@@ -20,15 +20,15 @@ const state = {
   currentView: "exam",
   dataSource: "default",
   results: [],
-  updatedAt: ""
+  updatedAt: "",
+  lastSubmittedSignature: ""
 };
 
 const elements = {
   loginShell: document.getElementById("loginShell"),
   appShell: document.getElementById("appShell"),
   loginForm: document.getElementById("loginForm"),
-  usernameInput: document.getElementById("usernameInput"),
-  passwordInput: document.getElementById("passwordInput"),
+  employeeCodeInput: document.getElementById("employeeCodeInput"),
   loginMessage: document.getElementById("loginMessage"),
   systemTitle: document.getElementById("systemTitle"),
   sidebarUserName: document.getElementById("sidebarUserName"),
@@ -42,7 +42,6 @@ const elements = {
   historyView: document.getElementById("historyView"),
   profileView: document.getElementById("profileView"),
   adminView: document.getElementById("adminView"),
-  adminPanel: document.getElementById("adminPanel"),
   pageHeading: document.getElementById("pageHeading"),
   modelSelector: document.getElementById("modelSelector"),
   examSelector: document.getElementById("examSelector"),
@@ -81,7 +80,10 @@ const elements = {
   historyStats: document.getElementById("historyStats"),
   historyList: document.getElementById("historyList"),
   profileUserName: document.getElementById("profileUserName"),
+  profileEmployeeCode: document.getElementById("profileEmployeeCode"),
   profileUserRole: document.getElementById("profileUserRole"),
+  profileDepartment: document.getElementById("profileDepartment"),
+  profilePosition: document.getElementById("profilePosition"),
   profileExamCount: document.getElementById("profileExamCount"),
   profileLastScore: document.getElementById("profileLastScore"),
   adminFileInput: document.getElementById("adminFileInput"),
@@ -124,6 +126,20 @@ async function api(path, options = {}) {
   return payload;
 }
 
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function formatDateTime(isoString) {
+  if (!isoString) return "-";
+  return new Date(isoString).toLocaleString("th-TH", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
+}
+
 function getCurrentExam() {
   return state.examSets[state.currentExamIndex];
 }
@@ -139,20 +155,6 @@ function getCurrentFilteredIndex() {
   const filtered = getFilteredExamSets();
   const current = getCurrentExam();
   return filtered.findIndex((exam) => exam.id === current?.id);
-}
-
-function formatTime(totalSeconds) {
-  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
-  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${seconds}`;
-}
-
-function formatDateTime(isoString) {
-  if (!isoString) return "-";
-  return new Date(isoString).toLocaleString("th-TH", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
 }
 
 function buildModelList() {
@@ -174,6 +176,14 @@ function buildModelList() {
   );
 }
 
+function setMessage(target, message, isError = false) {
+  target.textContent = message;
+  target.classList.remove("hidden");
+  target.style.background = isError ? "#ffeceb" : "#f6f9fd";
+  target.style.borderColor = isError ? "#ffc3bc" : "#dbe5f1";
+  target.style.color = isError ? "#9f3c33" : "#52627e";
+}
+
 function resetExamState() {
   const exam = getCurrentExam();
   if (!exam) return;
@@ -183,6 +193,7 @@ function resetExamState() {
   state.remainingSeconds = exam.durationMinutes * 60;
   state.started = false;
   state.submitted = false;
+  state.lastSubmittedSignature = "";
 
   if (state.timerId) {
     clearInterval(state.timerId);
@@ -190,14 +201,6 @@ function resetExamState() {
   }
 
   elements.resultPanel.classList.add("hidden");
-}
-
-function setMessage(target, message, isError = false) {
-  target.textContent = message;
-  target.classList.remove("hidden");
-  target.style.background = isError ? "#ffeceb" : "#f6f9fd";
-  target.style.borderColor = isError ? "#ffc3bc" : "#dbe5f1";
-  target.style.color = isError ? "#9f3c33" : "#52627e";
 }
 
 function renderAuth() {
@@ -211,11 +214,18 @@ function renderAuth() {
   elements.appShell.classList.remove("hidden");
 
   const roleText = state.currentUser.role === "admin" ? "ผู้ดูแลระบบ" : "พนักงาน";
-  elements.sidebarUserName.textContent = state.currentUser.username;
+  const displayName = state.currentUser.fullName || state.currentUser.username || state.currentUser.employeeCode;
+  const employeeCode = state.currentUser.employeeCode || state.currentUser.username || "-";
+
+  elements.sidebarUserName.textContent = displayName;
   elements.sidebarUserRole.textContent = `สิทธิ์: ${roleText}`;
-  elements.sidebarUserId.textContent = `ID: ${state.currentUser.id}`;
-  elements.profileUserName.textContent = state.currentUser.username;
+  elements.sidebarUserId.textContent = `รหัสพนักงาน: ${employeeCode}`;
+
+  elements.profileUserName.textContent = displayName;
+  elements.profileEmployeeCode.textContent = employeeCode;
   elements.profileUserRole.textContent = roleText;
+  elements.profileDepartment.textContent = state.currentUser.department || "-";
+  elements.profilePosition.textContent = state.currentUser.position || "-";
 
   elements.adminOnlyNodes.forEach((node) => {
     node.classList.toggle("hidden", state.currentUser.role !== "admin");
@@ -228,10 +238,11 @@ function renderAuth() {
 
 function setView(viewName) {
   state.currentView = viewName;
+
   const titleMap = {
     exam: "ทำข้อสอบออนไลน์",
     history: state.currentUser?.role === "admin" ? "ผลสอบของผู้ใช้งานทั้งหมด" : "ผลคะแนนย้อนหลัง",
-    profile: "บัญชีผู้ใช้",
+    profile: "ข้อมูลพนักงาน",
     admin: "จัดการคลังข้อสอบ"
   };
 
@@ -247,7 +258,8 @@ function setView(viewName) {
 }
 
 function renderAdminInfo() {
-  elements.dataSourceLabel.textContent = state.dataSource === "custom" ? "ใช้คลังข้อสอบจากฐานข้อมูล (custom)" : "ใช้คลังข้อสอบหลักจากฐานข้อมูล";
+  elements.dataSourceLabel.textContent =
+    state.dataSource === "custom" ? "ใช้คลังข้อสอบแบบอัปโหลด" : "ใช้คลังข้อสอบหลักของระบบ";
   elements.dataSummaryLabel.textContent = `${state.models.length} models / ${state.examSets.length} parts`;
   elements.adminDataInfo.innerHTML = `
     <span>Exam sets: ${state.examSets.length}</span>
@@ -266,8 +278,8 @@ function renderModelSelector() {
     button.textContent = `${model.modelCode} - ${model.modelName} (${model.count})`;
     button.addEventListener("click", () => {
       state.selectedModelKey = model.key;
-      const nextExam = getFilteredExamSets()[0];
-      const nextIndex = state.examSets.findIndex((exam) => exam.id === nextExam?.id);
+      const firstExam = getFilteredExamSets()[0];
+      const nextIndex = state.examSets.findIndex((exam) => exam.id === firstExam?.id);
       if (nextIndex >= 0) {
         state.currentExamIndex = nextIndex;
         resetExamState();
@@ -326,7 +338,8 @@ function renderQuestion() {
   elements.questionTitle.textContent = `ข้อ ${question.number}`;
   elements.currentQuestionText.textContent = `ข้อ ${state.currentQuestionIndex + 1} จาก ${exam.questions.length}`;
   elements.questionText.textContent = question.text;
-  elements.questionBadge.textContent = answer === null ? "ยังไม่เลือกคำตอบ" : `เลือกข้อ ${question.choiceKeys[answer]} แล้ว`;
+  elements.questionBadge.textContent =
+    answer === null ? "ยังไม่ได้เลือกคำตอบ" : `เลือกข้อ ${question.choiceKeys[answer]} แล้ว`;
   elements.choicesContainer.innerHTML = "";
 
   if (question.imageUrl) {
@@ -374,8 +387,10 @@ function renderQuestionNav() {
     button.type = "button";
     button.className = "question-index";
     button.textContent = question.number;
+
     if (index === state.currentQuestionIndex) button.classList.add("current");
     if (state.answers[index] !== null) button.classList.add("answered");
+
     button.addEventListener("click", () => {
       state.currentQuestionIndex = index;
       renderAll();
@@ -413,7 +428,7 @@ function renderSummary() {
   }
 
   elements.startExamBtn.disabled = state.loading || Boolean(state.loadError) || (state.started && !state.submitted);
-  elements.submitExamBtn.disabled = state.loading || Boolean(state.loadError);
+  elements.submitExamBtn.disabled = state.loading || Boolean(state.loadError) || !state.started || state.submitted;
 
   if (!state.loadError) {
     setMessage(elements.loadStatus, `โมเดลนี้มี ${filtered.length} ชุดข้อสอบ | ชุดปัจจุบัน ${filteredIndex + 1} จาก ${filtered.length}`);
@@ -436,6 +451,7 @@ function renderResult() {
 
   let correctCount = 0;
   let earnedScore = 0;
+
   exam.questions.forEach((question, index) => {
     if (state.answers[index] === question.answer) {
       correctCount += 1;
@@ -444,7 +460,7 @@ function renderResult() {
   });
 
   const totalScore = exam.questions.reduce((sum, question) => sum + question.score, 0);
-  const percent = Math.round((earnedScore / totalScore) * 100);
+  const percent = totalScore ? Math.round((earnedScore / totalScore) * 100) : 0;
   const wrongCount = exam.questions.length - correctCount;
   const passed = earnedScore >= exam.passScore;
 
@@ -453,14 +469,16 @@ function renderResult() {
   elements.correctCount.textContent = `${correctCount} ข้อ`;
   elements.wrongCount.textContent = `${wrongCount} ข้อ`;
   elements.resultMessage.textContent = passed
-    ? `ผ่านเกณฑ์แล้ว คะแนนขั้นต่ำคือ ${exam.passScore} คะแนน และคุณทำได้ ${earnedScore} คะแนน`
-    : `ยังไม่ผ่านเกณฑ์ คะแนนขั้นต่ำคือ ${exam.passScore} คะแนน แต่คุณทำได้ ${earnedScore} คะแนน`;
+    ? `ผ่านเกณฑ์แล้ว ขั้นต่ำ ${exam.passScore} คะแนน และคุณทำได้ ${earnedScore} คะแนน`
+    : `ยังไม่ผ่านเกณฑ์ ขั้นต่ำ ${exam.passScore} คะแนน แต่คุณทำได้ ${earnedScore} คะแนน`;
 
   elements.resultPanel.classList.remove("hidden");
 
   const payload = {
     user_id: state.currentUser.id,
-    username: state.currentUser.username,
+    username: state.currentUser.username || state.currentUser.employeeCode,
+    employee_code: state.currentUser.employeeCode || state.currentUser.username,
+    full_name: state.currentUser.fullName || state.currentUser.username || state.currentUser.employeeCode,
     role: state.currentUser.role,
     exam_id: exam.id,
     exam_title: exam.title,
@@ -477,14 +495,17 @@ function renderResult() {
     submitted_at: new Date().toISOString()
   };
 
-  if (!state.lastSubmittedSignature || state.lastSubmittedSignature !== JSON.stringify(payload)) {
-    state.lastSubmittedSignature = JSON.stringify(payload);
-    saveResultToServer(payload)
-      .then(loadResults)
-      .catch((error) => {
-        setMessage(elements.resultMessage, `บันทึกผลสอบไม่สำเร็จ: ${error.message}`, true);
-      });
+  const signature = JSON.stringify(payload);
+  if (state.lastSubmittedSignature === signature) {
+    return;
   }
+
+  state.lastSubmittedSignature = signature;
+  saveResultToServer(payload)
+    .then(loadResults)
+    .catch((error) => {
+      setMessage(elements.resultMessage, `บันทึกผลสอบไม่สำเร็จ: ${error.message}`, true);
+    });
 }
 
 function renderHistory() {
@@ -494,22 +515,32 @@ function renderHistory() {
   const last = results[0];
 
   elements.historyStats.innerHTML = `
-    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "รายการผลสอบทั้งหมด" : "จำนวนครั้งที่สอบ"}</span><strong>${results.length}</strong></div>
+    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "ผลสอบทั้งหมด" : "จำนวนครั้งที่สอบ"}</span><strong>${results.length}</strong></div>
     <div class="stat-box"><span>ค่าเฉลี่ย</span><strong>${average}%</strong></div>
-    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "สอบผ่านทั้งหมด" : "ผ่านเกณฑ์"}</span><strong>${passed}</strong></div>
+    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "รายการผ่านเกณฑ์" : "ผ่านเกณฑ์"}</span><strong>${passed}</strong></div>
   `;
 
   elements.profileExamCount.textContent = String(results.length);
   elements.profileLastScore.textContent = last ? `${last.score} / ${last.total_score}` : "-";
 
   if (!results.length) {
-    elements.historyList.innerHTML = `<article class="history-card"><h4>ยังไม่มีข้อมูลผลสอบ</h4><p>${state.currentUser?.role === "admin" ? "เมื่อมีผู้ใช้งานส่งข้อสอบ ระบบจะแสดงรายการทั้งหมดที่นี่" : "เมื่อส่งข้อสอบแล้ว ระบบจะบันทึกผลสอบไว้ในฐานข้อมูล"}</p></article>`;
+    elements.historyList.innerHTML = `
+      <article class="history-card">
+        <h4>ยังไม่มีข้อมูลผลสอบ</h4>
+        <p>${state.currentUser?.role === "admin" ? "เมื่อมีผู้ใช้งานส่งข้อสอบ ระบบจะแสดงรายการทั้งหมดที่นี่" : "เมื่อส่งข้อสอบแล้ว ระบบจะบันทึกผลสอบไว้ในฐานข้อมูล"}</p>
+      </article>
+    `;
     return;
   }
 
   elements.historyList.innerHTML = results
-    .map(
-      (item) => `
+    .map((item) => {
+      const ownerLabel =
+        state.currentUser?.role === "admin"
+          ? `<span>${item.employee_code || "-"}</span><span>${item.full_name || item.username}</span>`
+          : "";
+
+      return `
         <article class="history-card">
           <h4>${item.exam_title}</h4>
           <p>${item.model_code} / ${item.model_name} / ${item.part_code}</p>
@@ -518,21 +549,23 @@ function renderHistory() {
             <span>${item.percent}%</span>
             <span>${item.passed ? "ผ่าน" : "ไม่ผ่าน"}</span>
             <span>${formatDateTime(item.submitted_at)}</span>
-            ${state.currentUser?.role === "admin" ? `<span>${item.username}</span>` : ""}
+            ${ownerLabel}
           </div>
           <strong>ตอบถูก ${item.correct_count} ข้อ จาก ${item.question_count} ข้อ</strong>
         </article>
-      `
-    )
+      `;
+    })
     .join("");
 }
 
 async function loadResults() {
   if (!state.currentUser) return;
+
   const query = new URLSearchParams({
     role: state.currentUser.role,
     userId: state.currentUser.id
   });
+
   const payload = await api(`/api/results?${query.toString()}`);
   state.results = payload.results || [];
   renderHistory();
@@ -548,7 +581,7 @@ function submitExam(autoSubmit = false) {
   }
 
   if (autoSubmit) {
-    elements.examStatus.textContent = "หมดเวลา ระบบส่งข้อสอบแล้ว";
+    elements.examStatus.textContent = "หมดเวลา ระบบส่งข้อสอบให้อัตโนมัติแล้ว";
   }
 
   renderAll();
@@ -560,7 +593,6 @@ function startExam() {
   if (!exam) return;
 
   resetExamState();
-  state.lastSubmittedSignature = "";
   state.started = true;
 
   if (exam.randomizeQuestions) {
@@ -584,8 +616,9 @@ function startExam() {
 }
 
 function renderAll() {
-  if (!state.currentUser || !state.examSets.length) return;
   renderAuth();
+  if (!state.currentUser || !state.examSets.length) return;
+
   renderModelSelector();
   renderExamSelector();
   renderHeader();
@@ -600,7 +633,9 @@ function renderAll() {
 async function loadExamData() {
   try {
     state.loading = true;
+    state.loadError = "";
     setMessage(elements.loadStatus, "กำลังโหลดชุดข้อสอบ...");
+
     const payload = await api("/api/exams");
     state.examTitle = payload.title || "Factory Online Exam";
     state.examSets = payload.examSets || [];
@@ -615,7 +650,6 @@ async function loadExamData() {
     state.selectedModelKey = state.models[0]?.key || "";
     state.currentExamIndex = 0;
     state.loading = false;
-    state.loadError = "";
     resetExamState();
     renderAll();
   } catch (error) {
@@ -664,19 +698,19 @@ async function resetCustomJson() {
 
 async function handleLogin(event) {
   event.preventDefault();
-  const username = elements.usernameInput.value.trim();
-  const password = elements.passwordInput.value.trim();
+  const employeeCode = elements.employeeCodeInput.value.trim().toUpperCase();
 
-  if (!username || !password) {
-    setMessage(elements.loginMessage, "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน", true);
+  if (!employeeCode) {
+    setMessage(elements.loginMessage, "กรุณากรอกรหัสพนักงาน", true);
     return;
   }
 
   try {
     const payload = await api("/api/login", {
       method: "POST",
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ employeeCode })
     });
+
     state.currentUser = payload.user;
     safeWrite(STORAGE_KEYS.auth, state.currentUser);
     elements.loginMessage.classList.add("hidden");
@@ -693,10 +727,14 @@ function logout() {
   localStorage.removeItem(STORAGE_KEYS.auth);
   state.currentUser = null;
   state.results = [];
+  state.examSets = [];
+  state.models = [];
+
   if (state.timerId) {
     clearInterval(state.timerId);
     state.timerId = null;
   }
+
   renderAuth();
 }
 
@@ -719,7 +757,6 @@ elements.nextBtn.addEventListener("click", () => {
 });
 elements.restartExamBtn.addEventListener("click", () => {
   resetExamState();
-  state.lastSubmittedSignature = "";
   renderAll();
 });
 elements.importJsonBtn.addEventListener("click", importCustomJson);
@@ -738,13 +775,16 @@ async function init() {
   state.currentUser = safeRead(STORAGE_KEYS.auth, null);
   renderAuth();
   setView(state.currentView);
-  if (state.currentUser) {
-    try {
-      await loadExamData();
-      await loadResults();
-    } catch {
-      // handled in load functions
-    }
+
+  if (!state.currentUser) {
+    return;
+  }
+
+  try {
+    await loadExamData();
+    await loadResults();
+  } catch {
+    // handled in load functions
   }
 }
 

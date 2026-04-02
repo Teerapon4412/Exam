@@ -34,18 +34,13 @@
 
         <form id="loginForm" class="login-form">
           <label class="field">
-            <span>ชื่อผู้ใช้</span>
-            <input id="usernameInput" type="text" placeholder="เช่น worker01 หรือ admin" required />
-          </label>
-
-          <label class="field">
-            <span>รหัสผ่าน</span>
-            <input id="passwordInput" type="password" placeholder="กรอกรหัสผ่าน" required />
+            <span>รหัสพนักงาน</span>
+            <input id="employeeCodeInput" type="text" placeholder="เช่น L00489 หรือ ADMIN1234" required />
           </label>
 
           <div class="login-hint">
-            <span>Admin demo: `admin / admin123`</span>
-            <span>ผู้ใช้ทั่วไป: กรอกชื่อผู้ใช้และรหัสผ่านอะไรก็ได้</span>
+            <span>ใช้รหัสพนักงานอย่างเดียวในการเข้าใช้งาน</span>
+            <span>Admin dataset: `ADMIN1234`</span>
           </div>
 
           <button class="primary-btn wide" type="submit">เข้าสู่ระบบ</button>
@@ -279,12 +274,24 @@
               </div>
               <div class="profile-grid">
                 <div class="stat-box">
-                  <span>ชื่อผู้ใช้</span>
+                  <span>ชื่อพนักงาน</span>
                   <strong id="profileUserName">-</strong>
+                </div>
+                <div class="stat-box">
+                  <span>รหัสพนักงาน</span>
+                  <strong id="profileEmployeeCode">-</strong>
                 </div>
                 <div class="stat-box">
                   <span>สิทธิ์การใช้งาน</span>
                   <strong id="profileUserRole">-</strong>
+                </div>
+                <div class="stat-box">
+                  <span>แผนก</span>
+                  <strong id="profileDepartment">-</strong>
+                </div>
+                <div class="stat-box">
+                  <span>ตำแหน่ง</span>
+                  <strong id="profilePosition">-</strong>
                 </div>
                 <div class="stat-box">
                   <span>จำนวนครั้งที่สอบ</span>

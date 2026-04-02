@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
@@ -8,6 +9,8 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const DB_PATH = path.join(DATA_DIR, "factory-exam.sqlite");
 const DEFAULT_BANK_PATH = path.join(__dirname, "exam-data.json");
+const EMPLOYEE_DATA_PATH = path.join(__dirname, "employees-data.json");
+const AUTH_SECRET = process.env.AUTH_SECRET || "factory-exam-employee-auth";
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
@@ -17,10 +20,18 @@ db.pragma("journal_mode = WAL");
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
+    username TEXT UNIQUE,
+    password TEXT,
+    password_hash TEXT,
+    employee_code TEXT,
+    full_name TEXT,
+    department TEXT,
+    position TEXT,
+    photo_url TEXT,
     role TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS exam_bank (
@@ -35,6 +46,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT NOT NULL,
     username TEXT NOT NULL,
+    employee_code TEXT,
+    full_name TEXT,
     role TEXT NOT NULL,
     exam_id TEXT NOT NULL,
     exam_title TEXT NOT NULL,
@@ -52,11 +65,37 @@ db.exec(`
   );
 `);
 
-const insertUser = db.prepare(`
-  INSERT INTO users (id, username, password, role, created_at)
-  VALUES (@id, @username, @password, @role, @created_at)
+function getColumnNames(tableName) {
+  return db
+    .prepare(`PRAGMA table_info(${tableName})`)
+    .all()
+    .map((column) => column.name);
+}
+
+function ensureColumn(tableName, columnName, definition) {
+  const columns = getColumnNames(tableName);
+  if (!columns.includes(columnName)) {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${definition}`);
+  }
+}
+
+ensureColumn("users", "password_hash", "password_hash TEXT");
+ensureColumn("users", "employee_code", "employee_code TEXT");
+ensureColumn("users", "full_name", "full_name TEXT");
+ensureColumn("users", "department", "department TEXT");
+ensureColumn("users", "position", "position TEXT");
+ensureColumn("users", "photo_url", "photo_url TEXT");
+ensureColumn("users", "is_active", "is_active INTEGER NOT NULL DEFAULT 1");
+ensureColumn("users", "updated_at", "updated_at TEXT");
+
+ensureColumn("exam_results", "employee_code", "employee_code TEXT");
+ensureColumn("exam_results", "full_name", "full_name TEXT");
+
+db.exec(`
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_users_employee_code ON users(employee_code);
+  CREATE INDEX IF NOT EXISTS idx_exam_results_user_id ON exam_results(user_id);
 `);
-const getUserByUsername = db.prepare(`SELECT * FROM users WHERE username = ?`);
+
 const getBank = db.prepare(`SELECT title, payload, source, updated_at FROM exam_bank WHERE id = 1`);
 const upsertBank = db.prepare(`
   INSERT INTO exam_bank (id, title, payload, source, updated_at)
@@ -67,20 +106,50 @@ const upsertBank = db.prepare(`
     source = excluded.source,
     updated_at = excluded.updated_at
 `);
+
+const upsertEmployee = db.prepare(`
+  INSERT INTO users (
+    id, username, password, password_hash, employee_code, full_name, department,
+    position, photo_url, role, is_active, created_at, updated_at
+  ) VALUES (
+    @id, @username, @password, @password_hash, @employee_code, @full_name, @department,
+    @position, @photo_url, @role, @is_active, @created_at, @updated_at
+  )
+  ON CONFLICT(employee_code) DO UPDATE SET
+    id = excluded.id,
+    username = excluded.username,
+    password = excluded.password,
+    password_hash = excluded.password_hash,
+    full_name = excluded.full_name,
+    department = excluded.department,
+    position = excluded.position,
+    photo_url = excluded.photo_url,
+    role = excluded.role,
+    is_active = excluded.is_active,
+    updated_at = excluded.updated_at
+`);
+
+const getUserByEmployeeCode = db.prepare(`
+  SELECT * FROM users
+  WHERE employee_code = ?
+`);
+
 const insertResult = db.prepare(`
   INSERT INTO exam_results (
-    user_id, username, role, exam_id, exam_title, model_code, model_name, part_code,
+    user_id, username, employee_code, full_name, role, exam_id, exam_title, model_code, model_name, part_code,
     score, total_score, percent, correct_count, wrong_count, question_count, passed, submitted_at
   ) VALUES (
-    @user_id, @username, @role, @exam_id, @exam_title, @model_code, @model_name, @part_code,
+    @user_id, @username, @employee_code, @full_name, @role, @exam_id, @exam_title, @model_code, @model_name, @part_code,
     @score, @total_score, @percent, @correct_count, @wrong_count, @question_count, @passed, @submitted_at
   )
 `);
+
 const getResultsByUser = db.prepare(`
   SELECT * FROM exam_results
   WHERE user_id = ?
   ORDER BY submitted_at DESC
 `);
+
 const getAllResults = db.prepare(`
   SELECT * FROM exam_results
   ORDER BY submitted_at DESC
@@ -88,6 +157,57 @@ const getAllResults = db.prepare(`
 
 function randomId(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+}
+
+function normalizeRole(role) {
+  return String(role || "").trim().toUpperCase() === "ADMIN" ? "admin" : "student";
+}
+
+function normalizeEmployeeCode(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+function hashEmployeeCode(employeeCode) {
+  const normalized = normalizeEmployeeCode(employeeCode);
+  return crypto.scryptSync(normalized, `${AUTH_SECRET}:${normalized}`, 64).toString("hex");
+}
+
+function compareHashes(left, right) {
+  const leftBuffer = Buffer.from(String(left || ""), "hex");
+  const rightBuffer = Buffer.from(String(right || ""), "hex");
+  if (leftBuffer.length === 0 || rightBuffer.length === 0 || leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function normalizeEmployeeData(data) {
+  const employees = Array.isArray(data?.employees) ? data.employees : [];
+  return employees
+    .map((employee) => {
+      const employeeCode = normalizeEmployeeCode(employee.employeeCode || employee.username);
+      if (!employeeCode) return null;
+
+      const createdAt = employee.createdAt || new Date().toISOString();
+      const updatedAt = employee.updatedAt || createdAt;
+
+      return {
+        id: String(employee.id || randomId("EMP")),
+        username: employeeCode,
+        password: "[HASHED]",
+        password_hash: hashEmployeeCode(employeeCode),
+        employee_code: employeeCode,
+        full_name: String(employee.fullName || employee.username || employeeCode).trim(),
+        department: String(employee.department || "").trim(),
+        position: String(employee.position || "").trim(),
+        photo_url: String(employee.photoUrl || "").trim(),
+        role: normalizeRole(employee.role),
+        is_active: employee.isActive === false ? 0 : 1,
+        created_at: createdAt,
+        updated_at: updatedAt
+      };
+    })
+    .filter(Boolean);
 }
 
 function normalizeExamData(data) {
@@ -121,7 +241,7 @@ function normalizeExamData(data) {
     data.models.forEach((model) => {
       (model.parts || []).forEach((part) => {
         const questions = (part.questions || []).map((question, index) => {
-          const entries = Object.entries(question.choices || {}).sort(([a], [b]) => a.localeCompare(b));
+          const entries = Object.entries(question.choices || {}).sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
           const choiceKeys = entries.map(([key]) => String(key).trim());
           const choices = entries.map(([, value]) => String(value).trim());
           const answerKey = String(question.correctAnswer || "").trim();
@@ -163,16 +283,41 @@ function normalizeExamData(data) {
   throw new Error("Unsupported exam JSON structure");
 }
 
+function seedEmployees() {
+  if (!fs.existsSync(EMPLOYEE_DATA_PATH)) {
+    return 0;
+  }
+
+  const raw = fs.readFileSync(EMPLOYEE_DATA_PATH, "utf8");
+  const employees = normalizeEmployeeData(JSON.parse(raw));
+
+  const transaction = db.transaction((rows) => {
+    rows.forEach((employee) => upsertEmployee.run(employee));
+  });
+
+  transaction(employees);
+  return employees.length;
+}
+
 function seedDefaults() {
   const now = new Date().toISOString();
+  const employeeCount = seedEmployees();
 
-  if (!getUserByUsername.get("admin")) {
-    insertUser.run({
-      id: "ADMIN-001",
-      username: "admin",
-      password: "admin123",
+  if (!employeeCount && !getUserByEmployeeCode.get("ADMIN1234")) {
+    upsertEmployee.run({
+      id: "EMP-ADMIN-001",
+      username: "ADMIN1234",
+      password: "[HASHED]",
+      password_hash: hashEmployeeCode("ADMIN1234"),
+      employee_code: "ADMIN1234",
+      full_name: "Administrator",
+      department: "System",
+      position: "Admin",
+      photo_url: "",
       role: "admin",
-      created_at: now
+      is_active: 1,
+      created_at: now,
+      updated_at: now
     });
   }
 
@@ -200,47 +345,46 @@ function getCurrentBankPayload() {
   };
 }
 
+function serializeUser(user) {
+  return {
+    id: user.id,
+    employeeCode: user.employee_code,
+    username: user.username || user.employee_code,
+    fullName: user.full_name || user.username || user.employee_code,
+    department: user.department || "",
+    position: user.position || "",
+    photoUrl: user.photo_url || "",
+    role: user.role
+  };
+}
+
 app.use(express.json({ limit: "5mb" }));
 app.use(express.static(__dirname));
 
 app.post("/api/login", (req, res) => {
-  const username = String(req.body.username || "").trim();
-  const password = String(req.body.password || "").trim();
+  const employeeCode = normalizeEmployeeCode(req.body.employeeCode);
 
-  if (!username || !password) {
-    return res.status(400).json({ error: "Username and password are required" });
+  if (!employeeCode) {
+    return res.status(400).json({ error: "Employee code is required" });
   }
 
-  const existing = getUserByUsername.get(username);
-  if (existing) {
-    if (existing.password !== password) {
-      return res.status(401).json({ error: "Invalid password" });
-    }
-    return res.json({
-      user: {
-        id: existing.id,
-        username: existing.username,
-        role: existing.role
-      }
-    });
+  const user = getUserByEmployeeCode.get(employeeCode);
+  if (!user) {
+    return res.status(401).json({ error: "Employee code not found" });
   }
 
-  const now = new Date().toISOString();
-  const user = {
-    id: randomId("USER"),
-    username,
-    password,
-    role: "student",
-    created_at: now
-  };
-  insertUser.run(user);
-  return res.json({
-    user: {
-      id: user.id,
-      username: user.username,
-      role: user.role
-    }
-  });
+  if (!user.is_active) {
+    return res.status(403).json({ error: "This employee account is inactive" });
+  }
+
+  const incomingHash = hashEmployeeCode(employeeCode);
+  const storedHash = user.password_hash || "";
+
+  if (!compareHashes(incomingHash, storedHash)) {
+    return res.status(401).json({ error: "Unable to verify employee code" });
+  }
+
+  return res.json({ user: serializeUser(user) });
 });
 
 app.get("/api/exams", (_req, res) => {
@@ -258,6 +402,8 @@ app.post("/api/results", (req, res) => {
   insertResult.run({
     user_id: String(payload.user_id),
     username: String(payload.username),
+    employee_code: String(payload.employee_code || ""),
+    full_name: String(payload.full_name || ""),
     role: String(payload.role),
     exam_id: String(payload.exam_id),
     exam_title: String(payload.exam_title),
