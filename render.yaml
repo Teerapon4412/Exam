@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: factory-online-exam
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .
