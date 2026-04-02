@@ -1,7 +1,5 @@
 const STORAGE_KEYS = {
-  auth: "factory_exam_auth",
-  history: "factory_exam_history",
-  customBank: "factory_exam_custom_bank",
+  auth: "factory_exam_auth"
 };
 
 const state = {
@@ -21,6 +19,8 @@ const state = {
   currentUser: null,
   currentView: "exam",
   dataSource: "default",
+  results: [],
+  updatedAt: ""
 };
 
 const elements = {
@@ -89,7 +89,7 @@ const elements = {
   resetJsonBtn: document.getElementById("resetJsonBtn"),
   adminMessage: document.getElementById("adminMessage"),
   adminDataInfo: document.getElementById("adminDataInfo"),
-  adminOnlyNodes: Array.from(document.querySelectorAll(".admin-only")),
+  adminOnlyNodes: Array.from(document.querySelectorAll(".admin-only"))
 };
 
 function safeRead(key, fallback) {
@@ -105,6 +105,25 @@ function safeWrite(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+async function api(path, options = {}) {
+  const response = await fetch(path, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    },
+    ...options
+  });
+
+  const isJson = response.headers.get("content-type")?.includes("application/json");
+  const payload = isJson ? await response.json() : await response.text();
+
+  if (!response.ok) {
+    throw new Error(payload.error || payload || `Request failed: ${response.status}`);
+  }
+
+  return payload;
+}
+
 function getCurrentExam() {
   return state.examSets[state.currentExamIndex];
 }
@@ -113,7 +132,6 @@ function getFilteredExamSets() {
   if (!state.selectedModelKey) {
     return state.examSets;
   }
-
   return state.examSets.filter((exam) => `${exam.modelCode}|${exam.modelName}` === state.selectedModelKey);
 }
 
@@ -124,94 +142,17 @@ function getCurrentFilteredIndex() {
 }
 
 function formatTime(totalSeconds) {
-  const minutes = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, "0");
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
   const seconds = (totalSeconds % 60).toString().padStart(2, "0");
   return `${minutes}:${seconds}`;
 }
 
 function formatDateTime(isoString) {
-  const date = new Date(isoString);
-  return date.toLocaleString("th-TH", {
+  if (!isoString) return "-";
+  return new Date(isoString).toLocaleString("th-TH", {
     dateStyle: "medium",
-    timeStyle: "short",
+    timeStyle: "short"
   });
-}
-
-function normalizeExamData(data) {
-  if (data && Array.isArray(data.examSets)) {
-    return {
-      title: data.title || "Factory Online Exam",
-      examSets: data.examSets.map((exam) => ({
-        ...exam,
-        description: (exam.description || exam.modelName || "").trim(),
-        durationMinutes: Number(exam.durationMinutes) || 10,
-        passScore: Number(exam.passScore) || 0,
-        randomizeQuestions: Boolean(exam.randomizeQuestions),
-        showResultImmediately: exam.showResultImmediately !== false,
-        questions: exam.questions.map((question, index) => ({
-          ...question,
-          number: Number(question.number || question.questionNo || index + 1),
-          text: (question.text || question.questionText || "").trim(),
-          imageUrl: question.imageUrl || null,
-          choiceKeys: question.choiceKeys || ["A", "B", "C", "D"].slice(0, (question.choices || []).length),
-          choices: Array.isArray(question.choices)
-            ? question.choices.map((choice) => String(choice).trim())
-            : [],
-          answer: Number(question.answer),
-          score: Number(question.score) || 1,
-        })),
-      })),
-    };
-  }
-
-  if (data && Array.isArray(data.models)) {
-    const examSets = [];
-
-    data.models.forEach((model) => {
-      (model.parts || []).forEach((part) => {
-        const questions = (part.questions || []).map((question, index) => {
-          const entries = Object.entries(question.choices || {}).sort(([left], [right]) => left.localeCompare(right));
-          const choiceKeys = entries.map(([key]) => key.trim());
-          const choices = entries.map(([, value]) => String(value).trim());
-          const answerKey = String(question.correctAnswer || "").trim();
-
-          return {
-            id: question.id || `q-${index + 1}`,
-            number: Number(question.questionNo || index + 1),
-            text: String(question.questionText || "").trim(),
-            imageUrl: question.imageUrl ? String(question.imageUrl).trim() : null,
-            choiceKeys,
-            choices,
-            answer: choiceKeys.indexOf(answerKey),
-            score: Number(question.score) || 1,
-          };
-        });
-
-        examSets.push({
-          id: part.id,
-          title: String(part.partName || "").trim(),
-          description: String(part.subtitle || model.modelName || "").trim(),
-          modelCode: String(model.modelCode || "").trim(),
-          modelName: String(model.modelName || "").trim(),
-          partCode: String(part.partCode || "").trim(),
-          durationMinutes: Math.max(Math.ceil(questions.length * 1.5), 10),
-          passScore: Number(part.passScore) || 0,
-          randomizeQuestions: Boolean(part.randomizeQuestions),
-          showResultImmediately: part.showResultImmediately !== false,
-          questions,
-        });
-      });
-    });
-
-    return {
-      title: data.title || "Factory Online Exam",
-      examSets,
-    };
-  }
-
-  throw new Error("Unsupported exam JSON structure");
 }
 
 function buildModelList() {
@@ -225,8 +166,8 @@ function buildModelList() {
             key,
             modelCode: exam.modelCode,
             modelName: exam.modelName,
-            count: state.examSets.filter((item) => `${item.modelCode}|${item.modelName}` === key).length,
-          },
+            count: state.examSets.filter((item) => `${item.modelCode}|${item.modelName}` === key).length
+          }
         ];
       })
     ).values()
@@ -251,28 +192,12 @@ function resetExamState() {
   elements.resultPanel.classList.add("hidden");
 }
 
-function setLoadMessage(message, isError = false, target = elements.loadStatus) {
+function setMessage(target, message, isError = false) {
   target.textContent = message;
   target.classList.remove("hidden");
   target.style.background = isError ? "#ffeceb" : "#f6f9fd";
   target.style.borderColor = isError ? "#ffc3bc" : "#dbe5f1";
   target.style.color = isError ? "#9f3c33" : "#52627e";
-}
-
-function saveAuth(user) {
-  state.currentUser = user;
-  safeWrite(STORAGE_KEYS.auth, user);
-}
-
-function logout() {
-  localStorage.removeItem(STORAGE_KEYS.auth);
-  state.currentUser = null;
-  if (state.timerId) {
-    clearInterval(state.timerId);
-    state.timerId = null;
-  }
-  elements.appShell.classList.add("hidden");
-  elements.loginShell.classList.remove("hidden");
 }
 
 function renderAuth() {
@@ -305,9 +230,9 @@ function setView(viewName) {
   state.currentView = viewName;
   const titleMap = {
     exam: "ทำข้อสอบออนไลน์",
-    history: "ผลคะแนนย้อนหลัง",
+    history: state.currentUser?.role === "admin" ? "ผลสอบของผู้ใช้งานทั้งหมด" : "ผลคะแนนย้อนหลัง",
     profile: "บัญชีผู้ใช้",
-    admin: "Admin Upload",
+    admin: "จัดการคลังข้อสอบ"
   };
 
   elements.pageHeading.textContent = titleMap[viewName] || "Factory Online Exam";
@@ -321,73 +246,19 @@ function setView(viewName) {
   });
 }
 
-function getHistory() {
-  return safeRead(STORAGE_KEYS.history, []);
-}
-
-function saveHistoryEntry(entry) {
-  const history = getHistory();
-  history.unshift(entry);
-  safeWrite(STORAGE_KEYS.history, history.slice(0, 200));
-}
-
-function renderHistory() {
-  const history = getHistory().filter((item) => item.userId === state.currentUser?.id);
-
-  const average = history.length
-    ? Math.round(history.reduce((sum, item) => sum + item.percent, 0) / history.length)
-    : 0;
-  const passed = history.filter((item) => item.passed).length;
-  const last = history[0];
-
-  elements.historyStats.innerHTML = `
-    <div class="stat-box"><span>จำนวนครั้งที่สอบ</span><strong>${history.length}</strong></div>
-    <div class="stat-box"><span>ค่าเฉลี่ยล่าสุด</span><strong>${average}%</strong></div>
-    <div class="stat-box"><span>ผ่านเกณฑ์</span><strong>${passed}</strong></div>
-  `;
-
-  elements.profileExamCount.textContent = String(history.length);
-  elements.profileLastScore.textContent = last ? `${last.score} / ${last.totalScore}` : "-";
-
-  if (!history.length) {
-    elements.historyList.innerHTML = '<article class="history-card"><h4>ยังไม่มีประวัติผลสอบ</h4><p>เมื่อส่งข้อสอบแล้ว ระบบจะบันทึกคะแนนไว้ในเบราว์เซอร์นี้อัตโนมัติ</p></article>';
-    return;
-  }
-
-  elements.historyList.innerHTML = history
-    .map(
-      (item) => `
-        <article class="history-card">
-          <h4>${item.examTitle}</h4>
-          <p>${item.modelCode} / ${item.modelName} / ${item.partCode}</p>
-          <div class="history-meta">
-            <span>${item.score} / ${item.totalScore}</span>
-            <span>${item.percent}%</span>
-            <span>${item.passed ? "ผ่าน" : "ไม่ผ่าน"}</span>
-            <span>${formatDateTime(item.submittedAt)}</span>
-          </div>
-          <strong>ตอบถูก ${item.correctCount} ข้อ จาก ${item.questionCount} ข้อ</strong>
-        </article>
-      `
-    )
-    .join("");
-}
-
 function renderAdminInfo() {
-  elements.dataSourceLabel.textContent = state.dataSource === "custom" ? "ใช้คลังข้อสอบที่อัปโหลด" : "ใช้ไฟล์ exam-data.json";
+  elements.dataSourceLabel.textContent = state.dataSource === "custom" ? "ใช้คลังข้อสอบจากฐานข้อมูล (custom)" : "ใช้คลังข้อสอบหลักจากฐานข้อมูล";
   elements.dataSummaryLabel.textContent = `${state.models.length} models / ${state.examSets.length} parts`;
-
   elements.adminDataInfo.innerHTML = `
     <span>Exam sets: ${state.examSets.length}</span>
     <span>Models: ${state.models.length}</span>
     <span>Source: ${state.dataSource}</span>
-    <span>User: ${state.currentUser?.username || "-"}</span>
+    <span>Updated: ${formatDateTime(state.updatedAt)}</span>
   `;
 }
 
 function renderModelSelector() {
   elements.modelSelector.innerHTML = "";
-
   state.models.forEach((model) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -395,8 +266,7 @@ function renderModelSelector() {
     button.textContent = `${model.modelCode} - ${model.modelName} (${model.count})`;
     button.addEventListener("click", () => {
       state.selectedModelKey = model.key;
-      const filtered = getFilteredExamSets();
-      const nextExam = filtered[0];
+      const nextExam = getFilteredExamSets()[0];
       const nextIndex = state.examSets.findIndex((exam) => exam.id === nextExam?.id);
       if (nextIndex >= 0) {
         state.currentExamIndex = nextIndex;
@@ -471,7 +341,10 @@ function renderQuestion() {
     const choiceBtn = document.createElement("button");
     choiceBtn.type = "button";
     choiceBtn.className = "exam-option";
-    if (answer === index) choiceBtn.classList.add("selected");
+
+    if (answer === index) {
+      choiceBtn.classList.add("selected");
+    }
 
     if (state.submitted) {
       if (index === question.answer) choiceBtn.classList.add("correct");
@@ -500,9 +373,9 @@ function renderQuestionNav() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "question-index";
+    button.textContent = question.number;
     if (index === state.currentQuestionIndex) button.classList.add("current");
     if (state.answers[index] !== null) button.classList.add("answered");
-    button.textContent = question.number;
     button.addEventListener("click", () => {
       state.currentQuestionIndex = index;
       renderAll();
@@ -515,7 +388,7 @@ function renderSummary() {
   const exam = getCurrentExam();
   if (!exam) return;
 
-  const answered = state.answers.filter((answer) => answer !== null).length;
+  const answered = state.answers.filter((item) => item !== null).length;
   const unanswered = exam.questions.length - answered;
   const percent = Math.round((answered / exam.questions.length) * 100);
   const filtered = getFilteredExamSets();
@@ -541,9 +414,17 @@ function renderSummary() {
 
   elements.startExamBtn.disabled = state.loading || Boolean(state.loadError) || (state.started && !state.submitted);
   elements.submitExamBtn.disabled = state.loading || Boolean(state.loadError);
+
   if (!state.loadError) {
-    setLoadMessage(`โมเดลนี้มี ${filtered.length} ชุดข้อสอบ | ชุดปัจจุบัน ${filteredIndex + 1} จาก ${filtered.length}`);
+    setMessage(elements.loadStatus, `โมเดลนี้มี ${filtered.length} ชุดข้อสอบ | ชุดปัจจุบัน ${filteredIndex + 1} จาก ${filtered.length}`);
   }
+}
+
+async function saveResultToServer(payload) {
+  await api("/api/results", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 }
 
 function renderResult() {
@@ -577,29 +458,83 @@ function renderResult() {
 
   elements.resultPanel.classList.remove("hidden");
 
-  const history = getHistory();
-  const latestKey = `${state.currentUser.id}|${exam.id}|${earnedScore}|${percent}|${correctCount}|${wrongCount}`;
-  if (!history[0] || history[0].entryKey !== latestKey) {
-    saveHistoryEntry({
-      entryKey: latestKey,
-      userId: state.currentUser.id,
-      username: state.currentUser.username,
-      examId: exam.id,
-      examTitle: exam.title,
-      modelCode: exam.modelCode,
-      modelName: exam.modelName,
-      partCode: exam.partCode,
-      score: earnedScore,
-      totalScore,
-      percent,
-      correctCount,
-      wrongCount,
-      questionCount: exam.questions.length,
-      passed,
-      submittedAt: new Date().toISOString(),
-    });
+  const payload = {
+    user_id: state.currentUser.id,
+    username: state.currentUser.username,
+    role: state.currentUser.role,
+    exam_id: exam.id,
+    exam_title: exam.title,
+    model_code: exam.modelCode,
+    model_name: exam.modelName,
+    part_code: exam.partCode,
+    score: earnedScore,
+    total_score: totalScore,
+    percent,
+    correct_count: correctCount,
+    wrong_count: wrongCount,
+    question_count: exam.questions.length,
+    passed,
+    submitted_at: new Date().toISOString()
+  };
+
+  if (!state.lastSubmittedSignature || state.lastSubmittedSignature !== JSON.stringify(payload)) {
+    state.lastSubmittedSignature = JSON.stringify(payload);
+    saveResultToServer(payload)
+      .then(loadResults)
+      .catch((error) => {
+        setMessage(elements.resultMessage, `บันทึกผลสอบไม่สำเร็จ: ${error.message}`, true);
+      });
+  }
+}
+
+function renderHistory() {
+  const results = state.results;
+  const average = results.length ? Math.round(results.reduce((sum, item) => sum + item.percent, 0) / results.length) : 0;
+  const passed = results.filter((item) => item.passed).length;
+  const last = results[0];
+
+  elements.historyStats.innerHTML = `
+    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "รายการผลสอบทั้งหมด" : "จำนวนครั้งที่สอบ"}</span><strong>${results.length}</strong></div>
+    <div class="stat-box"><span>ค่าเฉลี่ย</span><strong>${average}%</strong></div>
+    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "สอบผ่านทั้งหมด" : "ผ่านเกณฑ์"}</span><strong>${passed}</strong></div>
+  `;
+
+  elements.profileExamCount.textContent = String(results.length);
+  elements.profileLastScore.textContent = last ? `${last.score} / ${last.total_score}` : "-";
+
+  if (!results.length) {
+    elements.historyList.innerHTML = `<article class="history-card"><h4>ยังไม่มีข้อมูลผลสอบ</h4><p>${state.currentUser?.role === "admin" ? "เมื่อมีผู้ใช้งานส่งข้อสอบ ระบบจะแสดงรายการทั้งหมดที่นี่" : "เมื่อส่งข้อสอบแล้ว ระบบจะบันทึกผลสอบไว้ในฐานข้อมูล"}</p></article>`;
+    return;
   }
 
+  elements.historyList.innerHTML = results
+    .map(
+      (item) => `
+        <article class="history-card">
+          <h4>${item.exam_title}</h4>
+          <p>${item.model_code} / ${item.model_name} / ${item.part_code}</p>
+          <div class="history-meta">
+            <span>${item.score} / ${item.total_score}</span>
+            <span>${item.percent}%</span>
+            <span>${item.passed ? "ผ่าน" : "ไม่ผ่าน"}</span>
+            <span>${formatDateTime(item.submitted_at)}</span>
+            ${state.currentUser?.role === "admin" ? `<span>${item.username}</span>` : ""}
+          </div>
+          <strong>ตอบถูก ${item.correct_count} ข้อ จาก ${item.question_count} ข้อ</strong>
+        </article>
+      `
+    )
+    .join("");
+}
+
+async function loadResults() {
+  if (!state.currentUser) return;
+  const query = new URLSearchParams({
+    role: state.currentUser.role,
+    userId: state.currentUser.id
+  });
+  const payload = await api(`/api/results?${query.toString()}`);
+  state.results = payload.results || [];
   renderHistory();
 }
 
@@ -625,6 +560,7 @@ function startExam() {
   if (!exam) return;
 
   resetExamState();
+  state.lastSubmittedSignature = "";
   state.started = true;
 
   if (exam.randomizeQuestions) {
@@ -648,7 +584,7 @@ function startExam() {
 }
 
 function renderAll() {
-  if (!state.examSets.length || !state.currentUser) return;
+  if (!state.currentUser || !state.examSets.length) return;
   renderAuth();
   renderModelSelector();
   renderExamSelector();
@@ -661,28 +597,18 @@ function renderAll() {
   renderAdminInfo();
 }
 
-async function loadDefaultBank() {
-  const response = await fetch("./exam-data.json");
-  if (!response.ok) {
-    throw new Error(`Unable to load exam-data.json (${response.status})`);
-  }
-  return normalizeExamData(await response.json());
-}
-
 async function loadExamData() {
   try {
     state.loading = true;
-    setLoadMessage("กำลังโหลดชุดข้อสอบ...");
-
-    const customBank = safeRead(STORAGE_KEYS.customBank, null);
-    const normalized = customBank ? normalizeExamData(customBank) : await loadDefaultBank();
-
-    state.examTitle = normalized.title || "Factory Online Exam";
-    state.examSets = normalized.examSets || [];
-    state.dataSource = customBank ? "custom" : "default";
+    setMessage(elements.loadStatus, "กำลังโหลดชุดข้อสอบ...");
+    const payload = await api("/api/exams");
+    state.examTitle = payload.title || "Factory Online Exam";
+    state.examSets = payload.examSets || [];
+    state.dataSource = payload.source || "default";
+    state.updatedAt = payload.updatedAt || "";
 
     if (!state.examSets.length) {
-      throw new Error("ไม่พบชุดข้อสอบในข้อมูลที่โหลด");
+      throw new Error("ไม่พบชุดข้อสอบในระบบ");
     }
 
     buildModelList();
@@ -691,67 +617,87 @@ async function loadExamData() {
     state.loading = false;
     state.loadError = "";
     resetExamState();
-    setLoadMessage(`โหลดข้อสอบสำเร็จ ${state.examSets.length} ชุด`);
     renderAll();
   } catch (error) {
     state.loading = false;
     state.loadError = error.message;
-    setLoadMessage("โหลดข้อสอบไม่สำเร็จ ถ้าเปิดผ่านไฟล์ตรง ๆ ให้ใช้ local server เช่น Live Server", true);
+    setMessage(elements.loadStatus, `โหลดข้อสอบไม่สำเร็จ: ${error.message}`, true);
   }
 }
 
 async function importCustomJson() {
   const file = elements.adminFileInput.files[0];
   if (!file) {
-    setLoadMessage("กรุณาเลือกไฟล์ JSON ก่อน", true, elements.adminMessage);
+    setMessage(elements.adminMessage, "กรุณาเลือกไฟล์ JSON ก่อน", true);
     return;
   }
 
   try {
     const text = await file.text();
-    const parsed = JSON.parse(text);
-    const normalized = normalizeExamData(parsed);
-    safeWrite(STORAGE_KEYS.customBank, normalized);
-    setLoadMessage(`นำเข้าข้อสอบสำเร็จ ${normalized.examSets.length} ชุด`, false, elements.adminMessage);
+    const payload = JSON.parse(text);
+    const result = await api("/api/admin/exam-bank", {
+      method: "POST",
+      body: JSON.stringify({
+        role: state.currentUser.role,
+        payload
+      })
+    });
+    setMessage(elements.adminMessage, `นำเข้าข้อสอบสำเร็จ ${result.examSetCount} ชุด`);
     await loadExamData();
   } catch (error) {
-    setLoadMessage(`นำเข้าไม่สำเร็จ: ${error.message}`, true, elements.adminMessage);
+    setMessage(elements.adminMessage, `นำเข้าไม่สำเร็จ: ${error.message}`, true);
   }
 }
 
 async function resetCustomJson() {
-  localStorage.removeItem(STORAGE_KEYS.customBank);
-  setLoadMessage("ล้างคลังข้อสอบที่อัปโหลดแล้ว กลับไปใช้ไฟล์เดิม", false, elements.adminMessage);
-  await loadExamData();
+  try {
+    await api("/api/admin/reset-exam-bank", {
+      method: "POST",
+      body: JSON.stringify({ role: state.currentUser.role })
+    });
+    setMessage(elements.adminMessage, "กลับไปใช้คลังข้อสอบเดิมแล้ว");
+    await loadExamData();
+  } catch (error) {
+    setMessage(elements.adminMessage, `รีเซ็ตไม่สำเร็จ: ${error.message}`, true);
+  }
 }
 
-function handleLogin(event) {
+async function handleLogin(event) {
   event.preventDefault();
   const username = elements.usernameInput.value.trim();
   const password = elements.passwordInput.value.trim();
 
   if (!username || !password) {
-    setLoadMessage("กรุณากรอกชื่อผู้ใช้และรหัสผ่าน", true, elements.loginMessage);
+    setMessage(elements.loginMessage, "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน", true);
     return;
   }
 
-  const isAdmin = username.toLowerCase() === "admin" && password === "admin123";
-  const user = {
-    id: isAdmin ? "ADMIN-001" : `USER-${username.toUpperCase()}`,
-    username,
-    role: isAdmin ? "admin" : "student",
-  };
-
-  saveAuth(user);
-  elements.loginMessage.classList.add("hidden");
-  renderAuth();
-  setView("exam");
-
-  if (!state.examSets.length) {
-    loadExamData();
-  } else {
-    renderAll();
+  try {
+    const payload = await api("/api/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password })
+    });
+    state.currentUser = payload.user;
+    safeWrite(STORAGE_KEYS.auth, state.currentUser);
+    elements.loginMessage.classList.add("hidden");
+    renderAuth();
+    setView("exam");
+    await loadExamData();
+    await loadResults();
+  } catch (error) {
+    setMessage(elements.loginMessage, error.message, true);
   }
+}
+
+function logout() {
+  localStorage.removeItem(STORAGE_KEYS.auth);
+  state.currentUser = null;
+  state.results = [];
+  if (state.timerId) {
+    clearInterval(state.timerId);
+    state.timerId = null;
+  }
+  renderAuth();
 }
 
 elements.loginForm.addEventListener("submit", handleLogin);
@@ -773,24 +719,32 @@ elements.nextBtn.addEventListener("click", () => {
 });
 elements.restartExamBtn.addEventListener("click", () => {
   resetExamState();
+  state.lastSubmittedSignature = "";
   renderAll();
 });
 elements.importJsonBtn.addEventListener("click", importCustomJson);
 elements.resetJsonBtn.addEventListener("click", resetCustomJson);
-
 elements.navItems.forEach((button) => {
-  button.addEventListener("click", () => {
+  button.addEventListener("click", async () => {
     if (button.dataset.view === "admin" && state.currentUser?.role !== "admin") return;
     setView(button.dataset.view);
+    if (button.dataset.view === "history") {
+      await loadResults();
+    }
   });
 });
 
-function init() {
+async function init() {
   state.currentUser = safeRead(STORAGE_KEYS.auth, null);
   renderAuth();
   setView(state.currentView);
   if (state.currentUser) {
-    loadExamData();
+    try {
+      await loadExamData();
+      await loadResults();
+    } catch {
+      // handled in load functions
+    }
   }
 }
 

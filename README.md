@@ -1,22 +1,36 @@
 # Factory Online Exam
 
-Static online exam app prepared for GitHub + Render deployment.
+Online exam app with Express and SQLite, prepared for GitHub + Render deployment.
 
 ## Local preview
 
-Open with a local web server so `exam-data.json` can be loaded:
+Install dependencies and start the app:
 
-- VS Code Live Server
-- `npx serve .`
+```bash
+npm install
+npm start
+```
+
+Then open:
+
+- `http://127.0.0.1:3000`
 
 ## Deploy on Render
 
-This repo includes `render.yaml` for a static site deployment.
+This repo includes `render.yaml` for a Node web service deployment.
 
 - Service name: `factory-online-exam`
-- Publish path: project root
-- Build command: none
+- Build command: `npm install`
+- Start command: `npm start`
+- Persistent disk mounted at `/opt/render/project/src/data`
 
 ## Data source
 
-Exam questions are loaded from `exam-data.json`.
+Exam questions are seeded from `exam-data.json` into SQLite on first run.
+
+## Backend features
+
+- Login API with persistent users in SQLite
+- Persistent exam results for all users
+- Admin upload/reset of exam bank through API
+- Admin can view all submitted results

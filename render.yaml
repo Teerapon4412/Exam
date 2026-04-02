@@ -1,6 +1,13 @@
 services:
   - type: web
     name: factory-online-exam
-    runtime: static
-    buildCommand: ""
-    staticPublishPath: .
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATA_DIR
+        value: /opt/render/project/src/data
+    disks:
+      - name: factory-exam-data
+        mountPath: /opt/render/project/src/data
+        sizeGB: 1

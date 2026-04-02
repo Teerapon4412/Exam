@@ -1,0 +1,14 @@
+{
+  "name": "factory-online-exam",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Factory online exam with Express and SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.4.1",
+    "express": "^4.21.2"
+  }
+}
