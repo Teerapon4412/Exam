@@ -2,6 +2,26 @@ const STORAGE_KEYS = {
   auth: "factory_exam_auth"
 };
 
+const EVALUATION_ASSIGNED_EVALUATORS = [
+  "206006 - เธเธนเนเธเธฃเธฐเน€เธกเธดเธ",
+  "210027 - เธเธนเนเธเธฃเธฐเน€เธกเธดเธ",
+  "211075 - เธเธนเนเธเธฃเธฐเน€เธกเธดเธ",
+  "204041 - เธเธนเนเธเธฃเธฐเน€เธกเธดเธ",
+  "206029 - เธเธนเนเธเธฃเธฐเน€เธกเธดเธ",
+  "199033 - เธเธนเนเธเธฃเธฐเน€เธกเธดเธ",
+  "197036 - เธเธนเนเธเธฃเธฐเน€เธกเธดเธ",
+  "203009 - เธเธนเนเธเธฃเธฐเน€เธกเธดเธ"
+];
+
+const EVALUATION_SCORE_LEVELS = [1, 2, 3, 4];
+
+const EVALUATION_ROW_SEED = [
+  { item: "เธเธงเธฒเธกเน€เธเนเธฒเนเธเธเธฑเนเธเธ•เธญเธเธเธฒเธฃเธ—เธณเธเธฒเธเนเธฅเธฐเธเธฒเธฃเธญเนเธฒเธเธญเธดเธ WI เธญเธขเนเธฒเธเธ–เธนเธเธ•เนเธญเธ", method: "เธชเธฑเธเน€เธเธ•", weight: 1 },
+  { item: "เธเธงเธฒเธกเธ–เธนเธเธ•เนเธญเธเธเธญเธเธเธฒเธฃเธเธเธดเธเธฑเธ•เธดเธเธฒเธเธ•เธฒเธกเธกเธฒเธ•เธฃเธเธฒเธเธ—เธตเนเธเธณเธซเธเธ”", method: "เธ•เธฃเธงเธเธเธฒเธ", weight: 3 },
+  { item: "เธเธงเธฒเธกเธชเธฒเธกเธฒเธฃเธ–เนเธเธเธฒเธฃเธ—เธณเธเธฒเธเนเธ”เนเธญเธขเนเธฒเธเธ•เนเธญเน€เธเธทเนเธญเธเนเธฅเธฐเธเธฅเธญเธ”เธ เธฑเธข", method: "เธ—เธ”เธชเธญเธ", weight: 5 },
+  { item: "เธเธฒเธฃเธ•เธญเธเธชเธเธญเธเน€เธกเธทเนเธญเธเธเธเธงเธฒเธกเธเธดเธ”เธเธเธ•เธดเนเธฅเธฐเธเธฒเธฃเนเธขเธเธเธดเนเธเธเธฒเธ NG เนเธ”เนเน€เธซเธกเธฒเธฐเธชเธก", method: "เธชเธฑเธกเธ เธฒเธฉเธ“เน", weight: 6 }
+];
+
 const state = {
   examTitle: "Factory Online Exam",
   examSets: [],
@@ -21,7 +41,13 @@ const state = {
   dataSource: "default",
   results: [],
   updatedAt: "",
-  lastSubmittedSignature: ""
+  lastSubmittedSignature: "",
+  employees: [],
+  evaluations: [],
+  evaluationSearch: "",
+  evaluationPartFilter: "ALL",
+  evaluationEvaluatorFilter: "ALL",
+  evaluationForm: null
 };
 
 const elements = {
@@ -41,6 +67,7 @@ const elements = {
   examView: document.getElementById("examView"),
   historyView: document.getElementById("historyView"),
   profileView: document.getElementById("profileView"),
+  evaluationView: document.getElementById("evaluationView"),
   adminView: document.getElementById("adminView"),
   pageHeading: document.getElementById("pageHeading"),
   modelSelector: document.getElementById("modelSelector"),
@@ -91,8 +118,55 @@ const elements = {
   resetJsonBtn: document.getElementById("resetJsonBtn"),
   adminMessage: document.getElementById("adminMessage"),
   adminDataInfo: document.getElementById("adminDataInfo"),
-  adminOnlyNodes: Array.from(document.querySelectorAll(".admin-only"))
+  adminOnlyNodes: Array.from(document.querySelectorAll(".admin-only")),
+  evaluationSectionTitle: document.getElementById("evaluationSectionTitle"),
+  evaluationModelSelect: document.getElementById("evaluationModelSelect"),
+  evaluationPartSelect: document.getElementById("evaluationPartSelect"),
+  evaluationEmployeeCodeSelect: document.getElementById("evaluationEmployeeCodeSelect"),
+  evaluationEmployeeNameSelect: document.getElementById("evaluationEmployeeNameSelect"),
+  evaluationEvaluatorSelect: document.getElementById("evaluationEvaluatorSelect"),
+  evaluationSelectedPart: document.getElementById("evaluationSelectedPart"),
+  evaluationLatestExam: document.getElementById("evaluationLatestExam"),
+  evaluationMessage: document.getElementById("evaluationMessage"),
+  saveEvaluationBtn: document.getElementById("saveEvaluationBtn"),
+  resetEvaluationBtn: document.getElementById("resetEvaluationBtn"),
+  evaluationSheetTitle: document.getElementById("evaluationSheetTitle"),
+  evaluationMetaCode: document.getElementById("evaluationMetaCode"),
+  evaluationMetaName: document.getElementById("evaluationMetaName"),
+  evaluationMetaPart: document.getElementById("evaluationMetaPart"),
+  evaluationMetaEvaluator: document.getElementById("evaluationMetaEvaluator"),
+  evaluationRows: document.getElementById("evaluationRows"),
+  evaluationTotal: document.getElementById("evaluationTotal"),
+  evaluationMax: document.getElementById("evaluationMax"),
+  evaluationSearchInput: document.getElementById("evaluationSearchInput"),
+  evaluationHistoryPartFilter: document.getElementById("evaluationHistoryPartFilter"),
+  evaluationHistoryEvaluatorFilter: document.getElementById("evaluationHistoryEvaluatorFilter"),
+  evaluationHistoryEmpty: document.getElementById("evaluationHistoryEmpty"),
+  evaluationHistoryTableWrap: document.getElementById("evaluationHistoryTableWrap"),
+  evaluationHistoryBody: document.getElementById("evaluationHistoryBody")
 };
+
+function createEvaluationDraft() {
+  return {
+    sectionTitle: "เธซเธฑเธงเธเนเธญเธ—เธตเน 1 : เธเธฒเธฃเธเธฃเธฐเน€เธกเธดเธเธซเธเนเธฒเธเธฒเธ เนเธฅเธฐเธ—เธฑเธเธฉเธฐเธเธฒเธ",
+    modelKey: "",
+    examId: "",
+    employeeId: "",
+    employeeCode: "",
+    employeeName: "",
+    evaluator: state.currentUser?.role === "admin" ? (state.currentUser.fullName || "") : "",
+    rows: EVALUATION_ROW_SEED.map((row, index) => ({
+      id: `eval-row-${index + 1}`,
+      no: index + 1,
+      item: row.item,
+      method: row.method,
+      weight: row.weight,
+      score: 0
+    }))
+  };
+}
+
+state.evaluationForm = createEvaluationDraft();
 
 function safeRead(key, fallback) {
   try {
@@ -213,13 +287,13 @@ function renderAuth() {
   elements.loginShell.classList.add("hidden");
   elements.appShell.classList.remove("hidden");
 
-  const roleText = state.currentUser.role === "admin" ? "ผู้ดูแลระบบ" : "พนักงาน";
+  const roleText = state.currentUser.role === "admin" ? "เธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ" : "เธเธเธฑเธเธเธฒเธ";
   const displayName = state.currentUser.fullName || state.currentUser.username || state.currentUser.employeeCode;
   const employeeCode = state.currentUser.employeeCode || state.currentUser.username || "-";
 
   elements.sidebarUserName.textContent = displayName;
-  elements.sidebarUserRole.textContent = `สิทธิ์: ${roleText}`;
-  elements.sidebarUserId.textContent = `รหัสพนักงาน: ${employeeCode}`;
+  elements.sidebarUserRole.textContent = `เธชเธดเธ—เธเธดเน: ${roleText}`;
+  elements.sidebarUserId.textContent = `เธฃเธซเธฑเธชเธเธเธฑเธเธเธฒเธ: ${employeeCode}`;
 
   elements.profileUserName.textContent = displayName;
   elements.profileEmployeeCode.textContent = employeeCode;
@@ -240,10 +314,10 @@ function setView(viewName) {
   state.currentView = viewName;
 
   const titleMap = {
-    exam: "ทำข้อสอบออนไลน์",
-    history: state.currentUser?.role === "admin" ? "ผลสอบของผู้ใช้งานทั้งหมด" : "ผลคะแนนย้อนหลัง",
-    profile: "ข้อมูลพนักงาน",
-    admin: "จัดการคลังข้อสอบ"
+    exam: "เธ—เธณเธเนเธญเธชเธญเธเธญเธญเธเนเธฅเธเน",
+    history: state.currentUser?.role === "admin" ? "เธเธฅเธชเธญเธเธเธญเธเธเธนเนเนเธเนเธเธฒเธเธ—เธฑเนเธเธซเธกเธ”" : "เธเธฅเธเธฐเนเธเธเธขเนเธญเธเธซเธฅเธฑเธ",
+    profile: "เธเนเธญเธกเธนเธฅเธเธเธฑเธเธเธฒเธ",
+    admin: "เธเธฑเธ”เธเธฒเธฃเธเธฅเธฑเธเธเนเธญเธชเธญเธ"
   };
 
   elements.pageHeading.textContent = titleMap[viewName] || "Factory Online Exam";
@@ -259,7 +333,7 @@ function setView(viewName) {
 
 function renderAdminInfo() {
   elements.dataSourceLabel.textContent =
-    state.dataSource === "custom" ? "ใช้คลังข้อสอบแบบอัปโหลด" : "ใช้คลังข้อสอบหลักของระบบ";
+    state.dataSource === "custom" ? "เนเธเนเธเธฅเธฑเธเธเนเธญเธชเธญเธเนเธเธเธญเธฑเธเนเธซเธฅเธ”" : "เนเธเนเธเธฅเธฑเธเธเนเธญเธชเธญเธเธซเธฅเธฑเธเธเธญเธเธฃเธฐเธเธ";
   elements.dataSummaryLabel.textContent = `${state.models.length} models / ${state.examSets.length} parts`;
   elements.adminDataInfo.innerHTML = `
     <span>Exam sets: ${state.examSets.length}</span>
@@ -301,9 +375,9 @@ function renderExamSelector() {
       <h4>${exam.title}</h4>
       <p>${exam.description}</p>
       <div class="exam-tags">
-        <span>${exam.questions.length} ข้อ</span>
-        <span>${exam.durationMinutes} นาที</span>
-        <span>ผ่าน ${exam.passScore} คะแนน</span>
+        <span>${exam.questions.length} เธเนเธญ</span>
+        <span>${exam.durationMinutes} เธเธฒเธ—เธต</span>
+        <span>เธเนเธฒเธ ${exam.passScore} เธเธฐเนเธเธ</span>
       </div>
     `;
     card.addEventListener("click", () => {
@@ -323,9 +397,9 @@ function renderHeader() {
   elements.systemTitle.textContent = state.examTitle;
   elements.examTitle.textContent = exam.title;
   elements.examDescription.textContent = `${exam.description} (${exam.modelCode} / ${exam.modelName} / ${exam.partCode})`;
-  elements.examMetaQuestions.textContent = `${exam.questions.length} ข้อ`;
-  elements.examMetaTime.textContent = `${exam.durationMinutes} นาที`;
-  elements.examMetaPassScore.textContent = `ผ่าน ${exam.passScore} คะแนน`;
+  elements.examMetaQuestions.textContent = `${exam.questions.length} เธเนเธญ`;
+  elements.examMetaTime.textContent = `${exam.durationMinutes} เธเธฒเธ—เธต`;
+  elements.examMetaPassScore.textContent = `เธเนเธฒเธ ${exam.passScore} เธเธฐเนเธเธ`;
 }
 
 function renderQuestion() {
@@ -335,11 +409,11 @@ function renderQuestion() {
   const question = exam.questions[state.currentQuestionIndex];
   const answer = state.answers[state.currentQuestionIndex];
 
-  elements.questionTitle.textContent = `ข้อ ${question.number}`;
-  elements.currentQuestionText.textContent = `ข้อ ${state.currentQuestionIndex + 1} จาก ${exam.questions.length}`;
+  elements.questionTitle.textContent = `เธเนเธญ ${question.number}`;
+  elements.currentQuestionText.textContent = `เธเนเธญ ${state.currentQuestionIndex + 1} เธเธฒเธ ${exam.questions.length}`;
   elements.questionText.textContent = question.text;
   elements.questionBadge.textContent =
-    answer === null ? "ยังไม่ได้เลือกคำตอบ" : `เลือกข้อ ${question.choiceKeys[answer]} แล้ว`;
+    answer === null ? "เธขเธฑเธเนเธกเนเนเธ”เนเน€เธฅเธทเธญเธเธเธณเธ•เธญเธ" : `เน€เธฅเธทเธญเธเธเนเธญ ${question.choiceKeys[answer]} เนเธฅเนเธง`;
   elements.choicesContainer.innerHTML = "";
 
   if (question.imageUrl) {
@@ -411,27 +485,27 @@ function renderSummary() {
 
   elements.timeRemaining.textContent = formatTime(state.remainingSeconds);
   elements.answeredCount.textContent = `${answered} / ${exam.questions.length}`;
-  elements.summaryAnsweredCount.textContent = `${answered} ข้อ`;
-  elements.unansweredCount.textContent = `${unanswered} ข้อ`;
+  elements.summaryAnsweredCount.textContent = `${answered} เธเนเธญ`;
+  elements.unansweredCount.textContent = `${unanswered} เธเนเธญ`;
   elements.progressPercent.textContent = `${percent}%`;
   elements.progressBar.style.width = `${percent}%`;
 
   if (state.submitted) {
-    elements.examStatus.textContent = "ส่งข้อสอบแล้ว";
-    elements.summaryStatus.textContent = "เสร็จสิ้น";
+    elements.examStatus.textContent = "เธชเนเธเธเนเธญเธชเธญเธเนเธฅเนเธง";
+    elements.summaryStatus.textContent = "เน€เธชเธฃเนเธเธชเธดเนเธ";
   } else if (state.started) {
-    elements.examStatus.textContent = "กำลังทำข้อสอบ";
-    elements.summaryStatus.textContent = "กำลังสอบ";
+    elements.examStatus.textContent = "เธเธณเธฅเธฑเธเธ—เธณเธเนเธญเธชเธญเธ";
+    elements.summaryStatus.textContent = "เธเธณเธฅเธฑเธเธชเธญเธ";
   } else {
-    elements.examStatus.textContent = "ยังไม่ได้เริ่มสอบ";
-    elements.summaryStatus.textContent = "รอเริ่มสอบ";
+    elements.examStatus.textContent = "เธขเธฑเธเนเธกเนเนเธ”เนเน€เธฃเธดเนเธกเธชเธญเธ";
+    elements.summaryStatus.textContent = "เธฃเธญเน€เธฃเธดเนเธกเธชเธญเธ";
   }
 
   elements.startExamBtn.disabled = state.loading || Boolean(state.loadError) || (state.started && !state.submitted);
   elements.submitExamBtn.disabled = state.loading || Boolean(state.loadError) || !state.started || state.submitted;
 
   if (!state.loadError) {
-    setMessage(elements.loadStatus, `โมเดลนี้มี ${filtered.length} ชุดข้อสอบ | ชุดปัจจุบัน ${filteredIndex + 1} จาก ${filtered.length}`);
+    setMessage(elements.loadStatus, `เนเธกเน€เธ”เธฅเธเธตเนเธกเธต ${filtered.length} เธเธธเธ”เธเนเธญเธชเธญเธ | เธเธธเธ”เธเธฑเธเธเธธเธเธฑเธ ${filteredIndex + 1} เธเธฒเธ ${filtered.length}`);
   }
 }
 
@@ -466,11 +540,11 @@ function renderResult() {
 
   elements.scoreValue.textContent = `${earnedScore} / ${totalScore}`;
   elements.scorePercent.textContent = `${percent}%`;
-  elements.correctCount.textContent = `${correctCount} ข้อ`;
-  elements.wrongCount.textContent = `${wrongCount} ข้อ`;
+  elements.correctCount.textContent = `${correctCount} เธเนเธญ`;
+  elements.wrongCount.textContent = `${wrongCount} เธเนเธญ`;
   elements.resultMessage.textContent = passed
-    ? `ผ่านเกณฑ์แล้ว ขั้นต่ำ ${exam.passScore} คะแนน และคุณทำได้ ${earnedScore} คะแนน`
-    : `ยังไม่ผ่านเกณฑ์ ขั้นต่ำ ${exam.passScore} คะแนน แต่คุณทำได้ ${earnedScore} คะแนน`;
+    ? `เธเนเธฒเธเน€เธเธ“เธ‘เนเนเธฅเนเธง เธเธฑเนเธเธ•เนเธณ ${exam.passScore} เธเธฐเนเธเธ เนเธฅเธฐเธเธธเธ“เธ—เธณเนเธ”เน ${earnedScore} เธเธฐเนเธเธ`
+    : `เธขเธฑเธเนเธกเนเธเนเธฒเธเน€เธเธ“เธ‘เน เธเธฑเนเธเธ•เนเธณ ${exam.passScore} เธเธฐเนเธเธ เนเธ•เนเธเธธเธ“เธ—เธณเนเธ”เน ${earnedScore} เธเธฐเนเธเธ`;
 
   elements.resultPanel.classList.remove("hidden");
 
@@ -504,7 +578,7 @@ function renderResult() {
   saveResultToServer(payload)
     .then(loadResults)
     .catch((error) => {
-      setMessage(elements.resultMessage, `บันทึกผลสอบไม่สำเร็จ: ${error.message}`, true);
+      setMessage(elements.resultMessage, `เธเธฑเธเธ—เธถเธเธเธฅเธชเธญเธเนเธกเนเธชเธณเน€เธฃเนเธ: ${error.message}`, true);
     });
 }
 
@@ -515,9 +589,9 @@ function renderHistory() {
   const last = results[0];
 
   elements.historyStats.innerHTML = `
-    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "ผลสอบทั้งหมด" : "จำนวนครั้งที่สอบ"}</span><strong>${results.length}</strong></div>
-    <div class="stat-box"><span>ค่าเฉลี่ย</span><strong>${average}%</strong></div>
-    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "รายการผ่านเกณฑ์" : "ผ่านเกณฑ์"}</span><strong>${passed}</strong></div>
+    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "เธเธฅเธชเธญเธเธ—เธฑเนเธเธซเธกเธ”" : "เธเธณเธเธงเธเธเธฃเธฑเนเธเธ—เธตเนเธชเธญเธ"}</span><strong>${results.length}</strong></div>
+    <div class="stat-box"><span>เธเนเธฒเน€เธเธฅเธตเนเธข</span><strong>${average}%</strong></div>
+    <div class="stat-box"><span>${state.currentUser?.role === "admin" ? "เธฃเธฒเธขเธเธฒเธฃเธเนเธฒเธเน€เธเธ“เธ‘เน" : "เธเนเธฒเธเน€เธเธ“เธ‘เน"}</span><strong>${passed}</strong></div>
   `;
 
   elements.profileExamCount.textContent = String(results.length);
@@ -526,8 +600,8 @@ function renderHistory() {
   if (!results.length) {
     elements.historyList.innerHTML = `
       <article class="history-card">
-        <h4>ยังไม่มีข้อมูลผลสอบ</h4>
-        <p>${state.currentUser?.role === "admin" ? "เมื่อมีผู้ใช้งานส่งข้อสอบ ระบบจะแสดงรายการทั้งหมดที่นี่" : "เมื่อส่งข้อสอบแล้ว ระบบจะบันทึกผลสอบไว้ในฐานข้อมูล"}</p>
+        <h4>เธขเธฑเธเนเธกเนเธกเธตเธเนเธญเธกเธนเธฅเธเธฅเธชเธญเธ</h4>
+        <p>${state.currentUser?.role === "admin" ? "เน€เธกเธทเนเธญเธกเธตเธเธนเนเนเธเนเธเธฒเธเธชเนเธเธเนเธญเธชเธญเธ เธฃเธฐเธเธเธเธฐเนเธชเธ”เธเธฃเธฒเธขเธเธฒเธฃเธ—เธฑเนเธเธซเธกเธ”เธ—เธตเนเธเธตเน" : "เน€เธกเธทเนเธญเธชเนเธเธเนเธญเธชเธญเธเนเธฅเนเธง เธฃเธฐเธเธเธเธฐเธเธฑเธเธ—เธถเธเธเธฅเธชเธญเธเนเธงเนเนเธเธเธฒเธเธเนเธญเธกเธนเธฅ"}</p>
       </article>
     `;
     return;
@@ -547,11 +621,11 @@ function renderHistory() {
           <div class="history-meta">
             <span>${item.score} / ${item.total_score}</span>
             <span>${item.percent}%</span>
-            <span>${item.passed ? "ผ่าน" : "ไม่ผ่าน"}</span>
+            <span>${item.passed ? "เธเนเธฒเธ" : "เนเธกเนเธเนเธฒเธ"}</span>
             <span>${formatDateTime(item.submitted_at)}</span>
             ${ownerLabel}
           </div>
-          <strong>ตอบถูก ${item.correct_count} ข้อ จาก ${item.question_count} ข้อ</strong>
+          <strong>เธ•เธญเธเธ–เธนเธ ${item.correct_count} เธเนเธญ เธเธฒเธ ${item.question_count} เธเนเธญ</strong>
         </article>
       `;
     })
@@ -581,7 +655,7 @@ function submitExam(autoSubmit = false) {
   }
 
   if (autoSubmit) {
-    elements.examStatus.textContent = "หมดเวลา ระบบส่งข้อสอบให้อัตโนมัติแล้ว";
+    elements.examStatus.textContent = "เธซเธกเธ”เน€เธงเธฅเธฒ เธฃเธฐเธเธเธชเนเธเธเนเธญเธชเธญเธเนเธซเนเธญเธฑเธ•เนเธเธกเธฑเธ•เธดเนเธฅเนเธง";
   }
 
   renderAll();
@@ -634,7 +708,7 @@ async function loadExamData() {
   try {
     state.loading = true;
     state.loadError = "";
-    setMessage(elements.loadStatus, "กำลังโหลดชุดข้อสอบ...");
+    setMessage(elements.loadStatus, "เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเธธเธ”เธเนเธญเธชเธญเธ...");
 
     const payload = await api("/api/exams");
     state.examTitle = payload.title || "Factory Online Exam";
@@ -643,7 +717,7 @@ async function loadExamData() {
     state.updatedAt = payload.updatedAt || "";
 
     if (!state.examSets.length) {
-      throw new Error("ไม่พบชุดข้อสอบในระบบ");
+      throw new Error("เนเธกเนเธเธเธเธธเธ”เธเนเธญเธชเธญเธเนเธเธฃเธฐเธเธ");
     }
 
     buildModelList();
@@ -655,14 +729,14 @@ async function loadExamData() {
   } catch (error) {
     state.loading = false;
     state.loadError = error.message;
-    setMessage(elements.loadStatus, `โหลดข้อสอบไม่สำเร็จ: ${error.message}`, true);
+    setMessage(elements.loadStatus, `เนเธซเธฅเธ”เธเนเธญเธชเธญเธเนเธกเนเธชเธณเน€เธฃเนเธ: ${error.message}`, true);
   }
 }
 
 async function importCustomJson() {
   const file = elements.adminFileInput.files[0];
   if (!file) {
-    setMessage(elements.adminMessage, "กรุณาเลือกไฟล์ JSON ก่อน", true);
+    setMessage(elements.adminMessage, "เธเธฃเธธเธ“เธฒเน€เธฅเธทเธญเธเนเธเธฅเน JSON เธเนเธญเธ", true);
     return;
   }
 
@@ -676,10 +750,10 @@ async function importCustomJson() {
         payload
       })
     });
-    setMessage(elements.adminMessage, `นำเข้าข้อสอบสำเร็จ ${result.examSetCount} ชุด`);
+    setMessage(elements.adminMessage, `เธเธณเน€เธเนเธฒเธเนเธญเธชเธญเธเธชเธณเน€เธฃเนเธ ${result.examSetCount} เธเธธเธ”`);
     await loadExamData();
   } catch (error) {
-    setMessage(elements.adminMessage, `นำเข้าไม่สำเร็จ: ${error.message}`, true);
+    setMessage(elements.adminMessage, `เธเธณเน€เธเนเธฒเนเธกเนเธชเธณเน€เธฃเนเธ: ${error.message}`, true);
   }
 }
 
@@ -689,11 +763,476 @@ async function resetCustomJson() {
       method: "POST",
       body: JSON.stringify({ role: state.currentUser.role })
     });
-    setMessage(elements.adminMessage, "กลับไปใช้คลังข้อสอบเดิมแล้ว");
+    setMessage(elements.adminMessage, "เธเธฅเธฑเธเนเธเนเธเนเธเธฅเธฑเธเธเนเธญเธชเธญเธเน€เธ”เธดเธกเนเธฅเนเธง");
     await loadExamData();
   } catch (error) {
-    setMessage(elements.adminMessage, `รีเซ็ตไม่สำเร็จ: ${error.message}`, true);
+    setMessage(elements.adminMessage, `เธฃเธตเน€เธเนเธ•เนเธกเนเธชเธณเน€เธฃเนเธ: ${error.message}`, true);
   }
+}
+
+function getEvaluationModelKey(exam) {
+  return `${exam.modelCode}|${exam.modelName}`;
+}
+
+function getEvaluationModelOptions() {
+  return Array.from(
+    new Map(
+      state.examSets.map((exam) => [
+        getEvaluationModelKey(exam),
+        {
+          key: getEvaluationModelKey(exam),
+          modelCode: exam.modelCode,
+          modelName: exam.modelName
+        }
+      ])
+    ).values()
+  );
+}
+
+function getEvaluationExamOptions() {
+  if (!state.evaluationForm.modelKey) {
+    return [];
+  }
+
+  return state.examSets.filter((exam) => getEvaluationModelKey(exam) === state.evaluationForm.modelKey);
+}
+
+function getSelectedEvaluationExam() {
+  return state.examSets.find((exam) => exam.id === state.evaluationForm.examId) || null;
+}
+
+function findEmployeeById(employeeId) {
+  return state.employees.find((employee) => employee.id === employeeId) || null;
+}
+
+function findEmployeeByCode(employeeCode) {
+  return state.employees.find((employee) => employee.employeeCode === employeeCode) || null;
+}
+
+function findEmployeeByName(fullName) {
+  return state.employees.find((employee) => employee.fullName === fullName) || null;
+}
+
+function calculateEvaluationTotal(rows = state.evaluationForm.rows) {
+  return rows.reduce((sum, row) => sum + Number(row.weight || 0) * Number(row.score || 0), 0);
+}
+
+function calculateEvaluationMax(rows = state.evaluationForm.rows) {
+  return rows.reduce((sum, row) => sum + Number(row.weight || 0) * EVALUATION_SCORE_LEVELS[EVALUATION_SCORE_LEVELS.length - 1], 0);
+}
+
+function getLatestEvaluationExamResult() {
+  const exam = getSelectedEvaluationExam();
+  const employeeCode = state.evaluationForm.employeeCode;
+
+  if (!exam || !employeeCode) {
+    return null;
+  }
+
+  return [...state.results]
+    .filter((item) => item.employee_code === employeeCode && item.part_code === exam.partCode)
+    .sort((left, right) => new Date(right.submitted_at) - new Date(left.submitted_at))[0] || null;
+}
+
+function ensureEvaluationSelection() {
+  if (!state.examSets.length) {
+    return;
+  }
+
+  const modelOptions = getEvaluationModelOptions();
+  if (!state.evaluationForm.modelKey || !modelOptions.some((model) => model.key === state.evaluationForm.modelKey)) {
+    state.evaluationForm.modelKey = modelOptions[0]?.key || "";
+  }
+
+  const examOptions = getEvaluationExamOptions();
+  if (!state.evaluationForm.examId || !examOptions.some((exam) => exam.id === state.evaluationForm.examId)) {
+    state.evaluationForm.examId = examOptions[0]?.id || "";
+  }
+
+  if (state.employees.length) {
+    if (!state.evaluationForm.employeeId || !findEmployeeById(state.evaluationForm.employeeId)) {
+      const firstEmployee = state.employees[0];
+      state.evaluationForm.employeeId = firstEmployee.id;
+      state.evaluationForm.employeeCode = firstEmployee.employeeCode;
+      state.evaluationForm.employeeName = firstEmployee.fullName;
+    }
+  } else {
+    state.evaluationForm.employeeId = "";
+    state.evaluationForm.employeeCode = "";
+    state.evaluationForm.employeeName = "";
+  }
+
+  if (!state.evaluationForm.evaluator) {
+    state.evaluationForm.evaluator = state.currentUser?.fullName || EVALUATION_ASSIGNED_EVALUATORS[0] || "";
+  }
+
+  if (!state.evaluationForm.sectionTitle) {
+    state.evaluationForm.sectionTitle = createEvaluationDraft().sectionTitle;
+  }
+}
+
+function syncEvaluationEmployee(employee) {
+  if (!employee) {
+    state.evaluationForm.employeeId = "";
+    state.evaluationForm.employeeCode = "";
+    state.evaluationForm.employeeName = "";
+    return;
+  }
+
+  state.evaluationForm.employeeId = employee.id;
+  state.evaluationForm.employeeCode = employee.employeeCode;
+  state.evaluationForm.employeeName = employee.fullName;
+}
+
+function buildEvaluationPartFilterOptions() {
+  const map = new Map();
+  state.evaluations.forEach((evaluation) => {
+    if (!map.has(evaluation.partCode)) {
+      map.set(evaluation.partCode, {
+        value: evaluation.partCode,
+        label: `${evaluation.partCode} - ${evaluation.partName}`
+      });
+    }
+  });
+  return Array.from(map.values());
+}
+
+function buildEvaluationEvaluatorOptions() {
+  const set = new Set(EVALUATION_ASSIGNED_EVALUATORS);
+  state.evaluations.forEach((evaluation) => {
+    if (evaluation.evaluator) {
+      set.add(evaluation.evaluator);
+    }
+  });
+  return Array.from(set.values());
+}
+
+function getFilteredEvaluations() {
+  const query = state.evaluationSearch.trim().toLowerCase();
+
+  return [...state.evaluations]
+    .filter((evaluation) => {
+      if (state.evaluationPartFilter !== "ALL" && evaluation.partCode !== state.evaluationPartFilter) {
+        return false;
+      }
+      if (state.evaluationEvaluatorFilter !== "ALL" && evaluation.evaluator !== state.evaluationEvaluatorFilter) {
+        return false;
+      }
+      if (!query) {
+        return true;
+      }
+
+      const haystack = [
+        evaluation.employeeCode,
+        evaluation.employeeName,
+        evaluation.partCode,
+        evaluation.partName,
+        evaluation.modelCode,
+        evaluation.modelName,
+        evaluation.evaluator
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(query);
+    })
+    .sort((left, right) => new Date(right.updatedAt || right.createdAt) - new Date(left.updatedAt || left.createdAt));
+}
+
+function renderEvaluationRows() {
+  elements.evaluationRows.innerHTML = "";
+
+  state.evaluationForm.rows.forEach((row) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.no}</td>
+      <td>${row.item}</td>
+      <td>${row.method}</td>
+      <td>${row.weight}</td>
+      <td><div class="evaluation-score-options" data-row-id="${row.id}"></div></td>
+      <td>${Number(row.weight || 0) * Number(row.score || 0)}</td>
+    `;
+
+    const scoreWrap = tr.querySelector(".evaluation-score-options");
+    EVALUATION_SCORE_LEVELS.forEach((level) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `evaluation-score-pill${Number(row.score) === level ? " active" : ""}`;
+      button.textContent = String(level);
+      button.addEventListener("click", () => {
+        state.evaluationForm.rows = state.evaluationForm.rows.map((item) =>
+          item.id === row.id ? { ...item, score: level } : item
+        );
+        renderEvaluation();
+      });
+      scoreWrap.appendChild(button);
+    });
+
+    elements.evaluationRows.appendChild(tr);
+  });
+}
+
+function renderEvaluationHistory() {
+  const evaluations = getFilteredEvaluations();
+
+  elements.evaluationHistoryBody.innerHTML = "";
+  elements.evaluationHistoryEmpty.classList.toggle("hidden", evaluations.length > 0);
+  elements.evaluationHistoryTableWrap.classList.toggle("hidden", evaluations.length === 0);
+
+  if (!evaluations.length) {
+    return;
+  }
+
+  evaluations.forEach((evaluation) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${evaluation.employeeCode}</td>
+      <td>${evaluation.employeeName}</td>
+      <td>${evaluation.modelCode}</td>
+      <td>${evaluation.partCode} - ${evaluation.partName}</td>
+      <td>${evaluation.examScore} / ${evaluation.examTotalScore} (${evaluation.examPercent}%)</td>
+      <td>${evaluation.totalScore} / ${evaluation.maxScore}</td>
+      <td>${evaluation.evaluator}</td>
+      <td>${formatDateTime(evaluation.updatedAt || evaluation.createdAt)}</td>
+    `;
+    elements.evaluationHistoryBody.appendChild(tr);
+  });
+}
+
+function renderEvaluation() {
+  if (state.currentUser?.role !== "admin") {
+    return;
+  }
+
+  ensureEvaluationSelection();
+
+  const modelOptions = getEvaluationModelOptions();
+  const examOptions = getEvaluationExamOptions();
+  const selectedExam = getSelectedEvaluationExam();
+  const latestExam = getLatestEvaluationExamResult();
+  const total = calculateEvaluationTotal();
+  const maxScore = calculateEvaluationMax();
+
+  elements.evaluationSectionTitle.value = state.evaluationForm.sectionTitle;
+
+  elements.evaluationModelSelect.innerHTML = modelOptions
+    .map(
+      (model) =>
+        `<option value="${model.key}"${model.key === state.evaluationForm.modelKey ? " selected" : ""}>${model.modelCode} - ${model.modelName}</option>`
+    )
+    .join("");
+
+  elements.evaluationPartSelect.innerHTML = examOptions
+    .map(
+      (exam) =>
+        `<option value="${exam.id}"${exam.id === state.evaluationForm.examId ? " selected" : ""}>${exam.partCode} - ${exam.title}</option>`
+    )
+    .join("");
+
+  elements.evaluationEmployeeCodeSelect.innerHTML = state.employees
+    .map(
+      (employee) =>
+        `<option value="${employee.employeeCode}"${employee.employeeCode === state.evaluationForm.employeeCode ? " selected" : ""}>${employee.employeeCode}</option>`
+    )
+    .join("");
+
+  elements.evaluationEmployeeNameSelect.innerHTML = state.employees
+    .map(
+      (employee) =>
+        `<option value="${employee.fullName}"${employee.fullName === state.evaluationForm.employeeName ? " selected" : ""}>${employee.fullName}</option>`
+    )
+    .join("");
+
+  elements.evaluationEvaluatorSelect.innerHTML = buildEvaluationEvaluatorOptions()
+    .map(
+      (evaluator) =>
+        `<option value="${evaluator}"${evaluator === state.evaluationForm.evaluator ? " selected" : ""}>${evaluator}</option>`
+    )
+    .join("");
+
+  elements.evaluationSelectedPart.textContent = selectedExam
+    ? `${selectedExam.modelCode} / ${selectedExam.modelName} / ${selectedExam.partCode}`
+    : "-";
+  elements.evaluationLatestExam.textContent = latestExam
+    ? `${latestExam.score} / ${latestExam.total_score} (${latestExam.percent}%)`
+    : "-";
+
+  elements.evaluationSheetTitle.textContent = state.evaluationForm.sectionTitle;
+  elements.evaluationMetaCode.textContent = state.evaluationForm.employeeCode || "-";
+  elements.evaluationMetaName.textContent = state.evaluationForm.employeeName || "-";
+  elements.evaluationMetaPart.textContent = selectedExam ? `${selectedExam.partCode} - ${selectedExam.title}` : "-";
+  elements.evaluationMetaEvaluator.textContent = state.evaluationForm.evaluator || "-";
+  elements.evaluationTotal.textContent = String(total);
+  elements.evaluationMax.textContent = String(maxScore);
+
+  elements.evaluationHistoryPartFilter.innerHTML = [
+    `<option value="ALL">ทุก Part</option>`,
+    ...buildEvaluationPartFilterOptions().map(
+      (option) => `<option value="${option.value}"${option.value === state.evaluationPartFilter ? " selected" : ""}>${option.label}</option>`
+    )
+  ].join("");
+
+  elements.evaluationHistoryEvaluatorFilter.innerHTML = [
+    `<option value="ALL">ผู้ประเมินทั้งหมด</option>`,
+    ...buildEvaluationEvaluatorOptions().map(
+      (option) => `<option value="${option}"${option === state.evaluationEvaluatorFilter ? " selected" : ""}>${option}</option>`
+    )
+  ].join("");
+
+  elements.evaluationSearchInput.value = state.evaluationSearch;
+
+  renderEvaluationRows();
+  renderEvaluationHistory();
+}
+
+async function loadEmployees() {
+  if (state.currentUser?.role !== "admin") {
+    return;
+  }
+
+  const query = new URLSearchParams({ role: state.currentUser.role });
+  const payload = await api(`/api/admin/employees?${query.toString()}`);
+  state.employees = payload.employees || [];
+  ensureEvaluationSelection();
+}
+
+async function loadEvaluations() {
+  if (state.currentUser?.role !== "admin") {
+    return;
+  }
+
+  const query = new URLSearchParams({ role: state.currentUser.role });
+  const payload = await api(`/api/evaluations?${query.toString()}`);
+  state.evaluations = payload.evaluations || [];
+}
+
+async function saveEvaluation() {
+  const exam = getSelectedEvaluationExam();
+  const employee = findEmployeeById(state.evaluationForm.employeeId);
+
+  if (!exam || !employee) {
+    setMessage(elements.evaluationMessage, "กรุณาเลือกพนักงานและ Part ที่ต้องการประเมิน", true);
+    return;
+  }
+
+  const payload = {
+    role: state.currentUser.role,
+    employeeId: employee.id,
+    employeeCode: employee.employeeCode,
+    employeeName: employee.fullName,
+    evaluator: state.evaluationForm.evaluator,
+    sectionTitle: state.evaluationForm.sectionTitle.trim(),
+    modelCode: exam.modelCode,
+    modelName: exam.modelName,
+    partCode: exam.partCode,
+    partName: exam.title,
+    totalScore: calculateEvaluationTotal(),
+    maxScore: calculateEvaluationMax(),
+    rows: state.evaluationForm.rows
+  };
+
+  try {
+    const response = await api("/api/evaluations", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+
+    const evaluation = response.evaluation;
+    const existingIndex = state.evaluations.findIndex((item) => item.id === evaluation.id);
+    if (existingIndex >= 0) {
+      state.evaluations.splice(existingIndex, 1, evaluation);
+    } else {
+      state.evaluations.unshift(evaluation);
+    }
+
+    setMessage(elements.evaluationMessage, "บันทึกผลการประเมินเรียบร้อยแล้ว");
+    renderEvaluation();
+  } catch (error) {
+    setMessage(elements.evaluationMessage, `บันทึกผลการประเมินไม่สำเร็จ: ${error.message}`, true);
+  }
+}
+
+function resetEvaluationForm() {
+  state.evaluationForm = createEvaluationDraft();
+  ensureEvaluationSelection();
+  elements.evaluationMessage.classList.add("hidden");
+  renderEvaluation();
+}
+
+function renderAuth() {
+  if (!state.currentUser) {
+    elements.loginShell.classList.remove("hidden");
+    elements.appShell.classList.add("hidden");
+    return;
+  }
+
+  elements.loginShell.classList.add("hidden");
+  elements.appShell.classList.remove("hidden");
+
+  const roleText = state.currentUser.role === "admin" ? "ผู้ดูแลระบบ" : "พนักงาน";
+  const displayName = state.currentUser.fullName || state.currentUser.username || state.currentUser.employeeCode;
+  const employeeCode = state.currentUser.employeeCode || state.currentUser.username || "-";
+
+  elements.sidebarUserName.textContent = displayName;
+  elements.sidebarUserRole.textContent = `สิทธิ์: ${roleText}`;
+  elements.sidebarUserId.textContent = `รหัสพนักงาน: ${employeeCode}`;
+
+  elements.profileUserName.textContent = displayName;
+  elements.profileEmployeeCode.textContent = employeeCode;
+  elements.profileUserRole.textContent = roleText;
+  elements.profileDepartment.textContent = state.currentUser.department || "-";
+  elements.profilePosition.textContent = state.currentUser.position || "-";
+
+  elements.adminOnlyNodes.forEach((node) => {
+    node.classList.toggle("hidden", state.currentUser.role !== "admin");
+  });
+
+  if ((state.currentView === "admin" || state.currentView === "evaluation") && state.currentUser.role !== "admin") {
+    state.currentView = "exam";
+  }
+}
+
+function setView(viewName) {
+  if ((viewName === "admin" || viewName === "evaluation") && state.currentUser?.role !== "admin") {
+    viewName = "exam";
+  }
+
+  state.currentView = viewName;
+
+  const titleMap = {
+    exam: "ทำข้อสอบออนไลน์",
+    history: state.currentUser?.role === "admin" ? "ผลสอบของผู้ใช้งานทั้งหมด" : "ผลคะแนนย้อนหลัง",
+    profile: "ข้อมูลพนักงาน",
+    evaluation: "ประเมินผลหน้างาน",
+    admin: "จัดการคลังข้อสอบ"
+  };
+
+  elements.pageHeading.textContent = titleMap[viewName] || "Factory Online Exam";
+  elements.examView.classList.toggle("hidden", viewName !== "exam");
+  elements.historyView.classList.toggle("hidden", viewName !== "history");
+  elements.profileView.classList.toggle("hidden", viewName !== "profile");
+  elements.evaluationView.classList.toggle("hidden", viewName !== "evaluation");
+  elements.adminView.classList.toggle("hidden", viewName !== "admin");
+
+  elements.navItems.forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === viewName);
+  });
+}
+
+function renderAll() {
+  renderAuth();
+  if (!state.currentUser || !state.examSets.length) return;
+
+  renderModelSelector();
+  renderExamSelector();
+  renderHeader();
+  renderSummary();
+  renderQuestion();
+  renderQuestionNav();
+  renderResult();
+  renderHistory();
+  renderAdminInfo();
+  renderEvaluation();
 }
 
 async function handleLogin(event) {
@@ -718,6 +1257,13 @@ async function handleLogin(event) {
     setView("exam");
     await loadExamData();
     await loadResults();
+
+    if (state.currentUser.role === "admin") {
+      await loadEmployees();
+      await loadEvaluations();
+    }
+
+    renderAll();
   } catch (error) {
     setMessage(elements.loginMessage, error.message, true);
   }
@@ -729,6 +1275,12 @@ function logout() {
   state.results = [];
   state.examSets = [];
   state.models = [];
+  state.employees = [];
+  state.evaluations = [];
+  state.evaluationSearch = "";
+  state.evaluationPartFilter = "ALL";
+  state.evaluationEvaluatorFilter = "ALL";
+  state.evaluationForm = createEvaluationDraft();
 
   if (state.timerId) {
     clearInterval(state.timerId);
@@ -761,12 +1313,60 @@ elements.restartExamBtn.addEventListener("click", () => {
 });
 elements.importJsonBtn.addEventListener("click", importCustomJson);
 elements.resetJsonBtn.addEventListener("click", resetCustomJson);
+elements.evaluationSectionTitle.addEventListener("input", (event) => {
+  state.evaluationForm.sectionTitle = event.target.value;
+  renderEvaluation();
+});
+elements.evaluationModelSelect.addEventListener("change", (event) => {
+  state.evaluationForm.modelKey = event.target.value;
+  state.evaluationForm.examId = "";
+  ensureEvaluationSelection();
+  renderEvaluation();
+});
+elements.evaluationPartSelect.addEventListener("change", (event) => {
+  state.evaluationForm.examId = event.target.value;
+  renderEvaluation();
+});
+elements.evaluationEmployeeCodeSelect.addEventListener("change", (event) => {
+  syncEvaluationEmployee(findEmployeeByCode(event.target.value));
+  renderEvaluation();
+});
+elements.evaluationEmployeeNameSelect.addEventListener("change", (event) => {
+  syncEvaluationEmployee(findEmployeeByName(event.target.value));
+  renderEvaluation();
+});
+elements.evaluationEvaluatorSelect.addEventListener("change", (event) => {
+  state.evaluationForm.evaluator = event.target.value;
+  renderEvaluation();
+});
+elements.evaluationSearchInput.addEventListener("input", (event) => {
+  state.evaluationSearch = event.target.value;
+  renderEvaluationHistory();
+});
+elements.evaluationHistoryPartFilter.addEventListener("change", (event) => {
+  state.evaluationPartFilter = event.target.value;
+  renderEvaluationHistory();
+});
+elements.evaluationHistoryEvaluatorFilter.addEventListener("change", (event) => {
+  state.evaluationEvaluatorFilter = event.target.value;
+  renderEvaluationHistory();
+});
+elements.saveEvaluationBtn.addEventListener("click", saveEvaluation);
+elements.resetEvaluationBtn.addEventListener("click", resetEvaluationForm);
 elements.navItems.forEach((button) => {
   button.addEventListener("click", async () => {
-    if (button.dataset.view === "admin" && state.currentUser?.role !== "admin") return;
+    if ((button.dataset.view === "admin" || button.dataset.view === "evaluation") && state.currentUser?.role !== "admin") {
+      return;
+    }
     setView(button.dataset.view);
     if (button.dataset.view === "history") {
       await loadResults();
+      renderAll();
+    }
+    if (button.dataset.view === "evaluation" && state.currentUser?.role === "admin") {
+      await loadEmployees();
+      await loadEvaluations();
+      renderEvaluation();
     }
   });
 });
@@ -783,6 +1383,13 @@ async function init() {
   try {
     await loadExamData();
     await loadResults();
+
+    if (state.currentUser.role === "admin") {
+      await loadEmployees();
+      await loadEvaluations();
+    }
+
+    renderAll();
   } catch {
     // handled in load functions
   }

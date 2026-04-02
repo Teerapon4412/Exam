@@ -32,7 +32,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -154,6 +156,15 @@ input {
 }
 
 .field input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: white;
+}
+
+.field select,
+.field textarea {
   width: 100%;
   padding: 14px 16px;
   border-radius: 16px;
@@ -737,12 +748,85 @@ input {
   margin-top: 16px;
 }
 
+.evaluation-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.evaluation-form {
+  display: grid;
+  gap: 18px;
+}
+
+.evaluation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.evaluation-filter-grid {
+  margin-bottom: 18px;
+}
+
+.evaluation-summary-strip,
+.evaluation-sheet-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.evaluation-sheet-meta {
+  margin-bottom: 18px;
+  color: var(--muted);
+}
+
+.evaluation-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.evaluation-table th,
+.evaluation-table td {
+  padding: 12px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.evaluation-table thead th,
+.evaluation-table tfoot td {
+  background: #f6f9fd;
+  font-weight: 700;
+}
+
+.evaluation-score-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.evaluation-score-pill {
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.evaluation-score-pill.active {
+  background: linear-gradient(90deg, var(--orange), var(--pink));
+  color: white;
+  border-color: transparent;
+}
+
 @media (max-width: 1380px) {
   .hero-grid,
   .dashboard-grid,
   .exam-layout,
   .admin-grid,
-  .result-grid {
+  .result-grid,
+  .evaluation-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -775,7 +859,8 @@ input {
   .stat-grid,
   .profile-grid,
   .history-stats,
-  .result-grid {
+  .result-grid,
+  .evaluation-grid {
     grid-template-columns: 1fr;
   }
 

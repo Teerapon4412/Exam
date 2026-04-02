@@ -66,6 +66,7 @@
               <button class="nav-item active" data-view="exam" type="button">หน้าสอบ</button>
               <button class="nav-item" data-view="history" type="button">ผลคะแนน</button>
               <button class="nav-item" data-view="profile" type="button">บัญชีผู้ใช้</button>
+              <button class="nav-item admin-only hidden" data-view="evaluation" type="button">Evaluation</button>
               <button class="nav-item admin-only hidden" data-view="admin" type="button">Admin Upload</button>
             </nav>
           </div>
@@ -303,6 +304,145 @@
                 </div>
               </div>
             </section>
+          </section>
+
+          <section id="evaluationView" class="view-section hidden">
+            <div class="evaluation-layout">
+              <section class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-label">Evaluation</p>
+                    <h3>แบบฟอร์มประเมินหน้างาน</h3>
+                  </div>
+                </div>
+
+                <div class="evaluation-form">
+                  <label class="field">
+                    <span>หัวข้อการประเมิน</span>
+                    <input id="evaluationSectionTitle" type="text" />
+                  </label>
+
+                  <div class="evaluation-grid">
+                    <label class="field">
+                      <span>Model</span>
+                      <select id="evaluationModelSelect"></select>
+                    </label>
+                    <label class="field">
+                      <span>Part</span>
+                      <select id="evaluationPartSelect"></select>
+                    </label>
+                    <label class="field">
+                      <span>รหัสพนักงาน</span>
+                      <select id="evaluationEmployeeCodeSelect"></select>
+                    </label>
+                    <label class="field">
+                      <span>ชื่อพนักงาน</span>
+                      <select id="evaluationEmployeeNameSelect"></select>
+                    </label>
+                    <label class="field">
+                      <span>ผู้ประเมิน</span>
+                      <select id="evaluationEvaluatorSelect"></select>
+                    </label>
+                  </div>
+
+                  <div class="evaluation-summary-strip">
+                    <div class="mini-note">Part ที่เลือก: <strong id="evaluationSelectedPart">-</strong></div>
+                    <div class="mini-note">ผลสอบล่าสุด: <strong id="evaluationLatestExam">-</strong></div>
+                  </div>
+
+                  <p id="evaluationMessage" class="inline-message hidden"></p>
+
+                  <div class="result-actions">
+                    <button id="saveEvaluationBtn" class="primary-btn" type="button">บันทึกการประเมิน</button>
+                    <button id="resetEvaluationBtn" class="secondary-btn" type="button">ล้างแบบฟอร์ม</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-label">Evaluation Sheet</p>
+                    <h3 id="evaluationSheetTitle">หัวข้อที่ 1 : การประเมินหน้างาน และทักษะงาน</h3>
+                  </div>
+                </div>
+
+                <div class="evaluation-sheet-meta">
+                  <span>รหัสพนักงาน: <strong id="evaluationMetaCode">-</strong></span>
+                  <span>ชื่อพนักงาน: <strong id="evaluationMetaName">-</strong></span>
+                  <span>Model / Part: <strong id="evaluationMetaPart">-</strong></span>
+                  <span>ผู้ประเมิน: <strong id="evaluationMetaEvaluator">-</strong></span>
+                </div>
+
+                <div class="dashboard-table-wrap">
+                  <table class="evaluation-table">
+                    <thead>
+                      <tr>
+                        <th>ลำดับ</th>
+                        <th>หัวข้อประเมิน</th>
+                        <th>ระดับคะแนน</th>
+                        <th>วิธีประเมิน</th>
+                        <th>คะแนน</th>
+                        <th>น้ำหนัก</th>
+                        <th>รวม</th>
+                      </tr>
+                    </thead>
+                    <tbody id="evaluationRows"></tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="6">รวมคะแนน</td>
+                        <td id="evaluationTotal">0</td>
+                      </tr>
+                      <tr>
+                        <td colspan="6">คะแนนเต็ม</td>
+                        <td id="evaluationMax">0</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </section>
+
+              <section class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-label">History</p>
+                    <h3>ประวัติการประเมิน</h3>
+                  </div>
+                </div>
+
+                <div class="evaluation-grid evaluation-filter-grid">
+                  <label class="field">
+                    <span>ค้นหา</span>
+                    <input id="evaluationSearchInput" type="text" placeholder="ชื่อ / รหัส / Part / ผู้ประเมิน" />
+                  </label>
+                  <label class="field">
+                    <span>Part</span>
+                    <select id="evaluationHistoryPartFilter"></select>
+                  </label>
+                  <label class="field">
+                    <span>ผู้ประเมิน</span>
+                    <select id="evaluationHistoryEvaluatorFilter"></select>
+                  </label>
+                </div>
+
+                <div id="evaluationHistoryEmpty" class="inline-message">ยังไม่มีข้อมูลการประเมิน</div>
+                <div id="evaluationHistoryTableWrap" class="dashboard-table-wrap hidden">
+                  <table class="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>วันที่เวลา</th>
+                        <th>พนักงาน</th>
+                        <th>Model / Part</th>
+                        <th>คะแนนประเมิน</th>
+                        <th>ผลสอบล่าสุด</th>
+                        <th>ผู้ประเมิน</th>
+                      </tr>
+                    </thead>
+                    <tbody id="evaluationHistoryBody"></tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
           </section>
 
           <section id="adminView" class="view-section hidden">

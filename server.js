@@ -63,6 +63,28 @@ db.exec(`
     passed INTEGER NOT NULL,
     submitted_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS evaluations (
+    id TEXT PRIMARY KEY,
+    employee_id TEXT NOT NULL,
+    employee_code TEXT NOT NULL,
+    employee_name TEXT NOT NULL,
+    evaluator TEXT NOT NULL,
+    section_title TEXT NOT NULL,
+    model_code TEXT NOT NULL,
+    model_name TEXT NOT NULL,
+    part_code TEXT NOT NULL,
+    part_name TEXT NOT NULL,
+    exam_score INTEGER NOT NULL DEFAULT 0,
+    exam_total_score INTEGER NOT NULL DEFAULT 0,
+    exam_percent INTEGER NOT NULL DEFAULT 0,
+    exam_passed INTEGER NOT NULL DEFAULT 0,
+    total_score INTEGER NOT NULL,
+    max_score INTEGER NOT NULL,
+    rows_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 function getColumnNames(tableName) {
@@ -94,6 +116,7 @@ ensureColumn("exam_results", "full_name", "full_name TEXT");
 db.exec(`
   CREATE UNIQUE INDEX IF NOT EXISTS idx_users_employee_code ON users(employee_code);
   CREATE INDEX IF NOT EXISTS idx_exam_results_user_id ON exam_results(user_id);
+  CREATE INDEX IF NOT EXISTS idx_evaluations_employee_code ON evaluations(employee_code);
 `);
 
 const getBank = db.prepare(`SELECT title, payload, source, updated_at FROM exam_bank WHERE id = 1`);
@@ -153,6 +176,64 @@ const getResultsByUser = db.prepare(`
 const getAllResults = db.prepare(`
   SELECT * FROM exam_results
   ORDER BY submitted_at DESC
+`);
+
+const getActiveEmployees = db.prepare(`
+  SELECT id, employee_code, full_name, department, position, role, is_active
+  FROM users
+  WHERE is_active = 1
+    AND COALESCE(employee_code, '') <> ''
+    AND role <> 'admin'
+  ORDER BY full_name COLLATE NOCASE ASC
+`);
+
+const getAllEvaluations = db.prepare(`
+  SELECT *
+  FROM evaluations
+  ORDER BY updated_at DESC, created_at DESC
+`);
+
+const getLatestEvaluationByEmployeePart = db.prepare(`
+  SELECT id, created_at
+  FROM evaluations
+  WHERE employee_id = ? AND part_code = ?
+  ORDER BY updated_at DESC, created_at DESC
+  LIMIT 1
+`);
+
+const insertEvaluation = db.prepare(`
+  INSERT INTO evaluations (
+    id, employee_id, employee_code, employee_name, evaluator, section_title,
+    model_code, model_name, part_code, part_name,
+    exam_score, exam_total_score, exam_percent, exam_passed,
+    total_score, max_score, rows_json, created_at, updated_at
+  ) VALUES (
+    @id, @employee_id, @employee_code, @employee_name, @evaluator, @section_title,
+    @model_code, @model_name, @part_code, @part_name,
+    @exam_score, @exam_total_score, @exam_percent, @exam_passed,
+    @total_score, @max_score, @rows_json, @created_at, @updated_at
+  )
+`);
+
+const updateEvaluation = db.prepare(`
+  UPDATE evaluations
+  SET
+    employee_code = @employee_code,
+    employee_name = @employee_name,
+    evaluator = @evaluator,
+    section_title = @section_title,
+    model_code = @model_code,
+    model_name = @model_name,
+    part_name = @part_name,
+    exam_score = @exam_score,
+    exam_total_score = @exam_total_score,
+    exam_percent = @exam_percent,
+    exam_passed = @exam_passed,
+    total_score = @total_score,
+    max_score = @max_score,
+    rows_json = @rows_json,
+    updated_at = @updated_at
+  WHERE id = @id
 `);
 
 function randomId(prefix) {
@@ -358,6 +439,42 @@ function serializeUser(user) {
   };
 }
 
+function serializeEmployee(user) {
+  return {
+    id: user.id,
+    employeeCode: user.employee_code,
+    fullName: user.full_name || user.employee_code,
+    department: user.department || "",
+    position: user.position || "",
+    role: user.role,
+    isActive: Boolean(user.is_active)
+  };
+}
+
+function serializeEvaluation(row) {
+  return {
+    id: row.id,
+    employeeId: row.employee_id,
+    employeeCode: row.employee_code,
+    employeeName: row.employee_name,
+    evaluator: row.evaluator,
+    sectionTitle: row.section_title,
+    modelCode: row.model_code,
+    modelName: row.model_name,
+    partCode: row.part_code,
+    partName: row.part_name,
+    examScore: Number(row.exam_score || 0),
+    examTotalScore: Number(row.exam_total_score || 0),
+    examPercent: Number(row.exam_percent || 0),
+    examPassed: Boolean(row.exam_passed),
+    totalScore: Number(row.total_score || 0),
+    maxScore: Number(row.max_score || 0),
+    rows: JSON.parse(row.rows_json || "[]"),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 app.use(express.json({ limit: "5mb" }));
 app.use(express.static(__dirname));
 
@@ -436,6 +553,86 @@ app.get("/api/results", (req, res) => {
   }
 
   return res.json({ results: getResultsByUser.all(userId) });
+});
+
+app.get("/api/admin/employees", (req, res) => {
+  const role = String(req.query.role || "");
+  if (role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+
+  return res.json({ employees: getActiveEmployees.all().map(serializeEmployee) });
+});
+
+app.get("/api/evaluations", (req, res) => {
+  const role = String(req.query.role || "");
+  if (role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+
+  return res.json({ evaluations: getAllEvaluations.all().map(serializeEvaluation) });
+});
+
+app.post("/api/evaluations", (req, res) => {
+  const role = String(req.body.role || "");
+  if (role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+
+  const payload = req.body || {};
+  const employeeId = String(payload.employeeId || "").trim();
+  const employeeCode = normalizeEmployeeCode(payload.employeeCode || "");
+  const partCode = String(payload.partCode || "").trim();
+  const sectionTitle = String(payload.sectionTitle || "").trim();
+  const evaluator = String(payload.evaluator || "").trim();
+  const rows = Array.isArray(payload.rows) ? payload.rows : [];
+
+  if (!employeeId || !employeeCode || !partCode || !sectionTitle || !evaluator || !rows.length) {
+    return res.status(400).json({ error: "Missing required evaluation fields" });
+  }
+
+  const employee = getUserByEmployeeCode.get(employeeCode);
+  if (!employee || employee.id !== employeeId || !employee.is_active) {
+    return res.status(404).json({ error: "Employee not found" });
+  }
+
+  const latestExam = getAllResults
+    .all()
+    .find((entry) => entry.employee_code === employeeCode && entry.part_code === partCode) || null;
+
+  const now = new Date().toISOString();
+  const record = {
+    id: randomId("EVAL"),
+    employee_id: employeeId,
+    employee_code: employeeCode,
+    employee_name: String(payload.employeeName || employee.full_name || employeeCode).trim(),
+    evaluator,
+    section_title: sectionTitle,
+    model_code: String(payload.modelCode || "").trim(),
+    model_name: String(payload.modelName || "").trim(),
+    part_code: partCode,
+    part_name: String(payload.partName || "").trim(),
+    exam_score: Number(latestExam?.score || 0),
+    exam_total_score: Number(latestExam?.total_score || 0),
+    exam_percent: Number(latestExam?.percent || 0),
+    exam_passed: latestExam?.passed ? 1 : 0,
+    total_score: Number(payload.totalScore || 0),
+    max_score: Number(payload.maxScore || 0),
+    rows_json: JSON.stringify(rows),
+    created_at: now,
+    updated_at: now
+  };
+
+  const existing = getLatestEvaluationByEmployeePart.get(employeeId, partCode);
+  if (existing) {
+    record.id = existing.id;
+    record.created_at = existing.created_at;
+    updateEvaluation.run(record);
+  } else {
+    insertEvaluation.run(record);
+  }
+
+  return res.status(201).json({ evaluation: serializeEvaluation(record) });
 });
 
 app.post("/api/admin/exam-bank", (req, res) => {
