@@ -3,212 +3,332 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ระบบทำข้อสอบออนไลน์</title>
+    <title>Factory Online Exam</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="shell">
-      <aside class="sidebar">
-        <div class="brand">
+    <div class="login-shell" id="loginShell">
+      <section class="login-panel">
+        <div class="login-brand">
           <div class="brand-badge">E</div>
           <div>
-            <h1>Exam Portal</h1>
-            <p>ระบบทำข้อสอบออนไลน์</p>
+            <h1>Factory Online Exam</h1>
+            <p>ระบบสอบออนไลน์พร้อมประวัติผลสอบและแผงจัดการข้อสอบ</p>
           </div>
         </div>
 
-        <div class="side-block">
-          <p class="side-label">เมนูหลัก</p>
-          <nav class="side-nav">
-            <button class="nav-item active" type="button">หน้าสอบ</button>
-            <button class="nav-item" type="button">ผลคะแนน</button>
-            <button class="nav-item" type="button">ประวัติการสอบ</button>
-            <button class="nav-item" type="button">ตั้งค่า</button>
-          </nav>
+        <div class="info-grid">
+          <article class="info-card">
+            <strong>ผู้เข้าสอบ</strong>
+            <p>ล็อกอินเป็นพนักงานหรือผู้ดูแลระบบ</p>
+          </article>
+          <article class="info-card">
+            <strong>ประวัติผลสอบ</strong>
+            <p>บันทึกคะแนนลง localStorage อัตโนมัติ</p>
+          </article>
+          <article class="info-card">
+            <strong>Admin Upload</strong>
+            <p>อัปโหลดไฟล์ JSON ใหม่ผ่านหน้าเว็บได้ทันที</p>
+          </article>
         </div>
 
-        <div class="side-card">
-          <p class="side-label">ผู้เข้าสอบ</p>
-          <strong>นักเรียนตัวอย่าง</strong>
-          <span>รหัส: STD-240502</span>
-          <span>สถานะ: พร้อมเข้าสอบ</span>
-        </div>
+        <form id="loginForm" class="login-form">
+          <label class="field">
+            <span>ชื่อผู้ใช้</span>
+            <input id="usernameInput" type="text" placeholder="เช่น worker01 หรือ admin" required />
+          </label>
 
-        <div class="side-card highlight">
-          <p class="side-label">คำแนะนำ</p>
-          <ul class="hint-list">
-            <li>เลือกคำตอบได้ 1 ข้อ</li>
-            <li>ระบบบันทึกคำตอบอัตโนมัติ</li>
-            <li>หมดเวลาจะส่งข้อสอบทันที</li>
-          </ul>
-        </div>
-      </aside>
+          <label class="field">
+            <span>รหัสผ่าน</span>
+            <input id="passwordInput" type="password" placeholder="กรอกรหัสผ่าน" required />
+          </label>
 
-      <main class="content">
-        <header class="topbar">
-          <div>
-            <p class="eyebrow">Online Examination Dashboard</p>
-            <h2>ทำข้อสอบออนไลน์</h2>
+          <div class="login-hint">
+            <span>Admin demo: `admin / admin123`</span>
+            <span>ผู้ใช้ทั่วไป: กรอกชื่อผู้ใช้และรหัสผ่านอะไรก็ได้</span>
           </div>
-          <div class="topbar-actions">
-            <div class="status-chip">
-              <span class="status-dot"></span>
-              <span id="examStatus">ยังไม่ได้เริ่มสอบ</span>
-            </div>
-            <button id="submitExamBtn" class="primary-btn danger" type="button">ส่งข้อสอบ</button>
-          </div>
-        </header>
 
-        <section class="hero-grid">
-          <article class="hero-card gradient-card">
-            <p class="card-label">ชุดข้อสอบ</p>
-            <h3 id="examTitle">คณิตศาสตร์พื้นฐาน ม.ปลาย</h3>
-            <p id="examDescription">
-              ข้อสอบแบบปรนัย 10 ข้อ ครอบคลุมสมการ ฟังก์ชัน ความน่าจะเป็น และสถิติพื้นฐาน
-            </p>
-            <div class="hero-meta">
-              <span id="examMetaQuestions">10 ข้อ</span>
-              <span id="examMetaTime">20 นาที</span>
-              <span id="examMetaPassScore">ผ่าน 35 คะแนน</span>
-            </div>
-          </article>
+          <button class="primary-btn wide" type="submit">เข้าสู่ระบบ</button>
+          <p id="loginMessage" class="inline-message hidden"></p>
+        </form>
+      </section>
+    </div>
 
-          <article class="hero-card mini-card">
-            <p class="card-label">เวลาคงเหลือ</p>
-            <h3 id="timeRemaining">20:00</h3>
-            <p>เริ่มนับถอยหลังเมื่อกดเริ่มสอบ</p>
-          </article>
-
-          <article class="hero-card mini-card">
-            <p class="card-label">ตอบแล้ว</p>
-            <h3 id="answeredCount">0 / 10</h3>
-            <p>อัปเดตทันทีเมื่อเลือกคำตอบ</p>
-          </article>
-
-          <article class="hero-card mini-card">
-            <p class="card-label">ความคืบหน้า</p>
-            <h3 id="progressPercent">0%</h3>
-            <div class="progress-track">
-              <div id="progressBar" class="progress-bar"></div>
-            </div>
-          </article>
-        </section>
-
-        <section class="dashboard-grid">
-          <article class="panel exam-selector-panel">
-            <div class="panel-head">
-              <div>
-                <p class="card-label">เลือกโมเดลและพาร์ต</p>
-                <h3>ชุดข้อสอบที่พร้อมใช้งาน</h3>
-              </div>
-            </div>
-            <div id="modelSelector" class="model-selector"></div>
-            <div id="examSelector" class="exam-selector"></div>
-          </article>
-
-          <article class="panel summary-panel">
-            <div class="panel-head">
-              <div>
-                <p class="card-label">ภาพรวม</p>
-                <h3>สถานะการทำข้อสอบ</h3>
-              </div>
-            </div>
-            <div class="stat-grid">
-              <div class="stat-box">
-                <span>ข้อปัจจุบัน</span>
-                <strong id="currentQuestionText">ข้อ 1</strong>
-              </div>
-              <div class="stat-box">
-                <span>ยังไม่ตอบ</span>
-                <strong id="unansweredCount">10 ข้อ</strong>
-              </div>
-              <div class="stat-box">
-                <span>ตอบแล้ว</span>
-                <strong id="summaryAnsweredCount">0 ข้อ</strong>
-              </div>
-              <div class="stat-box">
-                <span>สถานะ</span>
-                <strong id="summaryStatus">รอเริ่มสอบ</strong>
-              </div>
-            </div>
-            <div id="loadStatus" class="inline-message">กำลังโหลดชุดข้อสอบ...</div>
-            <button id="startExamBtn" class="primary-btn" type="button">เริ่มสอบ</button>
-          </article>
-        </section>
-
-        <section class="exam-layout">
-          <article class="panel question-panel">
-            <div class="panel-head">
-              <div>
-                <p class="card-label">คำถาม</p>
-                <h3 id="questionTitle">ข้อ 1</h3>
-              </div>
-              <div class="question-badge" id="questionBadge">ยังไม่เลือกคำตอบ</div>
-            </div>
-
-            <div class="question-card">
-              <p id="questionText" class="question-text"></p>
-              <img id="questionImage" class="question-image hidden" alt="รูปประกอบข้อสอบ" />
-              <div id="choicesContainer" class="choices"></div>
-            </div>
-
-            <div class="question-actions">
-              <button id="prevBtn" class="secondary-btn" type="button">ย้อนกลับ</button>
-              <button id="nextBtn" class="primary-btn" type="button">ถัดไป</button>
-            </div>
-          </article>
-
-          <aside class="panel navigator-panel">
-            <div class="panel-head">
-              <div>
-                <p class="card-label">นำทาง</p>
-                <h3>เลขข้อสอบ</h3>
-              </div>
-            </div>
-            <div id="questionNav" class="question-nav"></div>
-
-            <div class="legend-list">
-              <div><span class="legend-dot current"></span> ข้อปัจจุบัน</div>
-              <div><span class="legend-dot answered"></span> ตอบแล้ว</div>
-              <div><span class="legend-dot empty"></span> ยังไม่ตอบ</div>
-            </div>
-          </aside>
-        </section>
-
-        <section class="panel result-panel hidden" id="resultPanel">
-          <div class="panel-head">
+    <div class="app-shell hidden" id="appShell">
+      <div class="shell">
+        <aside class="sidebar">
+          <div class="brand">
+            <div class="brand-badge">E</div>
             <div>
-              <p class="card-label">ผลสอบ</p>
-              <h3>สรุปคะแนน</h3>
+              <h1>Exam Portal</h1>
+              <p id="systemTitle">Factory Online Exam</p>
             </div>
           </div>
 
-          <div class="result-grid">
-            <div class="result-box">
-              <span>คะแนนรวม</span>
-              <strong id="scoreValue">0 / 10</strong>
-            </div>
-            <div class="result-box">
-              <span>คิดเป็นร้อยละ</span>
-              <strong id="scorePercent">0%</strong>
-            </div>
-            <div class="result-box">
-              <span>คำตอบถูก</span>
-              <strong id="correctCount">0 ข้อ</strong>
-            </div>
-            <div class="result-box">
-              <span>คำตอบผิด</span>
-              <strong id="wrongCount">0 ข้อ</strong>
-            </div>
+          <div class="side-block">
+            <p class="side-label">เมนูหลัก</p>
+            <nav class="side-nav">
+              <button class="nav-item active" data-view="exam" type="button">หน้าสอบ</button>
+              <button class="nav-item" data-view="history" type="button">ผลคะแนน</button>
+              <button class="nav-item" data-view="profile" type="button">บัญชีผู้ใช้</button>
+              <button class="nav-item admin-only hidden" data-view="admin" type="button">Admin Upload</button>
+            </nav>
           </div>
 
-          <div id="resultMessage" class="result-message"></div>
-
-          <div class="result-actions">
-            <button id="restartExamBtn" class="secondary-btn" type="button">เริ่มทำใหม่</button>
+          <div class="side-card">
+            <p class="side-label">ผู้ใช้งานปัจจุบัน</p>
+            <strong id="sidebarUserName">-</strong>
+            <span id="sidebarUserRole">-</span>
+            <span id="sidebarUserId">-</span>
           </div>
-        </section>
-      </main>
+
+          <div class="side-card highlight">
+            <p class="side-label">แหล่งข้อสอบ</p>
+            <span id="dataSourceLabel">-</span>
+            <span id="dataSummaryLabel">-</span>
+          </div>
+
+          <button id="logoutBtn" class="secondary-btn wide logout-btn" type="button">ออกจากระบบ</button>
+        </aside>
+
+        <main class="content">
+          <header class="topbar">
+            <div>
+              <p class="eyebrow">Online Examination Dashboard</p>
+              <h2 id="pageHeading">ทำข้อสอบออนไลน์</h2>
+            </div>
+            <div class="topbar-actions">
+              <div class="status-chip">
+                <span class="status-dot"></span>
+                <span id="examStatus">ยังไม่ได้เริ่มสอบ</span>
+              </div>
+              <button id="submitExamBtn" class="primary-btn danger" type="button">ส่งข้อสอบ</button>
+            </div>
+          </header>
+
+          <section id="examView" class="view-section">
+            <section class="hero-grid">
+              <article class="hero-card gradient-card">
+                <p class="card-label">ชุดข้อสอบ</p>
+                <h3 id="examTitle">-</h3>
+                <p id="examDescription">-</p>
+                <div class="hero-meta">
+                  <span id="examMetaQuestions">0 ข้อ</span>
+                  <span id="examMetaTime">0 นาที</span>
+                  <span id="examMetaPassScore">ผ่าน 0 คะแนน</span>
+                </div>
+              </article>
+
+              <article class="hero-card mini-card">
+                <p class="card-label">เวลาคงเหลือ</p>
+                <h3 id="timeRemaining">00:00</h3>
+                <p>เริ่มนับถอยหลังเมื่อกดเริ่มสอบ</p>
+              </article>
+
+              <article class="hero-card mini-card">
+                <p class="card-label">ตอบแล้ว</p>
+                <h3 id="answeredCount">0 / 0</h3>
+                <p>ระบบบันทึกคำตอบทันที</p>
+              </article>
+
+              <article class="hero-card mini-card">
+                <p class="card-label">ความคืบหน้า</p>
+                <h3 id="progressPercent">0%</h3>
+                <div class="progress-track">
+                  <div id="progressBar" class="progress-bar"></div>
+                </div>
+              </article>
+            </section>
+
+            <section class="dashboard-grid">
+              <article class="panel exam-selector-panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-label">เลือกโมเดลและพาร์ต</p>
+                    <h3>ชุดข้อสอบที่พร้อมใช้งาน</h3>
+                  </div>
+                </div>
+                <div id="modelSelector" class="model-selector"></div>
+                <div id="examSelector" class="exam-selector"></div>
+              </article>
+
+              <article class="panel summary-panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-label">ภาพรวม</p>
+                    <h3>สถานะการทำข้อสอบ</h3>
+                  </div>
+                </div>
+                <div class="stat-grid">
+                  <div class="stat-box">
+                    <span>ข้อปัจจุบัน</span>
+                    <strong id="currentQuestionText">ข้อ 1</strong>
+                  </div>
+                  <div class="stat-box">
+                    <span>ยังไม่ตอบ</span>
+                    <strong id="unansweredCount">0 ข้อ</strong>
+                  </div>
+                  <div class="stat-box">
+                    <span>ตอบแล้ว</span>
+                    <strong id="summaryAnsweredCount">0 ข้อ</strong>
+                  </div>
+                  <div class="stat-box">
+                    <span>สถานะ</span>
+                    <strong id="summaryStatus">รอเริ่มสอบ</strong>
+                  </div>
+                </div>
+                <div id="loadStatus" class="inline-message">กำลังโหลดชุดข้อสอบ...</div>
+                <button id="startExamBtn" class="primary-btn wide" type="button">เริ่มสอบ</button>
+              </article>
+            </section>
+
+            <section class="exam-layout">
+              <article class="panel question-panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-label">คำถาม</p>
+                    <h3 id="questionTitle">ข้อ 1</h3>
+                  </div>
+                  <div class="question-badge" id="questionBadge">ยังไม่เลือกคำตอบ</div>
+                </div>
+
+                <div class="question-card">
+                  <p id="questionText" class="question-text">-</p>
+                  <img id="questionImage" class="question-image hidden" alt="Question" />
+                  <div id="choicesContainer" class="choices"></div>
+                </div>
+
+                <div class="question-actions">
+                  <button id="prevBtn" class="secondary-btn" type="button">ย้อนกลับ</button>
+                  <button id="nextBtn" class="primary-btn" type="button">ถัดไป</button>
+                </div>
+              </article>
+
+              <aside class="panel navigator-panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-label">นำทาง</p>
+                    <h3>เลขข้อสอบ</h3>
+                  </div>
+                </div>
+                <div id="questionNav" class="question-nav"></div>
+
+                <div class="legend-list">
+                  <div><span class="legend-dot current"></span> ข้อปัจจุบัน</div>
+                  <div><span class="legend-dot answered"></span> ตอบแล้ว</div>
+                  <div><span class="legend-dot empty"></span> ยังไม่ตอบ</div>
+                </div>
+              </aside>
+            </section>
+
+            <section class="panel result-panel hidden" id="resultPanel">
+              <div class="panel-head">
+                <div>
+                  <p class="card-label">ผลสอบ</p>
+                  <h3>สรุปคะแนน</h3>
+                </div>
+              </div>
+
+              <div class="result-grid">
+                <div class="result-box">
+                  <span>คะแนนรวม</span>
+                  <strong id="scoreValue">0 / 0</strong>
+                </div>
+                <div class="result-box">
+                  <span>คิดเป็นร้อยละ</span>
+                  <strong id="scorePercent">0%</strong>
+                </div>
+                <div class="result-box">
+                  <span>คำตอบถูก</span>
+                  <strong id="correctCount">0 ข้อ</strong>
+                </div>
+                <div class="result-box">
+                  <span>คำตอบผิด</span>
+                  <strong id="wrongCount">0 ข้อ</strong>
+                </div>
+              </div>
+
+              <div id="resultMessage" class="result-message"></div>
+
+              <div class="result-actions">
+                <button id="restartExamBtn" class="secondary-btn" type="button">เริ่มทำใหม่</button>
+              </div>
+            </section>
+          </section>
+
+          <section id="historyView" class="view-section hidden">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="card-label">History</p>
+                  <h3>ประวัติผลสอบ</h3>
+                </div>
+              </div>
+              <div class="history-stats" id="historyStats"></div>
+              <div id="historyList" class="history-list"></div>
+            </section>
+          </section>
+
+          <section id="profileView" class="view-section hidden">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="card-label">Profile</p>
+                  <h3>ข้อมูลบัญชีผู้ใช้</h3>
+                </div>
+              </div>
+              <div class="profile-grid">
+                <div class="stat-box">
+                  <span>ชื่อผู้ใช้</span>
+                  <strong id="profileUserName">-</strong>
+                </div>
+                <div class="stat-box">
+                  <span>สิทธิ์การใช้งาน</span>
+                  <strong id="profileUserRole">-</strong>
+                </div>
+                <div class="stat-box">
+                  <span>จำนวนครั้งที่สอบ</span>
+                  <strong id="profileExamCount">0</strong>
+                </div>
+                <div class="stat-box">
+                  <span>คะแนนล่าสุด</span>
+                  <strong id="profileLastScore">-</strong>
+                </div>
+              </div>
+            </section>
+          </section>
+
+          <section id="adminView" class="view-section hidden">
+            <section class="panel admin-only hidden" id="adminPanel">
+              <div class="panel-head">
+                <div>
+                  <p class="card-label">Admin</p>
+                  <h3>อัปโหลดคลังข้อสอบ JSON</h3>
+                </div>
+              </div>
+
+              <div class="admin-grid">
+                <div class="admin-card">
+                  <label class="field">
+                    <span>เลือกไฟล์ JSON</span>
+                    <input id="adminFileInput" type="file" accept=".json,application/json" />
+                  </label>
+                  <div class="admin-actions">
+                    <button id="importJsonBtn" class="primary-btn" type="button">นำเข้าข้อสอบ</button>
+                    <button id="resetJsonBtn" class="secondary-btn" type="button">กลับไปใช้ไฟล์เดิม</button>
+                  </div>
+                  <p id="adminMessage" class="inline-message">รองรับทั้งไฟล์ต้นฉบับแบบ `models/parts` และไฟล์ `examSets` ที่แปลงแล้ว</p>
+                </div>
+
+                <div class="admin-card">
+                  <strong>สถานะข้อมูลปัจจุบัน</strong>
+                  <div id="adminDataInfo" class="admin-info-list"></div>
+                </div>
+              </div>
+            </section>
+          </section>
+        </main>
+      </div>
     </div>
 
     <script src="./script.js"></script>
