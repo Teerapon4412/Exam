@@ -103,6 +103,7 @@ const els = {
   skillMatrixModelFilter: $("skillMatrixModelFilter"),
   skillMatrixPartFilter: $("skillMatrixPartFilter"),
   skillMatrixBandFilter: $("skillMatrixBandFilter"),
+  skillMatrixTableHead: $("skillMatrixTableHead"),
   skillMatrixTableBody: $("skillMatrixTableBody"),
   skillMatrixEmpty: $("skillMatrixEmpty"),
   previewToolbar: $("previewToolbar")
@@ -984,6 +985,203 @@ function renderSkillMatrix() {
 
   if (els.skillMatrixEmpty) {
     els.skillMatrixEmpty.classList.toggle("hidden", filteredRows.length > 0);
+  }
+}
+
+function buildSkillMatrixRows() {
+  if (state.user?.role !== "admin") return { employees: [], columns: [] };
+
+  const employees = Array.isArray(state.employees) ? state.employees : [];
+  const allResults = Array.isArray(state.results) ? state.results : [];
+  const evaluations = Array.isArray(state.evaluations) ? state.evaluations : [];
+  const examSets = Array.isArray(state.bank?.examSets) ? state.bank.examSets : [];
+  const latestResultMap = new Map();
+  const latestEvaluationMap = new Map();
+
+  allResults.forEach((result) => {
+    const key = `${result.employee_code || result.employeeCode || ""}::${result.exam_id || result.examId || result.part_code || result.partCode || ""}`;
+    const current = latestResultMap.get(key);
+    if (!current || new Date(result.submitted_at || 0).getTime() > new Date(current.submitted_at || 0).getTime()) {
+      latestResultMap.set(key, result);
+    }
+  });
+
+  evaluations.forEach((evaluation) => {
+    const key = `${evaluation.employeeCode || ""}::${evaluation.partCode || ""}`;
+    const current = latestEvaluationMap.get(key);
+    if (!current || new Date(evaluation.updatedAt || 0).getTime() > new Date(current.updatedAt || 0).getTime()) {
+      latestEvaluationMap.set(key, evaluation);
+    }
+  });
+
+  const columns = examSets.map((exam) => ({
+    examId: String(exam.id),
+    modelCode: String(exam.modelCode || ""),
+    modelName: String(exam.modelName || ""),
+    partCode: String(exam.partCode || ""),
+    partName: String(exam.title || exam.partName || "")
+  }));
+
+  const employeeRows = employees.map((employee) => ({
+    employeeCode: employee.employeeCode,
+    employeeName: employee.fullName || employee.employeeCode,
+    department: employee.department || "",
+    position: employee.position || "",
+    photoUrl: employee.photoUrl || "",
+    cells: columns.map((column) => {
+      const result = latestResultMap.get(`${employee.employeeCode}::${column.examId}`)
+        || latestResultMap.get(`${employee.employeeCode}::${column.partCode}`)
+        || null;
+      const evaluation = latestEvaluationMap.get(`${employee.employeeCode}::${column.partCode}`) || null;
+      const examPercent = Number(result?.percent || 0);
+      const evaluationPercent = evaluation
+        ? Math.round((Number(evaluation.totalScore || 0) / Math.max(Number(evaluation.maxScore || 0), 1)) * 100)
+        : 0;
+      const finalPercent = Math.round(
+        ((examPercent * SKILL_MATRIX_CONFIG.examWeight) + (evaluationPercent * SKILL_MATRIX_CONFIG.evaluationWeight))
+        / SKILL_MATRIX_CONFIG.totalWeight
+      );
+      const band = getSkillBand(finalPercent);
+
+      return {
+        finalPercent,
+        skillPct: band.skillPct,
+        bandColor: band.color,
+        hasExam: Boolean(result),
+        hasEvaluation: Boolean(evaluation),
+        displayScore: `${finalPercent}/100`
+      };
+    })
+  }));
+
+  return {
+    columns,
+    employees: employeeRows.sort((left, right) =>
+      String(left.employeeName || "").localeCompare(String(right.employeeName || ""), "th"))
+  };
+}
+
+function renderSkillCircle(cell) {
+  const ringColor = cell.bandColor && cell.skillPct > 0 ? cell.bandColor : "#dbe5f0";
+  return `
+    <div class="skill-circle-card">
+      <div class="skill-circle" style="--skill-value:${cell.skillPct}; --skill-color:${ringColor};">
+        <span>${cell.skillPct}%</span>
+      </div>
+      <div class="skill-circle-meta">${cell.displayScore}</div>
+    </div>
+  `;
+}
+
+function renderSkillMatrix() {
+  if (state.user?.role !== "admin") return;
+
+  const matrix = buildSkillMatrixRows();
+  const searchValue = String(els.skillMatrixSearchInput?.value || "").trim().toLowerCase();
+  const selectedModel = String(els.skillMatrixModelFilter?.value || "");
+  const selectedPart = String(els.skillMatrixPartFilter?.value || "");
+  const selectedBand = String(els.skillMatrixBandFilter?.value || "");
+  const modelOptions = [...new Set(matrix.columns.map((column) => column.modelName).filter(Boolean))];
+  const partOptions = [...new Set(
+    matrix.columns
+      .filter((column) => !selectedModel || column.modelName === selectedModel)
+      .map((column) => column.partName)
+      .filter(Boolean)
+  )];
+
+  if (els.skillMatrixModelFilter) {
+    els.skillMatrixModelFilter.innerHTML = `<option value="">ทุก Model</option>${modelOptions
+      .map((item) => `<option value="${item}" ${item === selectedModel ? "selected" : ""}>${item}</option>`)
+      .join("")}`;
+  }
+
+  if (els.skillMatrixPartFilter) {
+    els.skillMatrixPartFilter.innerHTML = `<option value="">ทุก Part</option>${partOptions
+      .map((item) => `<option value="${item}" ${item === selectedPart ? "selected" : ""}>${item}</option>`)
+      .join("")}`;
+  }
+
+  if (els.skillMatrixBandFilter && !els.skillMatrixBandFilter.options.length) {
+    els.skillMatrixBandFilter.innerHTML = [
+      `<option value="">ทุกระดับ</option>`,
+      ...SKILL_MATRIX_CONFIG.skillBands.map((band) => `<option value="${band.skillPct}">${band.label}</option>`)
+    ].join("");
+  }
+
+  const visibleColumns = matrix.columns
+    .map((column, index) => ({ ...column, index }))
+    .filter((column) => (!selectedModel || column.modelName === selectedModel) && (!selectedPart || column.partName === selectedPart));
+
+  const filteredEmployees = matrix.employees.filter((employee) => {
+    const matchesSearch = !searchValue
+      || String(employee.employeeCode || "").toLowerCase().includes(searchValue)
+      || String(employee.employeeName || "").toLowerCase().includes(searchValue);
+    const matchesBand = !selectedBand || visibleColumns.some((column) => String(employee.cells[column.index].skillPct) === selectedBand);
+    return matchesSearch && matchesBand;
+  });
+
+  const allVisibleCells = filteredEmployees.flatMap((employee) => visibleColumns.map((column) => employee.cells[column.index]));
+  const completeCount = allVisibleCells.filter((cell) => cell.hasExam && cell.hasEvaluation).length;
+  const avgFinal = allVisibleCells.length
+    ? Math.round(allVisibleCells.reduce((sum, cell) => sum + cell.finalPercent, 0) / allVisibleCells.length)
+    : 0;
+  const readyCount = allVisibleCells.filter((cell) => cell.skillPct >= 75).length;
+
+  if (els.skillMatrixConfig) {
+    els.skillMatrixConfig.innerHTML = `
+      <span>Exam ${SKILL_MATRIX_CONFIG.examWeight}%</span>
+      <span>Evaluation ${SKILL_MATRIX_CONFIG.evaluationWeight}%</span>
+      <span>Total ${SKILL_MATRIX_CONFIG.totalWeight}%</span>
+      <span>พนักงาน ${matrix.employees.length} คน</span>
+    `;
+  }
+
+  if (els.skillMatrixSummary) {
+    els.skillMatrixSummary.innerHTML = `
+      <div class="stat-box"><span>พนักงานทั้งหมด</span><strong>${filteredEmployees.length}</strong></div>
+      <div class="stat-box"><span>ช่องข้อมูลครบ</span><strong>${completeCount}</strong></div>
+      <div class="stat-box"><span>ค่าเฉลี่ย Final</span><strong>${avgFinal}%</strong></div>
+      <div class="stat-box"><span>Skill 75% ขึ้นไป</span><strong>${readyCount}</strong></div>
+    `;
+  }
+
+  if (els.skillMatrixTableHead) {
+    els.skillMatrixTableHead.innerHTML = `
+      <tr>
+        <th class="sticky-col employee-col">ชื่อพนักงาน</th>
+        <th class="sticky-col code-col">รหัส</th>
+        <th class="sticky-col photo-col">รูป</th>
+        ${visibleColumns.map((column) => `
+          <th class="matrix-part-head">
+            <strong>${column.modelCode}/${column.partCode}</strong>
+            <div class="table-subline">${column.partName}</div>
+          </th>
+        `).join("")}
+      </tr>
+    `;
+  }
+
+  if (els.skillMatrixTableBody) {
+    els.skillMatrixTableBody.innerHTML = filteredEmployees.map((employee) => `
+      <tr>
+        <td class="sticky-col employee-col">
+          <strong>${employee.employeeName}</strong>
+          <div class="table-subline">${employee.position || "- / -"}</div>
+        </td>
+        <td class="sticky-col code-col">${employee.employeeCode}</td>
+        <td class="sticky-col photo-col">
+          ${employee.photoUrl
+            ? `<img class="employee-avatar" src="${employee.photoUrl}" alt="${employee.employeeName}" />`
+            : `<div class="employee-avatar placeholder">${String(employee.employeeName || "?").slice(0, 1)}</div>`}
+        </td>
+        ${visibleColumns.map((column) => `<td class="skill-cell">${renderSkillCircle(employee.cells[column.index])}</td>`).join("")}
+      </tr>
+    `).join("");
+  }
+
+  if (els.skillMatrixEmpty) {
+    const isEmpty = filteredEmployees.length === 0 || visibleColumns.length === 0;
+    els.skillMatrixEmpty.classList.toggle("hidden", !isEmpty);
   }
 }
 

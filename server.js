@@ -514,6 +514,7 @@ function serializeEmployee(user) {
     fullName: user.full_name || user.employee_code,
     department: user.department || "",
     position: user.position || "",
+    photoUrl: user.photo_url || "",
     role: user.role,
     isActive: Boolean(user.is_active)
   };

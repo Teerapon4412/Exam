@@ -1074,6 +1074,100 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   color: var(--muted);
 }
 
+.matrix-layout {
+  min-width: 1180px;
+}
+
+.matrix-layout th,
+.matrix-layout td {
+  min-width: 180px;
+}
+
+.sticky-col {
+  position: sticky;
+  background: #fff;
+  z-index: 2;
+}
+
+.employee-col {
+  left: 0;
+  min-width: 220px;
+  max-width: 220px;
+}
+
+.code-col {
+  left: 220px;
+  min-width: 96px;
+  max-width: 96px;
+  text-align: center;
+}
+
+.photo-col {
+  left: 316px;
+  min-width: 98px;
+  max-width: 98px;
+  text-align: center;
+}
+
+.matrix-part-head {
+  min-width: 210px;
+  text-align: center;
+}
+
+.skill-cell {
+  text-align: center;
+}
+
+.employee-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: inline-block;
+  border: 3px solid #edf2f7;
+  background: #fff;
+}
+
+.employee-avatar.placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #52627e;
+  background: #eef3f8;
+}
+
+.skill-circle-card {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.skill-circle {
+  --skill-color: #dbe5f0;
+  --skill-value: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(closest-side, white 67%, transparent 68% 100%),
+    conic-gradient(var(--skill-color) calc(var(--skill-value) * 1%), #e8eef5 0);
+  border: 1px solid #dbe5f0;
+}
+
+.skill-circle span {
+  font-weight: 800;
+  color: #18324a;
+  font-size: 0.92rem;
+}
+
+.skill-circle-meta {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .exam-layout {
   margin-top: 18px;
   grid-template-columns: 1.65fr 0.85fr;
