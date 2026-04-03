@@ -2,7 +2,8 @@
 
 const STORAGE_KEYS = {
   authToken: "factory_exam_auth_token",
-  authUser: "factory_exam_auth_user"
+  authUser: "factory_exam_auth_user",
+  previewMode: "factory_exam_preview_mode"
 };
 
 const $ = (id) => document.getElementById(id);
@@ -98,11 +99,13 @@ const els = {
   evaluationHistoryEvaluatorFilter: $("evaluationHistoryEvaluatorFilter"),
   evaluationHistoryEmpty: $("evaluationHistoryEmpty"),
   evaluationHistoryTableWrap: $("evaluationHistoryTableWrap"),
-  evaluationHistoryBody: $("evaluationHistoryBody")
+  evaluationHistoryBody: $("evaluationHistoryBody"),
+  previewToolbar: $("previewToolbar")
 };
 
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
 const adminOnlyNodes = Array.from(document.querySelectorAll(".admin-only"));
+const previewButtons = Array.from(document.querySelectorAll("[data-preview-mode]"));
 
 const TEXT = {
   titleByView: {
@@ -183,6 +186,19 @@ function setText(element, value) {
   if (element) {
     element.textContent = value;
   }
+}
+
+function applyPreviewMode(mode = "auto") {
+  const safeMode = ["auto", "mobile", "tablet", "desktop"].includes(mode) ? mode : "auto";
+  if (safeMode === "auto") {
+    document.body.removeAttribute("data-preview-mode");
+  } else {
+    document.body.setAttribute("data-preview-mode", safeMode);
+  }
+  previewButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.previewMode === safeMode);
+  });
+  window.localStorage.setItem(STORAGE_KEYS.previewMode, safeMode);
 }
 
 function roleLabel(role) {
@@ -1767,6 +1783,9 @@ function bindEvents() {
   els.logoutBtn.addEventListener("click", logout);
   els.startExamBtn.addEventListener("click", startExam);
   els.submitExamBtn.addEventListener("click", submitExam);
+  previewButtons.forEach((button) => {
+    button.addEventListener("click", () => applyPreviewMode(button.dataset.previewMode));
+  });
   if (els.nextPartBtn) {
     els.nextPartBtn.addEventListener("click", () => {
       const nextExam = getNextExamInCurrentModel();
@@ -1921,6 +1940,7 @@ function applyStaticThaiText() {
 
 function init() {
   applyStaticThaiText();
+  applyPreviewMode(window.localStorage.getItem(STORAGE_KEYS.previewMode) || "auto");
   bindEvents();
   renderBankSummary();
   resetExamSession();

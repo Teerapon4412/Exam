@@ -42,6 +42,55 @@ textarea {
   display: none !important;
 }
 
+.preview-toolbar {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: rgba(15, 27, 43, 0.82);
+  color: #fff;
+  box-shadow: 0 20px 40px rgba(12, 20, 32, 0.24);
+  backdrop-filter: blur(14px);
+}
+
+.preview-toolbar-label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.preview-toolbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preview-btn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.preview-btn:hover {
+  transform: translateY(-1px);
+}
+
+.preview-btn.active {
+  background: linear-gradient(90deg, var(--orange), var(--pink));
+  border-color: transparent;
+}
+
 .wide {
   width: 100%;
 }
@@ -190,6 +239,114 @@ textarea {
   border-radius: 36px;
   overflow: hidden;
   box-shadow: var(--shadow);
+}
+
+body[data-preview-mode="mobile"] .login-panel,
+body[data-preview-mode="mobile"] .shell {
+  width: min(390px, calc(100vw - 28px));
+}
+
+body[data-preview-mode="tablet"] .login-panel,
+body[data-preview-mode="tablet"] .shell {
+  width: min(820px, calc(100vw - 28px));
+}
+
+body[data-preview-mode="desktop"] .login-panel,
+body[data-preview-mode="desktop"] .shell {
+  width: min(1280px, calc(100vw - 28px));
+}
+
+body[data-preview-mode="mobile"] .shell,
+body[data-preview-mode="tablet"] .shell {
+  grid-template-columns: 1fr;
+  border-radius: 24px;
+}
+
+body[data-preview-mode="mobile"] .sidebar,
+body[data-preview-mode="tablet"] .sidebar {
+  display: none;
+}
+
+body[data-preview-mode="mobile"] .content,
+body[data-preview-mode="tablet"] .content {
+  padding: 16px;
+}
+
+body[data-preview-mode="mobile"] .topbar,
+body[data-preview-mode="tablet"] .topbar {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+body[data-preview-mode="mobile"] .exam-hero-shell,
+body[data-preview-mode="mobile"] .exam-control-shell,
+body[data-preview-mode="mobile"] .exam-workspace,
+body[data-preview-mode="mobile"] .info-grid,
+body[data-preview-mode="mobile"] .hero-grid,
+body[data-preview-mode="mobile"] .stat-grid,
+body[data-preview-mode="mobile"] .profile-grid,
+body[data-preview-mode="mobile"] .history-stats,
+body[data-preview-mode="mobile"] .result-grid,
+body[data-preview-mode="mobile"] .evaluation-grid,
+body[data-preview-mode="mobile"] .admin-quick-grid,
+body[data-preview-mode="mobile"] .admin-choice-grid,
+body[data-preview-mode="mobile"] .exam-kpi-grid,
+body[data-preview-mode="mobile"] .exam-command-grid {
+  grid-template-columns: 1fr;
+}
+
+body[data-preview-mode="mobile"] .question-nav {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body[data-preview-mode="mobile"] .question-actions,
+body[data-preview-mode="mobile"] .topbar-actions,
+body[data-preview-mode="mobile"] .result-actions,
+body[data-preview-mode="mobile"] .admin-actions,
+body[data-preview-mode="mobile"] .admin-toolbar,
+body[data-preview-mode="mobile"] .admin-question-head,
+body[data-preview-mode="mobile"] .admin-question-actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+body[data-preview-mode="mobile"] .primary-btn,
+body[data-preview-mode="mobile"] .secondary-btn {
+  width: 100%;
+}
+
+body[data-preview-mode="mobile"] .exam-side-rail {
+  position: static;
+}
+
+body[data-preview-mode="mobile"] .exam-spotlight,
+body[data-preview-mode="mobile"] .exam-question-shell,
+body[data-preview-mode="mobile"] .exam-side-rail {
+  padding: 20px;
+}
+
+body[data-preview-mode="mobile"] .exam-spotlight-copy h3 {
+  font-size: 1.85rem;
+}
+
+body[data-preview-mode="tablet"] .exam-hero-shell,
+body[data-preview-mode="tablet"] .exam-control-shell,
+body[data-preview-mode="tablet"] .exam-workspace,
+body[data-preview-mode="tablet"] .hero-grid,
+body[data-preview-mode="tablet"] .dashboard-grid,
+body[data-preview-mode="tablet"] .exam-layout,
+body[data-preview-mode="tablet"] .admin-grid,
+body[data-preview-mode="tablet"] .result-grid,
+body[data-preview-mode="tablet"] .evaluation-grid,
+body[data-preview-mode="tablet"] .admin-builder-layout,
+body[data-preview-mode="tablet"] .admin-part-grid,
+body[data-preview-mode="tablet"] .admin-summary-grid {
+  grid-template-columns: 1fr;
+}
+
+body[data-preview-mode="tablet"] .admin-builder-sidebar,
+body[data-preview-mode="tablet"] .exam-side-rail {
+  position: static;
 }
 
 .sidebar {
@@ -1390,6 +1547,14 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  .preview-toolbar {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .exam-kpi-grid,
   .exam-command-grid,
   .info-grid,
