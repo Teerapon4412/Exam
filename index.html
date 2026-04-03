@@ -447,14 +447,14 @@
 
           <section id="adminView" class="view-section hidden">
             <section class="panel admin-only hidden" id="adminPanel">
-              <div class="panel-head">
+              <div class="panel-head hidden">
                 <div>
                   <p class="card-label">Admin</p>
                   <h3>อัปโหลดคลังข้อสอบ JSON</h3>
                 </div>
               </div>
 
-              <div class="admin-grid">
+              <div class="admin-grid hidden">
                 <div class="admin-card">
                   <label class="field">
                     <span>ไฟล์ข้อสอบ JSON</span>
@@ -464,7 +464,6 @@
                     <button id="importJsonBtn" class="primary-btn" type="button">นำเข้าข้อสอบ</button>
                     <button id="resetJsonBtn" class="secondary-btn" type="button">กลับไปใช้ไฟล์เดิม</button>
                   </div>
-                  <p id="adminMessage" class="inline-message">รองรับทั้งโครงสร้าง `models/parts` และ `examSets` ในไฟล์เดียวกัน</p>
                 </div>
 
                 <div class="admin-card">
@@ -472,6 +471,7 @@
                   <div id="adminDataInfo" class="admin-info-list"></div>
                 </div>
               </div>
+              <p id="adminMessage" class="inline-message hidden"></p>
             </section>
           </section>
         </main>
