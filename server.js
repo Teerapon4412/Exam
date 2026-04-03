@@ -253,6 +253,56 @@ function hashEmployeeCode(employeeCode) {
   return crypto.scryptSync(normalized, `${AUTH_SECRET}:${normalized}`, 64).toString("hex");
 }
 
+function createAuthToken(user) {
+  const payload = {
+    sub: user.id,
+    employeeCode: user.employee_code,
+    role: user.role,
+    exp: Date.now() + 1000 * 60 * 60 * 12
+  };
+  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const signature = crypto
+    .createHmac("sha256", AUTH_SECRET)
+    .update(encodedPayload)
+    .digest("base64url");
+  return `${encodedPayload}.${signature}`;
+}
+
+function verifyAuthToken(token) {
+  if (!token || !String(token).includes(".")) {
+    return null;
+  }
+
+  const [encodedPayload, signature] = String(token).split(".");
+  if (!encodedPayload || !signature) {
+    return null;
+  }
+
+  const expectedSignature = crypto
+    .createHmac("sha256", AUTH_SECRET)
+    .update(encodedPayload)
+    .digest("base64url");
+
+  const signatureBuffer = Buffer.from(signature, "utf8");
+  const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+  if (
+    signatureBuffer.length !== expectedBuffer.length ||
+    !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+  ) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
+    if (!payload?.sub || !payload?.employeeCode || !payload?.role || Number(payload.exp) < Date.now()) {
+      return null;
+    }
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 function compareHashes(left, right) {
   const leftBuffer = Buffer.from(String(left || ""), "hex");
   const rightBuffer = Buffer.from(String(right || ""), "hex");
@@ -426,6 +476,11 @@ function getCurrentBankPayload() {
   };
 }
 
+function findExamById(examId) {
+  const bank = getCurrentBankPayload();
+  return (bank.examSets || []).find((exam) => String(exam.id) === String(examId)) || null;
+}
+
 function serializeUser(user) {
   return {
     id: user.id,
@@ -436,6 +491,19 @@ function serializeUser(user) {
     position: user.position || "",
     photoUrl: user.photo_url || "",
     role: user.role
+  };
+}
+
+function serializeResult(row) {
+  return {
+    ...row,
+    score: Number(row.score || 0),
+    total_score: Number(row.total_score || 0),
+    percent: Number(row.percent || 0),
+    correct_count: Number(row.correct_count || 0),
+    wrong_count: Number(row.wrong_count || 0),
+    question_count: Number(row.question_count || 0),
+    passed: Boolean(row.passed)
   };
 }
 
@@ -478,6 +546,41 @@ function serializeEvaluation(row) {
 app.use(express.json({ limit: "5mb" }));
 app.use(express.static(__dirname));
 
+function getBearerToken(req) {
+  const header = String(req.headers.authorization || "");
+  if (!header.startsWith("Bearer ")) {
+    return "";
+  }
+  return header.slice("Bearer ".length).trim();
+}
+
+function requireAuth(req, res, next) {
+  const token = getBearerToken(req);
+  const payload = verifyAuthToken(token);
+
+  if (!payload) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  const user = getUserByEmployeeCode.get(payload.employeeCode);
+  if (!user || !user.is_active || user.id !== payload.sub) {
+    return res.status(401).json({ error: "Invalid authentication token" });
+  }
+
+  req.auth = payload;
+  req.user = user;
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  requireAuth(req, res, () => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    next();
+  });
+}
+
 app.post("/api/login", (req, res) => {
   const employeeCode = normalizeEmployeeCode(req.body.employeeCode);
 
@@ -501,84 +604,90 @@ app.post("/api/login", (req, res) => {
     return res.status(401).json({ error: "Unable to verify employee code" });
   }
 
-  return res.json({ user: serializeUser(user) });
+  return res.json({ user: serializeUser(user), token: createAuthToken(user) });
+});
+
+app.get("/api/me", requireAuth, (req, res) => {
+  res.json({ user: serializeUser(req.user) });
 });
 
 app.get("/api/exams", (_req, res) => {
   res.json(getCurrentBankPayload());
 });
 
-app.post("/api/results", (req, res) => {
+app.post("/api/results", requireAuth, (req, res) => {
   const payload = req.body || {};
-  const required = ["user_id", "username", "role", "exam_id", "exam_title", "model_code", "model_name", "part_code"];
-  const missing = required.find((key) => !payload[key]);
-  if (missing) {
-    return res.status(400).json({ error: `Missing field: ${missing}` });
+  const examId = String(payload.examId || "").trim();
+  const answers = Array.isArray(payload.answers) ? payload.answers : null;
+
+  if (!examId || !answers) {
+    return res.status(400).json({ error: "examId and answers are required" });
   }
 
-  insertResult.run({
-    user_id: String(payload.user_id),
-    username: String(payload.username),
-    employee_code: String(payload.employee_code || ""),
-    full_name: String(payload.full_name || ""),
-    role: String(payload.role),
-    exam_id: String(payload.exam_id),
-    exam_title: String(payload.exam_title),
-    model_code: String(payload.model_code),
-    model_name: String(payload.model_name),
-    part_code: String(payload.part_code),
-    score: Number(payload.score) || 0,
-    total_score: Number(payload.total_score) || 0,
-    percent: Number(payload.percent) || 0,
-    correct_count: Number(payload.correct_count) || 0,
-    wrong_count: Number(payload.wrong_count) || 0,
-    question_count: Number(payload.question_count) || 0,
-    passed: payload.passed ? 1 : 0,
-    submitted_at: payload.submitted_at || new Date().toISOString()
+  const exam = findExamById(examId);
+  if (!exam) {
+    return res.status(404).json({ error: "Exam not found" });
+  }
+
+  const questions = Array.isArray(exam.questions) ? exam.questions : [];
+  let score = 0;
+  let totalScore = 0;
+  let correctCount = 0;
+
+  questions.forEach((question, index) => {
+    const weight = Number(question.score) || 1;
+    totalScore += weight;
+    if (Number.isInteger(answers[index]) && Number(answers[index]) === Number(question.answer)) {
+      score += weight;
+      correctCount += 1;
+    }
   });
 
-  res.json({ ok: true });
+  const wrongCount = Math.max(questions.length - correctCount, 0);
+  const percent = totalScore ? Math.round((score / totalScore) * 100) : 0;
+  const passed = score >= (Number(exam.passScore) || 0);
+  const submittedAt = new Date().toISOString();
+
+  const record = {
+    user_id: String(req.user.id),
+    username: String(req.user.username || req.user.employee_code),
+    employee_code: String(req.user.employee_code || ""),
+    full_name: String(req.user.full_name || req.user.username || ""),
+    role: String(req.user.role),
+    exam_id: String(exam.id),
+    exam_title: String(exam.title || ""),
+    model_code: String(exam.modelCode || ""),
+    model_name: String(exam.modelName || ""),
+    part_code: String(exam.partCode || ""),
+    score,
+    total_score: totalScore,
+    percent,
+    correct_count: correctCount,
+    wrong_count: wrongCount,
+    question_count: questions.length,
+    passed: passed ? 1 : 0,
+    submitted_at: submittedAt
+  };
+
+  insertResult.run(record);
+
+  res.json({ ok: true, result: serializeResult(record) });
 });
 
-app.get("/api/results", (req, res) => {
-  const role = String(req.query.role || "student");
-  const userId = String(req.query.userId || "");
-
-  if (role === "admin") {
-    return res.json({ results: getAllResults.all() });
-  }
-
-  if (!userId) {
-    return res.status(400).json({ error: "userId is required" });
-  }
-
-  return res.json({ results: getResultsByUser.all(userId) });
+app.get("/api/results", requireAuth, (req, res) => {
+  const results = req.user.role === "admin" ? getAllResults.all() : getResultsByUser.all(req.user.id);
+  return res.json({ results: results.map(serializeResult) });
 });
 
-app.get("/api/admin/employees", (req, res) => {
-  const role = String(req.query.role || "");
-  if (role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-
+app.get("/api/admin/employees", requireAdmin, (req, res) => {
   return res.json({ employees: getActiveEmployees.all().map(serializeEmployee) });
 });
 
-app.get("/api/evaluations", (req, res) => {
-  const role = String(req.query.role || "");
-  if (role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-
+app.get("/api/evaluations", requireAdmin, (req, res) => {
   return res.json({ evaluations: getAllEvaluations.all().map(serializeEvaluation) });
 });
 
-app.post("/api/evaluations", (req, res) => {
-  const role = String(req.body.role || "");
-  if (role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-
+app.post("/api/evaluations", requireAdmin, (req, res) => {
   const payload = req.body || {};
   const employeeId = String(payload.employeeId || "").trim();
   const employeeCode = normalizeEmployeeCode(payload.employeeCode || "");
@@ -635,12 +744,7 @@ app.post("/api/evaluations", (req, res) => {
   return res.status(201).json({ evaluation: serializeEvaluation(record) });
 });
 
-app.post("/api/admin/exam-bank", (req, res) => {
-  const role = String(req.body.role || "");
-  if (role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-
+app.post("/api/admin/exam-bank", requireAdmin, (req, res) => {
   try {
     const normalized = normalizeExamData(req.body.payload);
     upsertBank.run({
@@ -659,12 +763,7 @@ app.post("/api/admin/exam-bank", (req, res) => {
   }
 });
 
-app.post("/api/admin/reset-exam-bank", (req, res) => {
-  const role = String(req.body.role || "");
-  if (role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-
+app.post("/api/admin/reset-exam-bank", requireAdmin, (req, res) => {
   const raw = fs.readFileSync(DEFAULT_BANK_PATH, "utf8");
   const normalized = normalizeExamData(JSON.parse(raw));
   upsertBank.run({
