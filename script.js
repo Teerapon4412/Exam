@@ -1058,6 +1058,18 @@ function renderSkillCircle(cell) {
     </div>
   `;
 }
+
+function formatEmployeeMeta(employee) {
+  const department = String(employee.department || "").trim() || "-";
+  const position = String(employee.position || "").trim() || "-";
+  return `${department} / ${position}`;
+}
+
+function getEmployeeAvatarFallback(employeeName) {
+  const normalized = String(employeeName || "").trim();
+  return normalized ? normalized.slice(0, 1) : "?";
+}
+
 function renderSkillMatrix() {
   if (state.user?.role !== "admin") return;
 
@@ -1150,18 +1162,18 @@ function renderSkillMatrix() {
 
   if (els.skillMatrixTableBody) {
     els.skillMatrixTableBody.innerHTML = filteredEmployees.map((employee) => `
-      <tr>
+      <tr class="skill-matrix-row">
         <td class="sticky-col employee-col">
           <div class="employee-cell-copy">
             <strong>${employee.employeeName}</strong>
-            <div class="table-subline employee-subline">${employee.position || "- / -"}</div>
+            <div class="table-subline employee-subline">${formatEmployeeMeta(employee)}</div>
           </div>
         </td>
         <td class="sticky-col code-col">${employee.employeeCode}</td>
         <td class="sticky-col photo-col">
           ${employee.photoUrl
             ? `<img class="employee-avatar" src="${employee.photoUrl}" alt="${employee.employeeName}" />`
-            : `<div class="employee-avatar placeholder">${String(employee.employeeName || "?").slice(0, 1)}</div>`}
+            : `<div class="employee-avatar placeholder">${getEmployeeAvatarFallback(employee.employeeName)}</div>`}
         </td>
         ${visibleColumns.map((column) => `<td class="skill-cell">${renderSkillCircle(employee.cells[column.index])}</td>`).join("")}
       </tr>
