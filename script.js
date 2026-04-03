@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 const STORAGE_KEYS = {
   authToken: "factory_exam_auth_token",
@@ -117,7 +117,7 @@ const submitExamButtons = Array.from(document.querySelectorAll(".submit-exam-btn
 const TEXT = {
   titleByView: {
     exam: "ทำข้อสอบออนไลน์",
-    history: "ผลคะแนนย้อนหลัง",
+    history: "ประวัติผลสอบ",
     profile: "ข้อมูลพนักงาน",
     evaluation: "ประเมินผลหน้างาน",
     admin: "จัดการคลังข้อสอบ"
@@ -129,25 +129,25 @@ const TEXT = {
   ],
   evaluationRows: [
     {
-      title: "การเตรียมตัวก่อนปฏิบัติงาน\nการเตรียมงานและเอกสารการตรวจเช็คอุปกรณ์ต่างๆ",
+      title: "การเตรียมตัวก่อนปฏิบัติงาน\nการเตรียมงานและเอกสาร รวมถึงการตรวจเช็กอุปกรณ์ก่อนเริ่มงาน",
       method: "สังเกต",
       maxScore: 4,
       weight: 1
     },
     {
-      title: "ปริมาณงาน\nปริมาณผลงานที่ทำได้ตามเป้าหมาย คุณภาพ และตามเวลา",
+      title: "ปริมาณงาน\nทำงานได้ตามเป้าหมายภายในเวลาที่กำหนด และรักษาความต่อเนื่องของการทำงาน",
       method: "ตรวจงาน",
       maxScore: 4,
       weight: 3
     },
     {
-      title: "คุณภาพ\nความถูกต้องของผลงานที่ทำได้",
+      title: "คุณภาพงาน\nผลงานมีความถูกต้อง ครบถ้วน และเป็นไปตามมาตรฐานการทำงาน",
       method: "ประเมิน",
       maxScore: 4,
       weight: 5
     },
     {
-      title: "การเปลี่ยนแม่พิมพ์และการตรวจสอบ ความถูกต้องของผลงานที่ทำได้",
+      title: "การตอบสนองต่อปัญหา\nสามารถแก้ไขปัญหาเบื้องต้นและปฏิบัติตามขั้นตอนเมื่อพบความผิดปกติได้เหมาะสม",
       method: "สัมภาษณ์",
       maxScore: 4,
       weight: 6
@@ -263,11 +263,10 @@ async function api(url, options = {}) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || "เกิดข้อผิดพลาดจากระบบ");
+    throw new Error(data.error || "ไม่สามารถดำเนินการกับเซิร์ฟเวอร์ได้");
   }
   return data;
 }
-
 function groupExamSets(examSets) {
   const grouped = new Map();
   examSets.forEach((exam) => {
@@ -464,7 +463,7 @@ function updateUserPanel() {
   if (!user) return;
 
   setText(els.sidebarUserName, user.fullName || user.username || "-");
-  setText(els.sidebarUserRole, `สิทธิ์: ${roleLabel(user.role)}`);
+  setText(els.sidebarUserRole, `บทบาท: ${roleLabel(user.role)}`);
   setText(els.sidebarUserId, `รหัสพนักงาน: ${user.employeeCode || "-"}`);
 
   const isAdmin = user.role === "admin";
@@ -490,7 +489,7 @@ function renderModelSelector() {
       <select id="examModelDropdown" class="exam-select-dropdown">
         ${groups.map((group) => `
           <option value="${group.modelCode}" ${group.modelCode === state.selectedModelCode ? "selected" : ""}>
-            ${group.modelName} (${group.exams.length} ชุด)
+            ${group.modelName} (${group.exams.length} Part)
           </option>
         `).join("")}
       </select>
@@ -516,7 +515,7 @@ function renderExamSelector() {
   const selectedExam = exams.find((exam) => exam.id === state.selectedExamId) || exams[0] || null;
 
   if (!exams.length) {
-    els.examSelector.innerHTML = `<div class="exam-empty-state">ยังไม่มี Part ใน Model นี้</div>`;
+    els.examSelector.innerHTML = `<div class="exam-empty-state">ยังไม่มีข้อสอบใน Model ที่เลือก</div>`;
   } else {
     els.examSelector.innerHTML = `
       <div class="exam-select-stack">
@@ -525,14 +524,14 @@ function renderExamSelector() {
           <select id="examPartDropdown" class="exam-select-dropdown">
             ${exams.map((exam) => `
               <option value="${exam.id}" ${exam.id === state.selectedExamId ? "selected" : ""}>
-                ${exam.partCode || "-"} - ${exam.title || "ชุดข้อสอบ"}
+                ${exam.partCode || "-"} - ${exam.title || "ยังไม่ตั้งชื่อชุดข้อสอบ"}
               </option>
             `).join("")}
           </select>
         </label>
         <div class="exam-select-summary">
           <div class="exam-select-summary-head">
-            <strong>${selectedExam?.title || selectedExam?.partCode || "ชุดข้อสอบ"}</strong>
+            <strong>${selectedExam?.title || selectedExam?.partCode || "ยังไม่ตั้งชื่อชุดข้อสอบ"}</strong>
             <span>${selectedExam?.partCode || "-"}</span>
           </div>
           <div class="exam-tags exam-library-card-tags">
@@ -558,18 +557,9 @@ function renderExamSelector() {
   showMessage(
     els.loadStatus,
     count
-      ? `โมเดลนี้มี ${count} ชุดข้อสอบ | ชุดปัจจุบัน ${state.currentExam?.title || "-"}`
-      : "ไม่พบชุดข้อสอบในระบบ"
+      ? `พบข้อสอบ ${count} ชุดใน Model นี้ | ชุดปัจจุบัน: ${state.currentExam?.title || "-"}`
+      : "ยังไม่มีข้อสอบในระบบ"
   );
-}
-
-function renderSelectors() {
-  state.currentExam = getSelectedExam();
-  renderModelSelector();
-  renderExamSelector();
-  renderExamMeta();
-  renderQuestion();
-  renderQuestionNav();
 }
 
 function renderExamMeta() {
@@ -588,7 +578,6 @@ function updateExamStatus() {
   const exam = state.currentExam;
   const questionCount = exam?.questions?.length || 0;
   const answeredCount = state.answers.filter((value) => value !== null && value !== undefined).length;
-  const unansweredCount = Math.max(questionCount - answeredCount, 0);
   const progress = questionCount ? Math.round((answeredCount / questionCount) * 100) : 0;
 
   setText(els.progressPercent, `${progress}%`);
@@ -597,7 +586,7 @@ function updateExamStatus() {
 
   let statusText = "ยังไม่ได้เลือกชุดข้อสอบ";
   if (state.submitted) {
-    statusText = "เสร็จสิ้น";
+    statusText = "ส่งข้อสอบแล้ว";
   } else if (exam) {
     statusText = "กำลังทำข้อสอบ";
   }
@@ -714,18 +703,18 @@ function renderResult(result) {
   setText(els.scoreValue, `${result.score} / ${result.total_score}`);
   setText(els.scorePercent, `${result.percent}%`);
   setText(els.correctCount, `ตอบถูก ${result.correct_count} ข้อ`);
-  setText(els.wrongCount, `${result.wrong_count} ข้อ`);
+  setText(els.wrongCount, `ตอบผิด ${result.wrong_count} ข้อ`);
   els.resultMessage.textContent = result.passed
-    ? `ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`
-    : `ไม่ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`;
+    ? `ผ่านเกณฑ์แล้ว: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`
+    : `ยังไม่ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`;
   const nextExam = getNextExamInCurrentModel();
   if (els.nextPartBtn) {
     els.nextPartBtn.disabled = !nextExam;
     els.nextPartBtn.textContent = nextExam
       ? `Next Part: ${nextExam.partCode || nextExam.title || "ถัดไป"}`
-      : "ไม่มี Part ถัดไป";
+      : "ยังไม่มี Part ถัดไป";
   }
-  showMessage(els.loadStatus, "ส่งข้อสอบแล้ว");
+  showMessage(els.loadStatus, "ส่งข้อสอบเรียบร้อยแล้ว");
   updateExamStatus();
 }
 
@@ -750,19 +739,8 @@ async function loadExams() {
     state.selectedModelCode = "";
     state.selectedExamId = "";
     resetExamSession();
-    showMessage(els.loadStatus, `โหลดข้อสอบไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.loadStatus, `โหลดชุดข้อสอบไม่สำเร็จ: ${error.message}`, true);
   }
-}
-
-async function loadResults() {
-  if (!state.user) return;
-  const payload = await api("/api/results");
-  state.results = Array.isArray(payload.results) ? payload.results : [];
-  renderHistory();
-  renderProfile();
-  renderSkillMatrix();
-  renderEvaluationForm();
-  renderEvaluationHistory();
 }
 
 function renderHistory() {
@@ -774,14 +752,14 @@ function renderHistory() {
   const passedCount = results.filter((item) => item.passed).length;
 
   els.historyStats.innerHTML = `
-    <div class="stat-box"><span>ผลสอบทั้งหมด</span><strong>${total}</strong></div>
-    <div class="stat-box"><span>จำนวนครั้งที่สอบ</span><strong>${total}</strong></div>
-    <div class="stat-box"><span>ค่าเฉลี่ย</span><strong>${avgPercent}%</strong></div>
-    <div class="stat-box"><span>รายการผ่านเกณฑ์</span><strong>${passedCount}</strong></div>
+    <div class="stat-box"><span>รายการทั้งหมด</span><strong>${total}</strong></div>
+    <div class="stat-box"><span>จำนวนครั้งที่ทำ</span><strong>${total}</strong></div>
+    <div class="stat-box"><span>คะแนนเฉลี่ย</span><strong>${avgPercent}%</strong></div>
+    <div class="stat-box"><span>ผ่านเกณฑ์</span><strong>${passedCount}</strong></div>
   `;
 
   if (!total) {
-    els.historyList.innerHTML = `<div class="inline-message">ยังไม่มีข้อมูลผลสอบ</div>`;
+    els.historyList.innerHTML = `<div class="inline-message">ยังไม่มีประวัติผลสอบในระบบ</div>`;
     return;
   }
 
@@ -799,7 +777,7 @@ function renderHistory() {
           </div>
           <div class="history-score ${item.passed ? "pass" : "fail"}">
             <strong>${item.percent}%</strong>
-            <span>${item.passed ? "ผ่านเกณฑ์" : "ไม่ผ่าน"}</span>
+            <span>${item.passed ? "ผ่าน" : "ไม่ผ่าน"}</span>
           </div>
         </article>
       `;
@@ -887,7 +865,7 @@ function buildSkillMatrixRows() {
       bandColor: band.color,
       hasExam: Boolean(result),
       hasEvaluation: Boolean(evaluation),
-      status: result && evaluation ? "ครบ" : result ? "รอประเมิน" : "ยังไม่มีผลสอบ"
+      status: result && evaluation ? "มีข้อมูลครบ" : result ? "รอประเมินหน้างาน" : "ยังไม่มีข้อมูลการสอบ"
     });
   });
 
@@ -925,7 +903,7 @@ function renderSkillMatrix() {
 
   if (els.skillMatrixBandFilter && !els.skillMatrixBandFilter.options.length) {
     els.skillMatrixBandFilter.innerHTML = [
-      `<option value="">ทุกระดับ</option>`,
+      `<option value="">ทุกระดับทักษะ</option>`,
       ...SKILL_MATRIX_CONFIG.skillBands.map((band) => `<option value="${band.skillPct}">${band.label}</option>`)
     ].join("");
   }
@@ -956,9 +934,9 @@ function renderSkillMatrix() {
 
   if (els.skillMatrixSummary) {
     els.skillMatrixSummary.innerHTML = `
-      <div class="stat-box"><span>รายการทั้งหมด</span><strong>${filteredRows.length}</strong></div>
-      <div class="stat-box"><span>ข้อมูลครบ</span><strong>${completeCount}</strong></div>
-      <div class="stat-box"><span>ค่าเฉลี่ย Final</span><strong>${avgFinal}%</strong></div>
+      <div class="stat-box"><span>พนักงานที่แสดง</span><strong>${filteredRows.length}</strong></div>
+      <div class="stat-box"><span>มีข้อมูลครบ</span><strong>${completeCount}</strong></div>
+      <div class="stat-box"><span>คะแนน Final เฉลี่ย</span><strong>${avgFinal}%</strong></div>
       <div class="stat-box"><span>Skill 75% ขึ้นไป</span><strong>${readyCount}</strong></div>
     `;
   }
@@ -968,7 +946,7 @@ function renderSkillMatrix() {
       <tr>
         <td>
           <strong>${row.employeeName}</strong>
-          <div class="table-subline">${row.employeeCode}${row.department ? ` • ${row.department}` : ""}</div>
+          <div class="table-subline">${row.employeeCode}${row.department ? ` · ${row.department}` : ""}</div>
         </td>
         <td>
           <strong>${row.modelName || "-"}</strong>
@@ -1072,7 +1050,6 @@ function renderSkillCircle(cell) {
     </div>
   `;
 }
-
 function renderSkillMatrix() {
   if (state.user?.role !== "admin") return;
 
@@ -1103,7 +1080,7 @@ function renderSkillMatrix() {
 
   if (els.skillMatrixBandFilter && !els.skillMatrixBandFilter.options.length) {
     els.skillMatrixBandFilter.innerHTML = [
-      `<option value="">ทุกระดับ</option>`,
+      `<option value="">ทุกระดับทักษะ</option>`,
       ...SKILL_MATRIX_CONFIG.skillBands.map((band) => `<option value="${band.skillPct}">${band.label}</option>`)
     ].join("");
   }
@@ -1132,15 +1109,15 @@ function renderSkillMatrix() {
       <span>Exam ${SKILL_MATRIX_CONFIG.examWeight}%</span>
       <span>Evaluation ${SKILL_MATRIX_CONFIG.evaluationWeight}%</span>
       <span>Total ${SKILL_MATRIX_CONFIG.totalWeight}%</span>
-      <span>พนักงาน ${matrix.employees.length} คน</span>
+      <span>พนักงานทั้งหมด ${matrix.employees.length} คน</span>
     `;
   }
 
   if (els.skillMatrixSummary) {
     els.skillMatrixSummary.innerHTML = `
-      <div class="stat-box"><span>พนักงานทั้งหมด</span><strong>${filteredEmployees.length}</strong></div>
-      <div class="stat-box"><span>ช่องข้อมูลครบ</span><strong>${completeCount}</strong></div>
-      <div class="stat-box"><span>ค่าเฉลี่ย Final</span><strong>${avgFinal}%</strong></div>
+      <div class="stat-box"><span>พนักงานที่แสดง</span><strong>${filteredEmployees.length}</strong></div>
+      <div class="stat-box"><span>มีข้อมูลครบ</span><strong>${completeCount}</strong></div>
+      <div class="stat-box"><span>คะแนน Final เฉลี่ย</span><strong>${avgFinal}%</strong></div>
       <div class="stat-box"><span>Skill 75% ขึ้นไป</span><strong>${readyCount}</strong></div>
     `;
   }
@@ -1186,9 +1163,11 @@ function renderSkillMatrix() {
   if (els.skillMatrixEmpty) {
     const isEmpty = filteredEmployees.length === 0 || visibleColumns.length === 0;
     els.skillMatrixEmpty.classList.toggle("hidden", !isEmpty);
+    if (isEmpty) {
+      els.skillMatrixEmpty.textContent = "ไม่พบข้อมูลสำหรับเงื่อนไขที่เลือก";
+    }
   }
 }
-
 function populateSelect(element, options, valueKey, labelKey, selectedValue = "") {
   if (!element) return;
   element.innerHTML = options
@@ -1406,10 +1385,12 @@ async function loadEvaluations() {
 function renderEvaluationHistory() {
   if (state.user?.role !== "admin") return;
 
-  const partOptions = ["ทุก Part"].concat(
+  const defaultPartLabel = "ทุก Part";
+  const defaultEvaluatorLabel = "ผู้ประเมินทั้งหมด";
+  const partOptions = [defaultPartLabel].concat(
     Array.from(new Set(state.evaluations.map((item) => item.partCode).filter(Boolean)))
   );
-  const evaluatorOptions = ["ผู้ประเมินทั้งหมด"].concat(
+  const evaluatorOptions = [defaultEvaluatorLabel].concat(
     Array.from(new Set(state.evaluations.map((item) => item.evaluator).filter(Boolean)))
   );
 
@@ -1421,8 +1402,8 @@ function renderEvaluationHistory() {
     .join("");
 
   const keyword = (els.evaluationSearchInput.value || "").trim().toLowerCase();
-  const partFilter = els.evaluationHistoryPartFilter.value || "ทุก Part";
-  const evaluatorFilter = els.evaluationHistoryEvaluatorFilter.value || "ผู้ประเมินทั้งหมด";
+  const partFilter = els.evaluationHistoryPartFilter.value || defaultPartLabel;
+  const evaluatorFilter = els.evaluationHistoryEvaluatorFilter.value || defaultEvaluatorLabel;
 
   const filtered = state.evaluations.filter((item) => {
     const matchedKeyword = !keyword || [
@@ -1433,9 +1414,8 @@ function renderEvaluationHistory() {
       item.evaluator
     ].some((entry) => String(entry || "").toLowerCase().includes(keyword));
 
-    const matchedPart = partFilter === "ทุก Part" || item.partCode === partFilter;
-    const matchedEvaluator =
-      evaluatorFilter === "ผู้ประเมินทั้งหมด" || item.evaluator === evaluatorFilter;
+    const matchedPart = partFilter === defaultPartLabel || item.partCode === partFilter;
+    const matchedEvaluator = evaluatorFilter === defaultEvaluatorLabel || item.evaluator === evaluatorFilter;
 
     return matchedKeyword && matchedPart && matchedEvaluator;
   });
@@ -1457,7 +1437,7 @@ function renderEvaluationHistory() {
   els.evaluationHistoryEmpty.classList.toggle("hidden", hasRows);
   els.evaluationHistoryTableWrap.classList.toggle("hidden", !hasRows);
   if (!hasRows) {
-    setText(els.evaluationHistoryEmpty, "ยังไม่มีข้อมูลการประเมิน");
+    setText(els.evaluationHistoryEmpty, "ยังไม่มีประวัติการประเมิน");
   }
 }
 
@@ -1497,10 +1477,10 @@ async function saveEvaluation() {
         rows
       })
     });
-    showMessage(els.evaluationMessage, "บันทึกผลการประเมินเรียบร้อยแล้ว");
+    showMessage(els.evaluationMessage, "บันทึกผลประเมินเรียบร้อยแล้ว");
     await loadEvaluations();
   } catch (error) {
-    showMessage(els.evaluationMessage, `บันทึกผลการประเมินไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.evaluationMessage, `บันทึกผลประเมินไม่สำเร็จ: ${error.message}`, true);
   }
 }
 
@@ -1551,19 +1531,19 @@ function renderAdminEditor() {
     <div class="panel-head">
       <div>
         <p class="card-label">Exam Builder</p>
-        <h3>สร้างข้อสอบได้เร็วขึ้นจากหน้าเดียว</h3>
+        <h3>จัดการโครงสร้างคลังข้อสอบและแบบประเมิน</h3>
       </div>
     </div>
     <div class="admin-builder-layout">
       <div class="admin-card admin-builder-sidebar">
         <label class="field">
-          <span>ชื่อระบบข้อสอบ</span>
+          <span>ชื่อคลังข้อสอบ</span>
           <input id="adminDraftTitleInput" type="text" value="${state.adminEditor.draft.title || ""}" />
         </label>
         <div class="admin-flow-card">
           <div class="admin-flow-head">
             <span class="card-label">Step 1</span>
-            <strong>เพิ่ม Model</strong>
+            <strong>เพิ่ม Model ใหม่</strong>
           </div>
           <div class="admin-quick-grid admin-single-field" style="margin-top: 14px;">
             <label class="field">
@@ -1579,10 +1559,10 @@ function renderAdminEditor() {
         <div class="admin-flow-card">
           <div class="admin-flow-head">
             <span class="card-label">Step 2</span>
-            <strong>เพิ่ม Part ใต้ Model ที่เลือก</strong>
+            <strong>เพิ่ม Part ใน Model ที่เลือก</strong>
           </div>
           <div class="admin-info-list" style="margin-top: 10px;">
-            <div class="mini-note">Model ที่เลือกตอนนี้: <strong>${selectedGroup?.modelName || "-"}</strong></div>
+            <div class="mini-note">Model ที่เลือก: <strong>${selectedGroup?.modelName || "-"}</strong></div>
           </div>
           <div class="admin-quick-grid" style="margin-top: 14px;">
             <label class="field">
@@ -1591,7 +1571,7 @@ function renderAdminEditor() {
             </label>
             <label class="field">
               <span>ชื่อ Part</span>
-              <input id="adminNewPartTitleInput" type="text" value="${state.adminEditor.newPartTitle || ""}" placeholder="เช่น การตรวจสอบขั้นต้น" />
+              <input id="adminNewPartTitleInput" type="text" value="${state.adminEditor.newPartTitle || ""}" placeholder="เช่น ความปลอดภัยพื้นฐาน หรือ ประกอบชิ้นงานเบื้องต้น" />
             </label>
           </div>
           <div class="result-actions" style="margin-top: 14px;">
@@ -1610,7 +1590,7 @@ function renderAdminEditor() {
             </select>
           </label>
           <label class="field">
-            <span>เลือก Part ใต้ Model นี้</span>
+            <span>เลือก Part ใน Model ที่เลือก</span>
             <select id="adminPartSelect">
               ${(groups.find((group) => group.modelCode === state.adminEditor.selectedModelCode)?.exams || []).map((exam) => `<option value="${exam.id}" ${exam.id === state.adminEditor.selectedExamId ? "selected" : ""}>${exam.partCode} - ${exam.title}</option>`).join("")}
             </select>
@@ -1619,7 +1599,7 @@ function renderAdminEditor() {
         <div class="admin-info-list">
           <div class="mini-note">Model ปัจจุบัน: <strong>${selectedExam?.modelName || "-"}</strong></div>
           <div class="mini-note">Part ปัจจุบัน: <strong>${selectedExam?.partCode || "-"}</strong></div>
-          <div class="mini-note">จำนวนข้อ: <strong>${questionCount}</strong></div>
+          <div class="mini-note">จำนวนข้อสอบ: <strong>${questionCount}</strong></div>
         </div>
       </div>
       <div class="admin-builder-main">
@@ -1639,25 +1619,25 @@ function renderAdminEditor() {
                 <input id="adminExamPartCodeInput" type="text" value="${selectedExam.partCode || ""}" />
               </label>
               <label class="field">
-                <span>เวลา (นาที)</span>
+                <span>เวลาสอบ (นาที)</span>
                 <input id="adminExamDurationInput" type="number" min="1" value="${selectedExam.durationMinutes || 10}" />
               </label>
               <label class="field">
-                <span>คะแนนผ่าน</span>
+                <span>คะแนนผ่านเกณฑ์</span>
                 <input id="adminExamPassScoreInput" type="number" min="0" value="${selectedExam.passScore || 0}" />
               </label>
             </div>
             <label class="field" style="margin-top: 14px;">
-              <span>คำอธิบาย</span>
+              <span>คำอธิบายเพิ่มเติม</span>
               <input id="adminExamDescriptionInput" type="text" value="${selectedExam.description || ""}" />
             </label>
             <div class="admin-toolbar">
-              <button id="adminAddQuestionBtn" class="primary-btn" type="button">เพิ่มข้อสอบเปล่า</button>
-              <button id="adminAddTemplateBtn" class="secondary-btn" type="button">เพิ่มข้อสอบตัวอย่าง</button>
+              <button id="adminAddQuestionBtn" class="primary-btn" type="button">เพิ่มคำถามใหม่</button>
+              <button id="adminAddTemplateBtn" class="secondary-btn" type="button">เพิ่มคำถามตัวอย่าง</button>
               <button id="adminDeletePartBtn" class="secondary-btn" type="button">ลบ Part นี้</button>
             </div>
           ` : `
-            <p class="inline-message">เริ่มจากกรอก Model และ Part ด้านซ้าย แล้วกดเพิ่ม Model / Part</p>
+            <p class="inline-message">เพิ่ม Model และ Part ก่อน จากนั้นจึงเลือกชุดข้อสอบที่ต้องการแก้ไข</p>
           `}
         </div>
         ${selectedExam ? `
@@ -1668,12 +1648,12 @@ function renderAdminEditor() {
       </div>
     </div>
     <div class="admin-card" style="margin-top: 18px;">
-        <strong>ภาพรวมชุดที่เลือก</strong>
+        <strong>สรุปสถานะคลังข้อสอบปัจจุบัน</strong>
         <div class="admin-summary-grid">
           <div class="mini-note">Model: <strong>${selectedExam?.modelName || "-"}</strong></div>
           <div class="mini-note">Part: <strong>${selectedExam?.partCode || "-"}</strong></div>
-          <div class="mini-note">จำนวนข้อ: <strong>${questionCount}</strong></div>
-          <div class="mini-note">คลังข้อสอบทั้งหมด: <strong>${state.adminEditor.draft.examSets.length} ชุด</strong></div>
+          <div class="mini-note">จำนวนข้อสอบ: <strong>${questionCount}</strong></div>
+          <div class="mini-note">จำนวนชุดในคลัง: <strong>${state.adminEditor.draft.examSets.length} ชุด</strong></div>
         </div>
       </div>
     </div>
@@ -1693,7 +1673,7 @@ function addAdminModel() {
   const modelName = String(state.adminEditor.newModelName || "").trim();
 
   if (!modelName) {
-    showMessage(els.adminMessage, "กรุณากรอกชื่อ Model ก่อน", true);
+    showMessage(els.adminMessage, "กรุณากรอกชื่อ Model ที่ต้องการเพิ่ม", true);
     return;
   }
 
@@ -1701,7 +1681,7 @@ function addAdminModel() {
   const duplicateModel = state.adminEditor.draft.examSets.some((exam) => exam.modelCode === modelCode);
   const duplicateDraftModel = (state.adminEditor.draft.models || []).some((model) => model.modelCode === modelCode);
   if (duplicateModel || duplicateDraftModel) {
-    showMessage(els.adminMessage, "มี Model นี้อยู่แล้ว", true);
+    showMessage(els.adminMessage, "Model นี้มีอยู่แล้วในคลังข้อสอบ", true);
     return;
   }
 
@@ -1711,7 +1691,7 @@ function addAdminModel() {
   state.adminEditor.newModelName = modelName;
   state.adminEditor.newPartCode = "";
   state.adminEditor.newPartTitle = "";
-  showMessage(els.adminMessage, `สร้าง Model ${modelName} แล้ว ตอนนี้เพิ่ม Part ใต้ Model นี้ได้เลย`);
+  showMessage(els.adminMessage, `เพิ่ม Model ${modelName} แล้ว สามารถเพิ่ม Part ต่อได้ทันที`);
   renderAdminEditor();
 }
 
@@ -1725,12 +1705,12 @@ function addAdminPartToSelectedModel() {
   const partTitle = String(state.adminEditor.newPartTitle || "").trim();
 
   if (!modelCode) {
-    showMessage(els.adminMessage, "กรุณาเพิ่มหรือเลือก Model ก่อน", true);
+    showMessage(els.adminMessage, "กรุณาเลือก Model ก่อนเพิ่ม Part", true);
     return;
   }
 
   if (!partCode || !partTitle) {
-    showMessage(els.adminMessage, "กรุณากรอก Part ให้ครบก่อนเพิ่ม", true);
+    showMessage(els.adminMessage, "กรุณากรอกรหัส Part และชื่อ Part ให้ครบ", true);
     return;
   }
 
@@ -1738,7 +1718,7 @@ function addAdminPartToSelectedModel() {
     (exam) => exam.modelCode === modelCode && exam.partCode === partCode
   );
   if (duplicatePart) {
-    showMessage(els.adminMessage, "มี Part นี้อยู่แล้วใน Model ที่เลือก", true);
+    showMessage(els.adminMessage, "Part นี้มีอยู่แล้วใน Model ที่เลือก", true);
     return;
   }
 
@@ -1753,7 +1733,7 @@ function addAdminPartToSelectedModel() {
   state.adminEditor.selectedExamId = exam.id;
   state.adminEditor.newPartCode = "";
   state.adminEditor.newPartTitle = "";
-  showMessage(els.adminMessage, `เพิ่ม Part ${partCode} ใต้ Model ${modelName} เรียบร้อยแล้ว`);
+  showMessage(els.adminMessage, `เพิ่ม Part ${partCode} ใน Model ${modelName} เรียบร้อยแล้ว`);
   renderAdminEditor();
 }
 
@@ -1791,25 +1771,25 @@ function buildAdminQuestionCard(question, index) {
     <article class="admin-question-card" data-question-card="${question.id}">
       <div class="admin-question-head">
         <div>
-          <span class="card-label">ข้อ ${index + 1}</span>
+          <span class="card-label">ข้อที่ ${index + 1}</span>
           <strong>Question ${index + 1}</strong>
         </div>
         <div class="admin-question-actions">
-          <button class="secondary-btn" data-admin-action="duplicate-question" data-question-id="${question.id}" type="button">คัดลอกข้อ</button>
-          <button class="secondary-btn" data-admin-action="delete-question" data-question-id="${question.id}" type="button">ลบข้อ</button>
+          <button class="secondary-btn" data-admin-action="duplicate-question" data-question-id="${question.id}" type="button">คัดลอกข้อนี้</button>
+          <button class="secondary-btn" data-admin-action="delete-question" data-question-id="${question.id}" type="button">ลบข้อนี้</button>
         </div>
       </div>
       <div class="evaluation-grid admin-question-grid">
         <label class="field admin-question-main">
           <span>คำถาม</span>
-          <textarea data-admin-field="question-text" data-question-id="${question.id}" rows="3" placeholder="พิมพ์คำถามที่นี่">${question.text || ""}</textarea>
+          <textarea data-admin-field="question-text" data-question-id="${question.id}" rows="3" placeholder="พิมพ์ข้อความคำถามที่ต้องการแสดง">${question.text || ""}</textarea>
         </label>
         <label class="field">
-          <span>คะแนน</span>
+          <span>คะแนนข้อนี้</span>
           <input data-admin-field="question-score" data-question-id="${question.id}" type="number" min="1" value="${question.score || 1}" />
         </label>
         <label class="field">
-          <span>เฉลย</span>
+          <span>คำตอบที่ถูก</span>
           <select data-admin-field="question-answer" data-question-id="${question.id}">
             ${["A", "B", "C", "D"].map((label, answerIndex) => `<option value="${answerIndex}" ${Number(question.answer) === answerIndex ? "selected" : ""}>${label}</option>`).join("")}
           </select>
@@ -1817,7 +1797,7 @@ function buildAdminQuestionCard(question, index) {
       </div>
       <div class="admin-question-media">
         <label class="field">
-          <span>ลิงก์รูปประกอบ</span>
+          <span>รูปประกอบคำถาม</span>
           <input data-admin-field="question-image" data-question-id="${question.id}" type="url" value="${question.imageUrl || ""}" placeholder="https://example.com/question-image.jpg" />
         </label>
         ${question.imageUrl ? `<img class="admin-question-preview" src="${question.imageUrl}" alt="Question preview" />` : ""}
@@ -2054,7 +2034,7 @@ async function saveAdminBuilder() {
     !exam.modelCode || !exam.modelName || !exam.partCode || !exam.title || !exam.questions.length
   );
   if (invalidExam) {
-    showMessage(els.adminMessage, "กรุณากรอกข้อมูล Model, Part และคำถามให้ครบก่อนบันทึก", true);
+    showMessage(els.adminMessage, "กรุณากรอกข้อมูล Model, Part และเพิ่มคำถามอย่างน้อย 1 ข้อให้ครบก่อนบันทึก", true);
     return;
   }
 
@@ -2062,7 +2042,7 @@ async function saveAdminBuilder() {
     !question.text || (question.choices || []).some((choice) => !String(choice || "").trim())
   );
   if (invalidQuestion) {
-    showMessage(els.adminMessage, "ทุกข้อสอบต้องมีคำถามและตัวเลือกให้ครบ 4 ตัวเลือก", true);
+    showMessage(els.adminMessage, "กรุณากรอกคำถาม ตัวเลือก และคำตอบให้ครบทุกข้ออย่างน้อย 4 ตัวเลือก", true);
     return;
   }
 
@@ -2071,7 +2051,7 @@ async function saveAdminBuilder() {
       method: "POST",
       body: JSON.stringify({ payload: draft })
     });
-    showMessage(els.adminMessage, `บันทึกคลังข้อสอบเรียบร้อยแล้ว ${response.examSetCount} ชุด`);
+    showMessage(els.adminMessage, `บันทึกคลังข้อสอบเรียบร้อยแล้ว จำนวน ${response.examSetCount} ชุด`);
     await loadExams();
     renderAdminEditor();
   } catch (error) {
@@ -2082,7 +2062,7 @@ async function saveAdminBuilder() {
 function renderAdminInfo() {
   els.adminDataInfo.innerHTML = `
     <div class="mini-note">แหล่งข้อมูล: <strong>${state.bank.source === "custom" ? "ใช้คลังข้อสอบแบบอัปโหลด" : "ใช้คลังข้อสอบหลักของระบบ"}</strong></div>
-    <div class="mini-note">ชื่อระบบ: <strong>${state.bank.title || "-"}</strong></div>
+    <div class="mini-note">ชื่อคลังข้อสอบ: <strong>${state.bank.title || "-"}</strong></div>
     <div class="mini-note">จำนวนชุดข้อสอบ: <strong>${state.bank.examSets.length}</strong></div>
   `;
   renderAdminEditor();
@@ -2091,7 +2071,7 @@ function renderAdminInfo() {
 async function importExamBank() {
   const file = els.adminFileInput.files?.[0];
   if (!file) {
-    showMessage(els.adminMessage, "กรุณาเลือกไฟล์ JSON ก่อน", true);
+    showMessage(els.adminMessage, "กรุณาเลือกไฟล์ JSON ที่ต้องการนำเข้า", true);
     return;
   }
 
@@ -2102,10 +2082,10 @@ async function importExamBank() {
       method: "POST",
       body: JSON.stringify({ payload })
     });
-    showMessage(els.adminMessage, `นำเข้าข้อสอบสำเร็จ ${response.examSetCount} ชุด`);
+    showMessage(els.adminMessage, `นำเข้าคลังข้อสอบเรียบร้อยแล้ว จำนวน ${response.examSetCount} ชุด`);
     await loadExams();
   } catch (error) {
-    showMessage(els.adminMessage, `นำเข้าไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.adminMessage, `นำเข้าคลังข้อสอบไม่สำเร็จ: ${error.message}`, true);
   }
 }
 
@@ -2115,10 +2095,10 @@ async function resetExamBank() {
       method: "POST",
       body: JSON.stringify({})
     });
-    showMessage(els.adminMessage, "กลับไปใช้คลังข้อสอบเดิมแล้ว");
+    showMessage(els.adminMessage, "รีเซ็ตกลับไปใช้คลังข้อสอบหลักของระบบแล้ว");
     await loadExams();
   } catch (error) {
-    showMessage(els.adminMessage, `รีเซ็ตไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.adminMessage, `รีเซ็ตคลังข้อสอบไม่สำเร็จ: ${error.message}`, true);
   }
 }
 
@@ -2236,6 +2216,7 @@ function bindEvents() {
 
 function applyStaticThaiText() {
   document.title = "Factory Online Exam";
+
   const replaceText = (selector, text, all = false) => {
     const nodes = all ? document.querySelectorAll(selector) : [document.querySelector(selector)];
     nodes.forEach((node) => {
@@ -2243,98 +2224,92 @@ function applyStaticThaiText() {
     });
   };
 
-  replaceText(".login-brand p", "ระบบสอบออนไลน์พร้อมประวัติผลสอบและแผงจัดการข้อสอบ");
-  replaceText(".info-card:nth-of-type(1) strong", "ผู้เข้าสอบ");
-  replaceText(".info-card:nth-of-type(1) p", "ล็อกอินเป็นพนักงานหรือผู้ดูแลระบบ");
-  replaceText(".info-card:nth-of-type(2) strong", "ประวัติผลสอบ");
-  replaceText(".info-card:nth-of-type(2) p", "บันทึกคะแนนและตรวจสอบผลย้อนหลังได้ทันที");
-  replaceText(".info-card:nth-of-type(3) strong", "อัปโหลดข้อสอบ");
-  replaceText(".info-card:nth-of-type(3) p", "อัปโหลดไฟล์ JSON ใหม่ผ่านหน้าเว็บได้ทันที");
-  replaceText(".side-block .side-label", "เมนูหลัก");
-  replaceText(".side-card:first-of-type .side-label", "ผู้ใช้งานปัจจุบัน");
-  replaceText(".side-card.highlight .side-label", "แหล่งข้อสอบ");
+  replaceText(".login-brand p", "ระบบสอบออนไลน์สำหรับพนักงาน");
+  replaceText(".info-card:nth-of-type(1) strong", "เข้าสู่ระบบด้วยรหัสพนักงาน");
+  replaceText(".info-card:nth-of-type(1) p", "ใช้รหัสพนักงานเพื่อเข้าสอบ ดูผลสอบ และติดตามการประเมินในระบบเดียว");
+  replaceText(".info-card:nth-of-type(2) strong", "ประเมินหน้างานได้ทันที");
+  replaceText(".info-card:nth-of-type(2) p", "หัวหน้างานสามารถบันทึกผลการประเมินและติดตามทักษะของทีมได้จากหน้าเดียว");
+  replaceText(".info-card:nth-of-type(3) strong", "อัปเดตคลังข้อสอบได้ยืดหยุ่น");
+  replaceText(".info-card:nth-of-type(3) p", "รองรับการนำเข้าไฟล์ JSON เพื่ออัปเดตคลังข้อสอบและข้อมูลการประเมิน");
+  replaceText(".side-block .side-label", "ภาพรวมการสอบ");
+  replaceText(".side-card:first-of-type .side-label", "สถานะการทำข้อสอบ");
+  replaceText(".side-card.highlight .side-label", "คะแนนล่าสุด");
   replaceText(".eyebrow", "Online Examination Dashboard");
   replaceText("#historyView .card-label", "History");
   replaceText("#historyView h3", "ประวัติผลสอบ");
   replaceText("#profileView .card-label", "Profile");
-  replaceText("#profileView h3", "ข้อมูลบัญชีผู้ใช้");
+  replaceText("#profileView h3", "ข้อมูลพนักงาน");
   replaceText("#evaluationView .card-label", "Evaluation", true);
-  replaceText("#evaluationView h3", "แบบฟอร์มประเมินหน้างาน");
+  replaceText("#evaluationView h3", "ประเมินผลหน้างาน");
   replaceText("#adminView .card-label", "Admin");
-  replaceText("#adminView h3", "อัปโหลดคลังข้อสอบ JSON");
+  replaceText("#adminView h3", "จัดการคลังข้อสอบ JSON");
 
-  const loginFieldLabel = document.querySelector(".login-form .field span");
+  const loginFieldLabel = document.querySelector("label[for='employeeCodeInput']");
   if (loginFieldLabel) {
     loginFieldLabel.textContent = "รหัสพนักงาน";
   }
 
-  const hintNodes = document.querySelectorAll(".login-hint span");
+  const hintNodes = document.querySelectorAll(".login-hint");
   if (hintNodes[0]) {
-    hintNodes[0].textContent = "ใช้รหัสพนักงานอย่างเดียวในการเข้าใช้งาน";
+    hintNodes[0].textContent = "ใช้รหัสพนักงานของคุณเพื่อเข้าสู่ระบบและเข้าถึงข้อสอบที่เกี่ยวข้อง";
   }
   if (hintNodes[1]) {
-    hintNodes[1].textContent = "สำหรับผู้มีสิทธิ์ในระบบเท่านั้น";
+    hintNodes[1].textContent = "ผู้ดูแลระบบสามารถจัดการคลังข้อสอบและประเมินผลได้จากเมนูด้านซ้าย";
   }
 
-  const navMap = {
-    exam: "หน้าสอบ",
-    history: "ผลคะแนน",
-    profile: "บัญชีผู้ใช้",
+  const navLabels = {
+    exam: "ทำข้อสอบ",
+    history: "ประวัติผลสอบ",
+    profile: "ข้อมูลพนักงาน",
     skillMatrix: "Skill Matrix",
-    evaluation: "Evaluation",
-    admin: "Admin Upload"
+    evaluation: "ประเมินผล",
+    admin: "จัดการข้อสอบ"
   };
-  navItems.forEach((button) => {
-    if (navMap[button.dataset.view]) {
-      button.textContent = navMap[button.dataset.view];
+  document.querySelectorAll(".nav-item").forEach((node) => {
+    const label = node?.querySelector("span");
+    const key = node?.dataset?.view;
+    if (label && navLabels[key]) {
+      label.textContent = navLabels[key];
     }
   });
 
-  const profileLabels = document.querySelectorAll("#profileView .stat-box span");
-  [
-    "ชื่อพนักงาน",
-    "รหัสพนักงาน",
-    "สิทธิ์การใช้งาน",
-    "แผนก",
-    "ตำแหน่ง",
-    "จำนวนครั้งที่สอบ",
-    "คะแนนล่าสุด"
-  ].forEach((text, index) => {
+  const profileLabels = document.querySelectorAll("#profileView .profile-meta .label");
+  ["ชื่อพนักงาน", "รหัสพนักงาน", "บทบาท", "แผนก", "ตำแหน่ง", "ผลสอบล่าสุด"].forEach((text, index) => {
     if (profileLabels[index]) profileLabels[index].textContent = text;
   });
 
   const summaryLabels = document.querySelectorAll(".summary-panel .stat-box span");
-  ["ข้อปัจจุบัน", "ยังไม่ตอบ", "ตอบแล้ว", "สถานะ"].forEach((text, index) => {
+  ["ข้อสอบทั้งหมด", "ทำไปแล้ว", "ความคืบหน้า", "ผ่านเกณฑ์"].forEach((text, index) => {
     if (summaryLabels[index]) summaryLabels[index].textContent = text;
   });
 
   const heroLabels = document.querySelectorAll(".exam-hero-shell .card-label");
-  ["พร้อมสอบ", "ตอบแล้ว", "ความคืบหน้า", "สถานะการทำข้อสอบ"].forEach((text, index) => {
+  ["Exam Session", "Question Set", "Navigation", "Result Summary"].forEach((text, index) => {
     if (heroLabels[index]) heroLabels[index].textContent = text;
   });
 
   const legendNodes = document.querySelectorAll(".legend-list div");
-  ["ข้อปัจจุบัน", "ตอบแล้ว", "ยังไม่ตอบ"].forEach((text, index) => {
+  ["พร้อมสอบ", "กำลังทำ", "ส่งแล้ว"].forEach((text, index) => {
     if (legendNodes[index]) {
-      legendNodes[index].lastChild.textContent = ` ${text}`;
+      legendNodes[index].lastChild.textContent = " " + text;
     }
   });
 
   const resultBoxLabels = document.querySelectorAll(".result-box span");
-  ["คะแนนรวม", "คิดเป็นร้อยละ", "คำตอบถูก", "คำตอบผิด"].forEach((text, index) => {
+  ["คะแนน", "เปอร์เซ็นต์", "ตอบถูก", "ตอบผิด"].forEach((text, index) => {
     if (resultBoxLabels[index]) resultBoxLabels[index].textContent = text;
   });
 
   const buttons = [
     [els.submitExamBtn, "ส่งข้อสอบ"],
-    [els.prevBtn, "ย้อนกลับ"],
-    [els.nextBtn, "ถัดไป"],
+    [els.prevBtn, "ข้อก่อนหน้า"],
+    [els.nextBtn, "ข้อต่อไป"],
     [els.restartExamBtn, "เริ่มทำใหม่"],
     [els.logoutBtn, "ออกจากระบบ"],
-    [els.saveEvaluationBtn, "บันทึกการประเมิน"],
-    [els.resetEvaluationBtn, "ล้างแบบฟอร์ม"],
+    [els.saveEvaluationBtn, "บันทึกผลประเมิน"],
+    [els.resetEvaluationBtn, "ล้างฟอร์ม"],
     [els.importJsonBtn, "นำเข้าข้อสอบ"],
-    [els.resetJsonBtn, "กลับไปใช้ไฟล์เดิม"]
+    [els.resetJsonBtn, "รีเซ็ตข้อมูลหลัก"]
   ];
   buttons.forEach(([node, text]) => {
     if (node) node.textContent = text;
