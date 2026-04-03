@@ -37,14 +37,9 @@ const els = {
   answeredCount: $("answeredCount"),
   progressPercent: $("progressPercent"),
   progressBar: $("progressBar"),
-  currentQuestionText: $("currentQuestionText"),
-  unansweredCount: $("unansweredCount"),
-  summaryAnsweredCount: $("summaryAnsweredCount"),
   summaryStatus: $("summaryStatus"),
-  examStatus: $("examStatus"),
   loadStatus: $("loadStatus"),
   submitExamBtn: $("submitExamBtn"),
-  submitExamBtnSecondary: $("submitExamBtnSecondary"),
   questionTitle: $("questionTitle"),
   questionBadge: $("questionBadge"),
   questionText: $("questionText"),
@@ -557,9 +552,6 @@ function updateExamStatus() {
   const unansweredCount = Math.max(questionCount - answeredCount, 0);
   const progress = questionCount ? Math.round((answeredCount / questionCount) * 100) : 0;
 
-  setText(els.currentQuestionText, questionCount ? `ข้อ ${state.currentQuestionIndex + 1}` : "ข้อ 0");
-  setText(els.unansweredCount, `${unansweredCount} ข้อ`);
-  setText(els.summaryAnsweredCount, `${answeredCount} ข้อ`);
   setText(els.progressPercent, `${progress}%`);
   els.progressBar.style.width = `${progress}%`;
   setText(els.answeredCount, `${answeredCount} / ${questionCount}`);
@@ -572,7 +564,6 @@ function updateExamStatus() {
   }
 
   setText(els.summaryStatus, statusText);
-  setText(els.examStatus, statusText);
   submitExamButtons.forEach((button) => {
     button.disabled = !exam || state.submitted;
   });
@@ -1914,7 +1905,6 @@ function applyStaticThaiText() {
 
   const buttons = [
     [els.submitExamBtn, "ส่งข้อสอบ"],
-    [els.submitExamBtnSecondary, "ส่งข้อสอบ"],
     [els.prevBtn, "ย้อนกลับ"],
     [els.nextBtn, "ถัดไป"],
     [els.restartExamBtn, "เริ่มทำใหม่"],
