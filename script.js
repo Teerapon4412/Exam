@@ -1075,16 +1075,20 @@ function renderSkillMatrix() {
 
   const matrix = buildSkillMatrixRows();
   const searchValue = String(els.skillMatrixSearchInput?.value || "").trim().toLowerCase();
-  const selectedModel = String(els.skillMatrixModelFilter?.value || "");
-  const selectedPart = String(els.skillMatrixPartFilter?.value || "");
-  const selectedBand = String(els.skillMatrixBandFilter?.value || "");
   const modelOptions = [...new Set(matrix.columns.map((column) => column.modelName).filter(Boolean))];
+  const rawSelectedModel = String(els.skillMatrixModelFilter?.value || "");
+  const selectedModel = modelOptions.includes(rawSelectedModel) ? rawSelectedModel : "";
   const partOptions = [...new Set(
     matrix.columns
       .filter((column) => !selectedModel || column.modelName === selectedModel)
       .map((column) => column.partName)
       .filter(Boolean)
   )];
+  const rawSelectedPart = String(els.skillMatrixPartFilter?.value || "");
+  const selectedPart = partOptions.includes(rawSelectedPart) ? rawSelectedPart : "";
+  const bandOptions = SKILL_MATRIX_CONFIG.skillBands.map((band) => String(band.skillPct));
+  const rawSelectedBand = String(els.skillMatrixBandFilter?.value || "");
+  const selectedBand = bandOptions.includes(rawSelectedBand) ? rawSelectedBand : "";
 
   if (els.skillMatrixModelFilter) {
     els.skillMatrixModelFilter.innerHTML = `<option value="">ทุก Model</option>${modelOptions
@@ -1103,6 +1107,9 @@ function renderSkillMatrix() {
       `<option value="">ทุกระดับทักษะ</option>`,
       ...SKILL_MATRIX_CONFIG.skillBands.map((band) => `<option value="${band.skillPct}">${band.label}</option>`)
     ].join("");
+  }
+  if (els.skillMatrixBandFilter) {
+    els.skillMatrixBandFilter.value = selectedBand;
   }
 
   const visibleColumns = matrix.columns
