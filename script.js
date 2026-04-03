@@ -167,7 +167,11 @@ const state = {
   adminEditor: {
     draft: null,
     selectedModelCode: "",
-    selectedExamId: ""
+    selectedExamId: "",
+    newModelCode: "",
+    newModelName: "",
+    newPartCode: "",
+    newPartTitle: ""
   }
 };
 
@@ -1042,134 +1046,130 @@ function renderAdminEditor() {
   const groups = Array.from(getAdminDraftGroups().values());
   const selectedExam = getAdminSelectedExam();
   const questionCount = selectedExam?.questions?.length || 0;
+  const selectedGroup = groups.find((group) => group.modelCode === state.adminEditor.selectedModelCode) || groups[0];
+
+  if (!state.adminEditor.newModelCode && selectedGroup) {
+    state.adminEditor.newModelCode = selectedGroup.modelCode;
+  }
+  if (!state.adminEditor.newModelName && selectedGroup) {
+    state.adminEditor.newModelName = selectedGroup.modelName;
+  }
 
   root.innerHTML = `
     <div class="panel-head">
       <div>
         <p class="card-label">Exam Builder</p>
-        <h3>เพิ่ม Model, Part และข้อสอบ</h3>
+        <h3>สร้างข้อสอบได้เร็วขึ้นจากหน้าเดียว</h3>
       </div>
     </div>
-    <div class="admin-grid">
-      <div class="admin-card">
+    <div class="admin-builder-layout">
+      <div class="admin-card admin-builder-sidebar">
         <label class="field">
           <span>ชื่อระบบข้อสอบ</span>
           <input id="adminDraftTitleInput" type="text" value="${state.adminEditor.draft.title || ""}" />
         </label>
-        <div class="evaluation-grid" style="margin-top: 14px;">
+        <div class="admin-quick-grid" style="margin-top: 14px;">
           <label class="field">
-            <span>เลือก Model</span>
+            <span>Model ที่จะเพิ่ม/แก้</span>
+            <input id="adminNewModelCodeInput" type="text" value="${state.adminEditor.newModelCode || ""}" placeholder="เช่น MODEL-A" />
+          </label>
+          <label class="field">
+            <span>ชื่อ Model</span>
+            <input id="adminNewModelNameInput" type="text" value="${state.adminEditor.newModelName || ""}" placeholder="ชื่อรุ่นสินค้า" />
+          </label>
+          <label class="field">
+            <span>Part ใหม่</span>
+            <input id="adminNewPartCodeInput" type="text" value="${state.adminEditor.newPartCode || ""}" placeholder="เช่น PART-01" />
+          </label>
+          <label class="field">
+            <span>ชื่อ Part</span>
+            <input id="adminNewPartTitleInput" type="text" value="${state.adminEditor.newPartTitle || ""}" placeholder="เช่น การตรวจสอบขั้นต้น" />
+          </label>
+        </div>
+        <div class="result-actions" style="margin-top: 14px;">
+          <button id="adminQuickCreateBtn" class="primary-btn" type="button">เพิ่ม Model / Part</button>
+          <button id="adminSaveBuilderBtn" class="secondary-btn" type="button">บันทึกคลังข้อสอบ</button>
+        </div>
+        <div class="admin-divider"></div>
+        <div class="evaluation-grid">
+          <label class="field">
+            <span>เลือก Model ที่มีอยู่</span>
             <select id="adminModelSelect">
               ${groups.map((group) => `<option value="${group.modelCode}" ${group.modelCode === state.adminEditor.selectedModelCode ? "selected" : ""}>${group.modelName} (${group.exams.length} Part)</option>`).join("")}
             </select>
           </label>
           <label class="field">
-            <span>เลือก Part</span>
+            <span>เลือก Part ที่จะแก้</span>
             <select id="adminPartSelect">
               ${(groups.find((group) => group.modelCode === state.adminEditor.selectedModelCode)?.exams || []).map((exam) => `<option value="${exam.id}" ${exam.id === state.adminEditor.selectedExamId ? "selected" : ""}>${exam.partCode} - ${exam.title}</option>`).join("")}
             </select>
           </label>
         </div>
-        <div class="result-actions" style="margin-top: 14px;">
-          <button id="adminAddModelBtn" class="secondary-btn" type="button">เพิ่ม Model</button>
-          <button id="adminAddPartBtn" class="secondary-btn" type="button">เพิ่ม Part</button>
-          <button id="adminSaveBuilderBtn" class="primary-btn" type="button">บันทึกคลังข้อสอบ</button>
-        </div>
-      </div>
-      <div class="admin-card">
-        <strong>ภาพรวมชุดที่เลือก</strong>
         <div class="admin-info-list">
-          <div class="mini-note">Model: <strong>${selectedExam?.modelName || "-"}</strong></div>
-          <div class="mini-note">Part: <strong>${selectedExam?.partCode || "-"}</strong></div>
+          <div class="mini-note">Model ปัจจุบัน: <strong>${selectedExam?.modelName || "-"}</strong></div>
+          <div class="mini-note">Part ปัจจุบัน: <strong>${selectedExam?.partCode || "-"}</strong></div>
           <div class="mini-note">จำนวนข้อ: <strong>${questionCount}</strong></div>
         </div>
       </div>
+      <div class="admin-builder-main">
+        <div class="admin-card">
+          ${selectedExam ? `
+            <div class="evaluation-grid admin-part-grid">
+              <label class="field">
+                <span>ชื่อ Model</span>
+                <input id="adminExamModelNameInput" type="text" value="${selectedExam.modelName || ""}" />
+              </label>
+              <label class="field">
+                <span>รหัส Model</span>
+                <input id="adminExamModelCodeInput" type="text" value="${selectedExam.modelCode || ""}" />
+              </label>
+              <label class="field">
+                <span>ชื่อ Part</span>
+                <input id="adminExamTitleInput" type="text" value="${selectedExam.title || ""}" />
+              </label>
+              <label class="field">
+                <span>รหัส Part</span>
+                <input id="adminExamPartCodeInput" type="text" value="${selectedExam.partCode || ""}" />
+              </label>
+              <label class="field">
+                <span>เวลา (นาที)</span>
+                <input id="adminExamDurationInput" type="number" min="1" value="${selectedExam.durationMinutes || 10}" />
+              </label>
+              <label class="field">
+                <span>คะแนนผ่าน</span>
+                <input id="adminExamPassScoreInput" type="number" min="0" value="${selectedExam.passScore || 0}" />
+              </label>
+            </div>
+            <label class="field" style="margin-top: 14px;">
+              <span>คำอธิบาย</span>
+              <input id="adminExamDescriptionInput" type="text" value="${selectedExam.description || ""}" />
+            </label>
+            <div class="admin-toolbar">
+              <button id="adminAddQuestionBtn" class="primary-btn" type="button">เพิ่มข้อสอบเปล่า</button>
+              <button id="adminAddTemplateBtn" class="secondary-btn" type="button">เพิ่มข้อสอบตัวอย่าง</button>
+              <button id="adminDeletePartBtn" class="secondary-btn" type="button">ลบ Part นี้</button>
+            </div>
+          ` : `
+            <p class="inline-message">เริ่มจากกรอก Model และ Part ด้านซ้าย แล้วกดเพิ่ม Model / Part</p>
+          `}
+        </div>
+        ${selectedExam ? `
+          <div class="admin-question-stack">
+            ${selectedExam.questions.map((question, index) => buildAdminQuestionCard(question, index)).join("")}
+          </div>
+        ` : ""}
+      </div>
     </div>
-    ${selectedExam ? `
-      <div class="admin-card" style="margin-top: 18px;">
-        <div class="evaluation-grid">
-          <label class="field">
-            <span>ชื่อ Model</span>
-            <input id="adminExamModelNameInput" type="text" value="${selectedExam.modelName || ""}" />
-          </label>
-          <label class="field">
-            <span>รหัส Model</span>
-            <input id="adminExamModelCodeInput" type="text" value="${selectedExam.modelCode || ""}" />
-          </label>
-          <label class="field">
-            <span>ชื่อ Part</span>
-            <input id="adminExamTitleInput" type="text" value="${selectedExam.title || ""}" />
-          </label>
-          <label class="field">
-            <span>รหัส Part</span>
-            <input id="adminExamPartCodeInput" type="text" value="${selectedExam.partCode || ""}" />
-          </label>
-          <label class="field">
-            <span>เวลา (นาที)</span>
-            <input id="adminExamDurationInput" type="number" min="1" value="${selectedExam.durationMinutes || 10}" />
-          </label>
-          <label class="field">
-            <span>คะแนนผ่าน</span>
-            <input id="adminExamPassScoreInput" type="number" min="0" value="${selectedExam.passScore || 0}" />
-          </label>
-        </div>
-        <label class="field" style="margin-top: 14px;">
-          <span>คำอธิบาย</span>
-          <input id="adminExamDescriptionInput" type="text" value="${selectedExam.description || ""}" />
-        </label>
-        <div class="result-actions" style="margin-top: 14px;">
-          <button id="adminAddQuestionBtn" class="secondary-btn" type="button">เพิ่มข้อสอบ</button>
-          <button id="adminDeletePartBtn" class="secondary-btn" type="button">ลบ Part นี้</button>
+    <div class="admin-card" style="margin-top: 18px;">
+        <strong>ภาพรวมชุดที่เลือก</strong>
+        <div class="admin-summary-grid">
+          <div class="mini-note">Model: <strong>${selectedExam?.modelName || "-"}</strong></div>
+          <div class="mini-note">Part: <strong>${selectedExam?.partCode || "-"}</strong></div>
+          <div class="mini-note">จำนวนข้อ: <strong>${questionCount}</strong></div>
+          <div class="mini-note">คลังข้อสอบทั้งหมด: <strong>${state.adminEditor.draft.examSets.length} ชุด</strong></div>
         </div>
       </div>
-      <div class="dashboard-table-wrap" style="margin-top: 18px;">
-        <table class="dashboard-table">
-          <thead>
-            <tr>
-              <th>ข้อ</th>
-              <th>คำถาม</th>
-              <th>ตัวเลือก</th>
-              <th>เฉลย</th>
-              <th>คะแนน</th>
-              <th>จัดการ</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${selectedExam.questions.map((question, index) => `
-              <tr>
-                <td style="min-width: 60px;">
-                  <input data-admin-field="question-number" data-question-id="${question.id}" type="number" min="1" value="${question.number || index + 1}" />
-                </td>
-                <td style="min-width: 260px;">
-                  <textarea data-admin-field="question-text" data-question-id="${question.id}" rows="4">${question.text || ""}</textarea>
-                </td>
-                <td style="min-width: 280px;">
-                  ${["A", "B", "C", "D"].map((label, choiceIndex) => `
-                    <label class="field" style="margin-bottom: 8px;">
-                      <span>${label}</span>
-                      <input data-admin-field="question-choice" data-choice-index="${choiceIndex}" data-question-id="${question.id}" type="text" value="${question.choices?.[choiceIndex] || ""}" />
-                    </label>
-                  `).join("")}
-                </td>
-                <td style="min-width: 90px;">
-                  <select data-admin-field="question-answer" data-question-id="${question.id}">
-                    ${["A", "B", "C", "D"].map((label, answerIndex) => `<option value="${answerIndex}" ${Number(question.answer) === answerIndex ? "selected" : ""}>${label}</option>`).join("")}
-                  </select>
-                </td>
-                <td style="min-width: 90px;">
-                  <input data-admin-field="question-score" data-question-id="${question.id}" type="number" min="1" value="${question.score || 1}" />
-                </td>
-                <td style="min-width: 90px;">
-                  <button class="secondary-btn" data-admin-action="delete-question" data-question-id="${question.id}" type="button">ลบ</button>
-                </td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      </div>
-    ` : `
-      <p class="inline-message">ยังไม่มี Part ใน Model นี้ เริ่มต้นด้วยการเพิ่ม Part ก่อน</p>
-    `}
+    </div>
   `;
 
   bindAdminEditorEvents();
@@ -1182,17 +1182,127 @@ function updateAdminDraftExam(examId, updater) {
   });
 }
 
+function addAdminPartFromQuickForm() {
+  const modelCode = String(state.adminEditor.newModelCode || "").trim().toUpperCase();
+  const modelName = String(state.adminEditor.newModelName || "").trim();
+  const partCode = String(state.adminEditor.newPartCode || "").trim().toUpperCase();
+  const partTitle = String(state.adminEditor.newPartTitle || "").trim();
+
+  if (!modelCode || !modelName || !partCode || !partTitle) {
+    showMessage(els.adminMessage, "กรุณากรอก Model และ Part ให้ครบก่อนเพิ่ม", true);
+    return;
+  }
+
+  const duplicatePart = state.adminEditor.draft.examSets.some(
+    (exam) => exam.modelCode === modelCode && exam.partCode === partCode
+  );
+  if (duplicatePart) {
+    showMessage(els.adminMessage, "มี Part นี้อยู่แล้วใน Model ที่เลือก", true);
+    return;
+  }
+
+  const exam = createBlankExam(modelCode, modelName, partCode, partTitle);
+  state.adminEditor.draft.examSets.push(exam);
+  state.adminEditor.selectedModelCode = modelCode;
+  state.adminEditor.selectedExamId = exam.id;
+  state.adminEditor.newPartCode = "";
+  state.adminEditor.newPartTitle = "";
+  showMessage(els.adminMessage, "เพิ่ม Part ใหม่เรียบร้อยแล้ว");
+  renderAdminEditor();
+}
+
+function duplicateAdminQuestion(examId, questionId) {
+  updateAdminDraftExam(examId, (exam) => {
+    const questions = [...(exam.questions || [])];
+    const sourceIndex = questions.findIndex((question) => question.id === questionId);
+    if (sourceIndex < 0) return exam;
+
+    const source = questions[sourceIndex];
+    const clone = {
+      ...deepClone(source),
+      id: makeId("Q"),
+      number: sourceIndex + 2
+    };
+    questions.splice(sourceIndex + 1, 0, clone);
+    return {
+      ...exam,
+      questions: questions.map((question, index) => ({ ...question, number: index + 1 }))
+    };
+  });
+}
+
+function deleteAdminQuestion(examId, questionId) {
+  updateAdminDraftExam(examId, (exam) => ({
+    ...exam,
+    questions: (exam.questions || [])
+      .filter((question) => question.id !== questionId)
+      .map((question, index) => ({ ...question, number: index + 1 }))
+  }));
+}
+
+function buildAdminQuestionCard(question, index) {
+  return `
+    <article class="admin-question-card" data-question-card="${question.id}">
+      <div class="admin-question-head">
+        <div>
+          <span class="card-label">ข้อ ${index + 1}</span>
+          <strong>Question ${index + 1}</strong>
+        </div>
+        <div class="admin-question-actions">
+          <button class="secondary-btn" data-admin-action="duplicate-question" data-question-id="${question.id}" type="button">คัดลอกข้อ</button>
+          <button class="secondary-btn" data-admin-action="delete-question" data-question-id="${question.id}" type="button">ลบข้อ</button>
+        </div>
+      </div>
+      <div class="evaluation-grid admin-question-grid">
+        <label class="field admin-question-main">
+          <span>คำถาม</span>
+          <textarea data-admin-field="question-text" data-question-id="${question.id}" rows="3" placeholder="พิมพ์คำถามที่นี่">${question.text || ""}</textarea>
+        </label>
+        <label class="field">
+          <span>คะแนน</span>
+          <input data-admin-field="question-score" data-question-id="${question.id}" type="number" min="1" value="${question.score || 1}" />
+        </label>
+        <label class="field">
+          <span>เฉลย</span>
+          <select data-admin-field="question-answer" data-question-id="${question.id}">
+            ${["A", "B", "C", "D"].map((label, answerIndex) => `<option value="${answerIndex}" ${Number(question.answer) === answerIndex ? "selected" : ""}>${label}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <div class="admin-choice-grid">
+        ${["A", "B", "C", "D"].map((label, choiceIndex) => `
+          <label class="field">
+            <span>ตัวเลือก ${label}</span>
+            <input data-admin-field="question-choice" data-choice-index="${choiceIndex}" data-question-id="${question.id}" type="text" value="${question.choices?.[choiceIndex] || ""}" placeholder="พิมพ์ตัวเลือก ${label}" />
+          </label>
+        `).join("")}
+      </div>
+    </article>
+  `;
+}
+
 function bindAdminEditorEvents() {
   const setInputValue = (id, handler) => {
     const node = document.getElementById(id);
-    if (node) {
-      node.addEventListener("input", handler);
-      node.addEventListener("change", handler);
-    }
+    if (!node) return;
+    node.addEventListener("input", handler);
+    node.addEventListener("change", handler);
   };
 
   setInputValue("adminDraftTitleInput", (event) => {
     state.adminEditor.draft.title = event.target.value;
+  });
+  setInputValue("adminNewModelCodeInput", (event) => {
+    state.adminEditor.newModelCode = String(event.target.value || "").trim().toUpperCase();
+  });
+  setInputValue("adminNewModelNameInput", (event) => {
+    state.adminEditor.newModelName = event.target.value;
+  });
+  setInputValue("adminNewPartCodeInput", (event) => {
+    state.adminEditor.newPartCode = String(event.target.value || "").trim().toUpperCase();
+  });
+  setInputValue("adminNewPartTitleInput", (event) => {
+    state.adminEditor.newPartTitle = event.target.value;
   });
 
   const modelSelect = document.getElementById("adminModelSelect");
@@ -1201,6 +1311,9 @@ function bindAdminEditorEvents() {
       state.adminEditor.selectedModelCode = event.target.value;
       const group = getAdminDraftGroups().get(state.adminEditor.selectedModelCode);
       state.adminEditor.selectedExamId = group?.exams?.[0]?.id || "";
+      const selectedGroup = group || Array.from(getAdminDraftGroups().values())[0];
+      state.adminEditor.newModelCode = selectedGroup?.modelCode || "";
+      state.adminEditor.newModelName = selectedGroup?.modelName || "";
       renderAdminEditor();
     });
   }
@@ -1217,68 +1330,43 @@ function bindAdminEditorEvents() {
   if (selectedExam) {
     setInputValue("adminExamModelNameInput", (event) => {
       updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelName: event.target.value }));
+      state.adminEditor.newModelName = event.target.value;
     });
     setInputValue("adminExamModelCodeInput", (event) => {
       const nextValue = String(event.target.value || "").trim().toUpperCase();
       updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelCode: nextValue }));
       state.adminEditor.selectedModelCode = nextValue;
+      state.adminEditor.newModelCode = nextValue;
     });
     setInputValue("adminExamTitleInput", (event) => {
       updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, title: event.target.value }));
     });
     setInputValue("adminExamPartCodeInput", (event) => {
-      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, partCode: String(event.target.value || "").trim().toUpperCase() }));
+      updateAdminDraftExam(selectedExam.id, (exam) => ({
+        ...exam,
+        partCode: String(event.target.value || "").trim().toUpperCase()
+      }));
     });
     setInputValue("adminExamDurationInput", (event) => {
-      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, durationMinutes: Math.max(1, Number(event.target.value) || 10) }));
+      updateAdminDraftExam(selectedExam.id, (exam) => ({
+        ...exam,
+        durationMinutes: Math.max(1, Number(event.target.value) || 10)
+      }));
     });
     setInputValue("adminExamPassScoreInput", (event) => {
-      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, passScore: Math.max(0, Number(event.target.value) || 0) }));
+      updateAdminDraftExam(selectedExam.id, (exam) => ({
+        ...exam,
+        passScore: Math.max(0, Number(event.target.value) || 0)
+      }));
     });
     setInputValue("adminExamDescriptionInput", (event) => {
       updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, description: event.target.value }));
     });
   }
 
-  const addModelBtn = document.getElementById("adminAddModelBtn");
-  if (addModelBtn) {
-    addModelBtn.addEventListener("click", () => {
-      const modelCode = window.prompt("รหัส Model ใหม่", "")?.trim().toUpperCase();
-      if (!modelCode) return;
-      const modelName = window.prompt("ชื่อ Model", modelCode)?.trim();
-      if (!modelName) return;
-      const exists = state.adminEditor.draft.examSets.some((exam) => exam.modelCode === modelCode);
-      if (exists) {
-        showMessage(els.adminMessage, "มี Model นี้อยู่แล้ว", true);
-        return;
-      }
-      const partCode = window.prompt("รหัส Part แรก", `${modelCode}-P1`)?.trim().toUpperCase();
-      const partTitle = window.prompt("ชื่อ Part แรก", "Part 1")?.trim();
-      if (!partCode || !partTitle) return;
-      const exam = createBlankExam(modelCode, modelName, partCode, partTitle);
-      state.adminEditor.draft.examSets.push(exam);
-      state.adminEditor.selectedModelCode = modelCode;
-      state.adminEditor.selectedExamId = exam.id;
-      renderAdminEditor();
-    });
-  }
-
-  const addPartBtn = document.getElementById("adminAddPartBtn");
-  if (addPartBtn) {
-    addPartBtn.addEventListener("click", () => {
-      const currentGroup = getAdminDraftGroups().get(state.adminEditor.selectedModelCode);
-      if (!currentGroup) {
-        showMessage(els.adminMessage, "กรุณาสร้าง Model ก่อน", true);
-        return;
-      }
-      const partCode = window.prompt("รหัส Part ใหม่", "")?.trim().toUpperCase();
-      const partTitle = window.prompt("ชื่อ Part ใหม่", "")?.trim();
-      if (!partCode || !partTitle) return;
-      const exam = createBlankExam(currentGroup.modelCode, currentGroup.modelName, partCode, partTitle);
-      state.adminEditor.draft.examSets.push(exam);
-      state.adminEditor.selectedExamId = exam.id;
-      renderAdminEditor();
-    });
+  const quickCreateBtn = document.getElementById("adminQuickCreateBtn");
+  if (quickCreateBtn) {
+    quickCreateBtn.addEventListener("click", addAdminPartFromQuickForm);
   }
 
   const addQuestionBtn = document.getElementById("adminAddQuestionBtn");
@@ -1287,6 +1375,24 @@ function bindAdminEditorEvents() {
       updateAdminDraftExam(selectedExam.id, (exam) => ({
         ...exam,
         questions: [...(exam.questions || []), createBlankQuestion((exam.questions || []).length + 1)]
+      }));
+      renderAdminEditor();
+    });
+  }
+
+  const addTemplateBtn = document.getElementById("adminAddTemplateBtn");
+  if (addTemplateBtn && selectedExam) {
+    addTemplateBtn.addEventListener("click", () => {
+      updateAdminDraftExam(selectedExam.id, (exam) => ({
+        ...exam,
+        questions: [
+          ...(exam.questions || []),
+          {
+            ...createBlankQuestion((exam.questions || []).length + 1),
+            text: "ตัวอย่างคำถามใหม่",
+            choices: ["ตัวเลือก A", "ตัวเลือก B", "ตัวเลือก C", "ตัวเลือก D"]
+          }
+        ]
       }));
       renderAdminEditor();
     });
@@ -1308,15 +1414,16 @@ function bindAdminEditorEvents() {
     saveBuilderBtn.addEventListener("click", saveAdminBuilder);
   }
 
+  document.querySelectorAll("[data-admin-action='duplicate-question']").forEach((button) => {
+    button.addEventListener("click", () => {
+      duplicateAdminQuestion(selectedExam.id, button.dataset.questionId);
+      renderAdminEditor();
+    });
+  });
+
   document.querySelectorAll("[data-admin-action='delete-question']").forEach((button) => {
     button.addEventListener("click", () => {
-      const questionId = button.dataset.questionId;
-      updateAdminDraftExam(selectedExam.id, (exam) => ({
-        ...exam,
-        questions: (exam.questions || [])
-          .filter((question) => question.id !== questionId)
-          .map((question, index) => ({ ...question, number: index + 1 }))
-      }));
+      deleteAdminQuestion(selectedExam.id, button.dataset.questionId);
       renderAdminEditor();
     });
   });
@@ -1332,9 +1439,6 @@ function bindAdminEditorEvents() {
           if (question.id !== questionId) return question;
           if (node.dataset.adminField === "question-text") {
             return { ...question, text: node.value };
-          }
-          if (node.dataset.adminField === "question-number") {
-            return { ...question, number: Math.max(1, Number(node.value) || 1) };
           }
           if (node.dataset.adminField === "question-answer") {
             return { ...question, answer: Number(node.value) || 0 };
