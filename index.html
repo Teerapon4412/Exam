@@ -185,7 +185,7 @@
                     <p class="card-label">คำถาม</p>
                     <h3 id="questionTitle">ข้อ 1</h3>
                   </div>
-                  <div class="question-badge" id="questionBadge">ยังไม่เลือกคำตอบ</div>
+                  <div class="question-badge" id="questionBadge">ยังไม่ได้เลือกคำตอบ</div>
                 </div>
 
                 <div class="question-card">
@@ -235,11 +235,11 @@
                   <strong id="scorePercent">0%</strong>
                 </div>
                 <div class="result-box">
-                  <span>คำตอบถูก</span>
+                  <span>ตอบถูก</span>
                   <strong id="correctCount">0 ข้อ</strong>
                 </div>
                 <div class="result-box">
-                  <span>คำตอบผิด</span>
+                  <span>ตอบผิด</span>
                   <strong id="wrongCount">0 ข้อ</strong>
                 </div>
               </div>
@@ -346,7 +346,7 @@
                   </div>
 
                   <div class="evaluation-summary-strip">
-                    <div class="mini-note">Part ที่เลือก: <strong id="evaluationSelectedPart">-</strong></div>
+                    <div class="mini-note">Part ปัจจุบัน: <strong id="evaluationSelectedPart">-</strong></div>
                     <div class="mini-note">ผลสอบล่าสุด: <strong id="evaluationLatestExam">-</strong></div>
                   </div>
 
@@ -379,18 +379,18 @@
                     <thead>
                       <tr>
                         <th>ลำดับ</th>
-                        <th>หัวข้อประเมิน</th>
-                        <th>ระดับคะแนน</th>
+                        <th>หัวข้อการประเมิน</th>
                         <th>วิธีประเมิน</th>
-                        <th>คะแนน</th>
+                        <th>คะแนนเต็ม</th>
                         <th>น้ำหนัก</th>
-                        <th>รวม</th>
+                        <th>คะแนน</th>
+                        <th>หมายเหตุ</th>
                       </tr>
                     </thead>
                     <tbody id="evaluationRows"></tbody>
                     <tfoot>
                       <tr>
-                        <td colspan="6">รวมคะแนน</td>
+                        <td colspan="6">คะแนนรวม</td>
                         <td id="evaluationTotal">0</td>
                       </tr>
                       <tr>
@@ -430,11 +430,11 @@
                   <table class="dashboard-table">
                     <thead>
                       <tr>
-                        <th>วันที่เวลา</th>
+                        <th>วันที่ประเมิน</th>
                         <th>พนักงาน</th>
                         <th>Model / Part</th>
-                        <th>คะแนนประเมิน</th>
-                        <th>ผลสอบล่าสุด</th>
+                        <th>คะแนนที่ได้</th>
+                        <th>ผลการประเมิน</th>
                         <th>ผู้ประเมิน</th>
                       </tr>
                     </thead>
@@ -457,14 +457,14 @@
               <div class="admin-grid">
                 <div class="admin-card">
                   <label class="field">
-                    <span>เลือกไฟล์ JSON</span>
+                    <span>ไฟล์ข้อสอบ JSON</span>
                     <input id="adminFileInput" type="file" accept=".json,application/json" />
                   </label>
                   <div class="admin-actions">
                     <button id="importJsonBtn" class="primary-btn" type="button">นำเข้าข้อสอบ</button>
                     <button id="resetJsonBtn" class="secondary-btn" type="button">กลับไปใช้ไฟล์เดิม</button>
                   </div>
-                  <p id="adminMessage" class="inline-message">รองรับทั้งไฟล์ต้นฉบับแบบ `models/parts` และไฟล์ `examSets` ที่แปลงแล้ว</p>
+                  <p id="adminMessage" class="inline-message">รองรับทั้งโครงสร้าง `models/parts` และ `examSets` ในไฟล์เดียวกัน</p>
                 </div>
 
                 <div class="admin-card">
