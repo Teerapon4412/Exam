@@ -1153,8 +1153,10 @@ function renderSkillMatrix() {
         <th class="sticky-col photo-col">รูป</th>
         ${visibleColumns.map((column) => `
           <th class="matrix-part-head">
-            <strong>${column.modelCode}/${column.partCode}</strong>
-            <div class="table-subline">${column.partName}</div>
+            <div class="matrix-part-head-inner">
+              <strong>${column.modelCode}/${column.partCode}</strong>
+              <div class="table-subline matrix-part-name">${column.partName}</div>
+            </div>
           </th>
         `).join("")}
       </tr>
@@ -1165,8 +1167,10 @@ function renderSkillMatrix() {
     els.skillMatrixTableBody.innerHTML = filteredEmployees.map((employee) => `
       <tr>
         <td class="sticky-col employee-col">
-          <strong>${employee.employeeName}</strong>
-          <div class="table-subline">${employee.position || "- / -"}</div>
+          <div class="employee-cell-copy">
+            <strong>${employee.employeeName}</strong>
+            <div class="table-subline employee-subline">${employee.position || "- / -"}</div>
+          </div>
         </td>
         <td class="sticky-col code-col">${employee.employeeCode}</td>
         <td class="sticky-col photo-col">
