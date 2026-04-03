@@ -748,6 +748,117 @@ textarea {
   margin-top: 16px;
 }
 
+.admin-builder-layout {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.admin-builder-sidebar {
+  position: sticky;
+  top: 18px;
+  align-self: start;
+}
+
+.admin-builder-main {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-part-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-toolbar {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 18px 0;
+}
+
+.admin-flow-card {
+  padding: 16px;
+  border-radius: 18px;
+  background: #f8fbff;
+  border: 1px solid var(--line);
+}
+
+.admin-flow-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.admin-flow-head strong {
+  font-size: 1rem;
+}
+
+.admin-summary-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-question-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-question-card {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #fbfdff;
+}
+
+.admin-question-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.admin-question-head strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.admin-question-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-question-grid {
+  grid-template-columns: minmax(0, 2fr) 140px 140px;
+  margin-bottom: 14px;
+}
+
+.admin-question-main {
+  grid-column: 1 / 2;
+}
+
+.admin-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .evaluation-layout {
   display: grid;
   gap: 18px;
@@ -826,8 +937,15 @@ textarea {
   .exam-layout,
   .admin-grid,
   .result-grid,
-  .evaluation-grid {
+  .evaluation-grid,
+  .admin-builder-layout,
+  .admin-part-grid,
+  .admin-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-builder-sidebar {
+    position: static;
   }
 }
 
@@ -860,7 +978,9 @@ textarea {
   .profile-grid,
   .history-stats,
   .result-grid,
-  .evaluation-grid {
+  .evaluation-grid,
+  .admin-quick-grid,
+  .admin-choice-grid {
     grid-template-columns: 1fr;
   }
 
@@ -871,8 +991,12 @@ textarea {
   .question-actions,
   .topbar-actions,
   .result-actions,
-  .admin-actions {
+  .admin-actions,
+  .admin-toolbar,
+  .admin-question-head,
+  .admin-question-actions {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .primary-btn,

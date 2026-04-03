@@ -1048,10 +1048,10 @@ function renderAdminEditor() {
   const questionCount = selectedExam?.questions?.length || 0;
   const selectedGroup = groups.find((group) => group.modelCode === state.adminEditor.selectedModelCode) || groups[0];
 
-  if (!state.adminEditor.newModelCode && selectedGroup) {
-    state.adminEditor.newModelCode = selectedGroup.modelCode;
+  if (!state.adminEditor.selectedModelCode && selectedGroup) {
+    state.adminEditor.selectedModelCode = selectedGroup.modelCode;
   }
-  if (!state.adminEditor.newModelName && selectedGroup) {
+  if (!state.adminEditor.newModelName && selectedGroup?.modelName) {
     state.adminEditor.newModelName = selectedGroup.modelName;
   }
 
@@ -1068,38 +1068,61 @@ function renderAdminEditor() {
           <span>ชื่อระบบข้อสอบ</span>
           <input id="adminDraftTitleInput" type="text" value="${state.adminEditor.draft.title || ""}" />
         </label>
-        <div class="admin-quick-grid" style="margin-top: 14px;">
-          <label class="field">
-            <span>Model ที่จะเพิ่ม/แก้</span>
-            <input id="adminNewModelCodeInput" type="text" value="${state.adminEditor.newModelCode || ""}" placeholder="เช่น MODEL-A" />
-          </label>
-          <label class="field">
-            <span>ชื่อ Model</span>
-            <input id="adminNewModelNameInput" type="text" value="${state.adminEditor.newModelName || ""}" placeholder="ชื่อรุ่นสินค้า" />
-          </label>
-          <label class="field">
-            <span>Part ใหม่</span>
-            <input id="adminNewPartCodeInput" type="text" value="${state.adminEditor.newPartCode || ""}" placeholder="เช่น PART-01" />
-          </label>
-          <label class="field">
-            <span>ชื่อ Part</span>
-            <input id="adminNewPartTitleInput" type="text" value="${state.adminEditor.newPartTitle || ""}" placeholder="เช่น การตรวจสอบขั้นต้น" />
-          </label>
-        </div>
-        <div class="result-actions" style="margin-top: 14px;">
-          <button id="adminQuickCreateBtn" class="primary-btn" type="button">เพิ่ม Model / Part</button>
-          <button id="adminSaveBuilderBtn" class="secondary-btn" type="button">บันทึกคลังข้อสอบ</button>
+        <div class="admin-flow-card">
+          <div class="admin-flow-head">
+            <span class="card-label">Step 1</span>
+            <strong>เพิ่ม Model</strong>
+          </div>
+          <div class="admin-quick-grid" style="margin-top: 14px;">
+            <label class="field">
+              <span>รหัส Model</span>
+              <input id="adminNewModelCodeInput" type="text" value="${state.adminEditor.newModelCode || ""}" placeholder="เช่น RJ08" />
+            </label>
+            <label class="field">
+              <span>ชื่อ Model</span>
+              <input id="adminNewModelNameInput" type="text" value="${state.adminEditor.newModelName || ""}" placeholder="ถ้าไม่กรอกจะใช้รหัสเดียวกัน" />
+            </label>
+          </div>
+          <div class="result-actions" style="margin-top: 14px;">
+            <button id="adminAddModelBtn" class="primary-btn" type="button">เพิ่ม Model</button>
+          </div>
         </div>
         <div class="admin-divider"></div>
+        <div class="admin-flow-card">
+          <div class="admin-flow-head">
+            <span class="card-label">Step 2</span>
+            <strong>เพิ่ม Part ใต้ Model ที่เลือก</strong>
+          </div>
+          <div class="admin-info-list" style="margin-top: 10px;">
+            <div class="mini-note">Model ที่เลือกตอนนี้: <strong>${selectedGroup?.modelCode || "-"}</strong></div>
+          </div>
+          <div class="admin-quick-grid" style="margin-top: 14px;">
+            <label class="field">
+              <span>รหัส Part</span>
+              <input id="adminNewPartCodeInput" type="text" value="${state.adminEditor.newPartCode || ""}" placeholder="เช่น P1 หรือ PART-01" />
+            </label>
+            <label class="field">
+              <span>ชื่อ Part</span>
+              <input id="adminNewPartTitleInput" type="text" value="${state.adminEditor.newPartTitle || ""}" placeholder="เช่น การตรวจสอบขั้นต้น" />
+            </label>
+          </div>
+          <div class="result-actions" style="margin-top: 14px;">
+            <button id="adminAddPartBtn" class="primary-btn" type="button">เพิ่ม Part</button>
+          </div>
+        </div>
+        <div class="admin-divider"></div>
+        <div class="result-actions" style="margin-top: 14px;">
+          <button id="adminSaveBuilderBtn" class="secondary-btn" type="button">บันทึกคลังข้อสอบ</button>
+        </div>
         <div class="evaluation-grid">
           <label class="field">
-            <span>เลือก Model ที่มีอยู่</span>
+            <span>เลือก Model</span>
             <select id="adminModelSelect">
-              ${groups.map((group) => `<option value="${group.modelCode}" ${group.modelCode === state.adminEditor.selectedModelCode ? "selected" : ""}>${group.modelName} (${group.exams.length} Part)</option>`).join("")}
+              ${groups.map((group) => `<option value="${group.modelCode}" ${group.modelCode === state.adminEditor.selectedModelCode ? "selected" : ""}>${group.modelCode} - ${group.modelName} (${group.exams.length} Part)</option>`).join("")}
             </select>
           </label>
           <label class="field">
-            <span>เลือก Part ที่จะแก้</span>
+            <span>เลือก Part ใต้ Model นี้</span>
             <select id="adminPartSelect">
               ${(groups.find((group) => group.modelCode === state.adminEditor.selectedModelCode)?.exams || []).map((exam) => `<option value="${exam.id}" ${exam.id === state.adminEditor.selectedExamId ? "selected" : ""}>${exam.partCode} - ${exam.title}</option>`).join("")}
             </select>
@@ -1182,14 +1205,46 @@ function updateAdminDraftExam(examId, updater) {
   });
 }
 
-function addAdminPartFromQuickForm() {
+function addAdminModel() {
   const modelCode = String(state.adminEditor.newModelCode || "").trim().toUpperCase();
   const modelName = String(state.adminEditor.newModelName || "").trim();
+
+  if (!modelCode) {
+    showMessage(els.adminMessage, "กรุณากรอกรหัส Model ก่อน", true);
+    return;
+  }
+
+  const duplicateModel = state.adminEditor.draft.examSets.some((exam) => exam.modelCode === modelCode);
+  if (duplicateModel) {
+    showMessage(els.adminMessage, "มี Model นี้อยู่แล้ว", true);
+    return;
+  }
+
+  state.adminEditor.selectedModelCode = modelCode;
+  state.adminEditor.selectedExamId = "";
+  state.adminEditor.newModelName = modelName || modelCode;
+  state.adminEditor.newPartCode = "";
+  state.adminEditor.newPartTitle = "";
+  showMessage(els.adminMessage, `สร้าง Model ${modelCode} แล้ว ตอนนี้เพิ่ม Part ใต้ Model นี้ได้เลย`);
+  renderAdminEditor();
+}
+
+function addAdminPartToSelectedModel() {
+  const selectedGroup = getAdminDraftGroups().get(state.adminEditor.selectedModelCode);
+  const modelCode = String(state.adminEditor.selectedModelCode || "").trim().toUpperCase();
+  const modelName = String(
+    state.adminEditor.newModelName || selectedGroup?.modelName || modelCode
+  ).trim();
   const partCode = String(state.adminEditor.newPartCode || "").trim().toUpperCase();
   const partTitle = String(state.adminEditor.newPartTitle || "").trim();
 
-  if (!modelCode || !modelName || !partCode || !partTitle) {
-    showMessage(els.adminMessage, "กรุณากรอก Model และ Part ให้ครบก่อนเพิ่ม", true);
+  if (!modelCode) {
+    showMessage(els.adminMessage, "กรุณาเพิ่มหรือเลือก Model ก่อน", true);
+    return;
+  }
+
+  if (!partCode || !partTitle) {
+    showMessage(els.adminMessage, "กรุณากรอก Part ให้ครบก่อนเพิ่ม", true);
     return;
   }
 
@@ -1207,7 +1262,7 @@ function addAdminPartFromQuickForm() {
   state.adminEditor.selectedExamId = exam.id;
   state.adminEditor.newPartCode = "";
   state.adminEditor.newPartTitle = "";
-  showMessage(els.adminMessage, "เพิ่ม Part ใหม่เรียบร้อยแล้ว");
+  showMessage(els.adminMessage, `เพิ่ม Part ${partCode} ใต้ Model ${modelCode} เรียบร้อยแล้ว`);
   renderAdminEditor();
 }
 
@@ -1312,8 +1367,7 @@ function bindAdminEditorEvents() {
       const group = getAdminDraftGroups().get(state.adminEditor.selectedModelCode);
       state.adminEditor.selectedExamId = group?.exams?.[0]?.id || "";
       const selectedGroup = group || Array.from(getAdminDraftGroups().values())[0];
-      state.adminEditor.newModelCode = selectedGroup?.modelCode || "";
-      state.adminEditor.newModelName = selectedGroup?.modelName || "";
+      state.adminEditor.newModelName = selectedGroup?.modelName || state.adminEditor.newModelName;
       renderAdminEditor();
     });
   }
@@ -1330,13 +1384,11 @@ function bindAdminEditorEvents() {
   if (selectedExam) {
     setInputValue("adminExamModelNameInput", (event) => {
       updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelName: event.target.value }));
-      state.adminEditor.newModelName = event.target.value;
     });
     setInputValue("adminExamModelCodeInput", (event) => {
       const nextValue = String(event.target.value || "").trim().toUpperCase();
       updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelCode: nextValue }));
       state.adminEditor.selectedModelCode = nextValue;
-      state.adminEditor.newModelCode = nextValue;
     });
     setInputValue("adminExamTitleInput", (event) => {
       updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, title: event.target.value }));
@@ -1364,9 +1416,14 @@ function bindAdminEditorEvents() {
     });
   }
 
-  const quickCreateBtn = document.getElementById("adminQuickCreateBtn");
-  if (quickCreateBtn) {
-    quickCreateBtn.addEventListener("click", addAdminPartFromQuickForm);
+  const addModelBtn = document.getElementById("adminAddModelBtn");
+  if (addModelBtn) {
+    addModelBtn.addEventListener("click", addAdminModel);
+  }
+
+  const addPartBtn = document.getElementById("adminAddPartBtn");
+  if (addPartBtn) {
+    addPartBtn.addEventListener("click", addAdminPartToSelectedModel);
   }
 
   const addQuestionBtn = document.getElementById("adminAddQuestionBtn");
