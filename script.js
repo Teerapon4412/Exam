@@ -1351,6 +1351,13 @@ function buildAdminQuestionCard(question, index) {
           </select>
         </label>
       </div>
+      <div class="admin-question-media">
+        <label class="field">
+          <span>ลิงก์รูปประกอบ</span>
+          <input data-admin-field="question-image" data-question-id="${question.id}" type="url" value="${question.imageUrl || ""}" placeholder="https://example.com/question-image.jpg" />
+        </label>
+        ${question.imageUrl ? `<img class="admin-question-preview" src="${question.imageUrl}" alt="Question preview" />` : ""}
+      </div>
       <div class="admin-choice-grid">
         ${["A", "B", "C", "D"].map((label, choiceIndex) => `
           <label class="field">
@@ -1527,6 +1534,9 @@ function bindAdminEditorEvents() {
           if (node.dataset.adminField === "question-score") {
             return { ...question, score: Math.max(1, Number(node.value) || 1) };
           }
+          if (node.dataset.adminField === "question-image") {
+            return { ...question, imageUrl: String(node.value || "").trim() || null };
+          }
           if (node.dataset.adminField === "question-choice") {
             const choices = [...(question.choices || ["", "", "", ""])];
             choices[Number(node.dataset.choiceIndex) || 0] = node.value;
@@ -1568,6 +1578,7 @@ async function saveAdminBuilder() {
       ...question,
       number: Number(question.number) || index + 1,
       text: String(question.text || "").trim(),
+      imageUrl: String(question.imageUrl || "").trim() || null,
       choiceKeys: ["A", "B", "C", "D"],
       choices: ["A", "B", "C", "D"].map((_, choiceIndex) => String(question.choices?.[choiceIndex] || "").trim()),
       answer: Number(question.answer) || 0,
