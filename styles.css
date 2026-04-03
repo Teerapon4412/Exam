@@ -1019,16 +1019,18 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .skill-matrix-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(190px, 1fr));
   gap: 14px;
   margin-bottom: 18px;
+  align-items: stretch;
 }
 
 .skill-matrix-filters {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(280px, 1.45fr) repeat(3, minmax(180px, 1fr));
   gap: 14px;
   margin-bottom: 18px;
+  align-items: end;
 }
 
 .table-wrap {
@@ -1038,6 +1040,13 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   border: 1px solid var(--line);
   border-radius: 24px;
   background: #fff;
+}
+
+.skill-matrix-table-wrap {
+  position: relative;
+  max-width: 100%;
+  padding-bottom: 8px;
+  scrollbar-gutter: stable both-edges;
 }
 
 .skill-matrix-table {
@@ -1078,14 +1087,14 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .matrix-layout {
-  min-width: 2200px;
+  min-width: 2640px;
   table-layout: auto;
 }
 
 .matrix-layout th,
 .matrix-layout td {
-  width: 180px;
-  min-width: 180px;
+  width: 200px;
+  min-width: 200px;
 }
 
 .sticky-col {
@@ -1097,39 +1106,40 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .employee-col {
   left: 0;
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 240px;
+  max-width: 240px;
 }
 
 .code-col {
-  left: 220px;
-  min-width: 110px;
-  max-width: 110px;
+  left: 240px;
+  min-width: 120px;
+  max-width: 120px;
   text-align: center;
 }
 
 .photo-col {
-  left: 330px;
-  min-width: 110px;
-  max-width: 110px;
+  left: 360px;
+  min-width: 116px;
+  max-width: 116px;
   text-align: center;
 }
 
 .matrix-part-head {
-  width: 180px;
-  min-width: 180px;
+  width: 200px;
+  min-width: 200px;
   text-align: center;
 }
 
 .skill-cell {
   text-align: center;
-  width: 180px;
+  width: 200px;
 }
 
 .matrix-part-head-inner {
   display: grid;
   gap: 8px;
   align-content: start;
+  min-height: 96px;
 }
 
 .matrix-part-head strong {
@@ -1169,10 +1179,15 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   position: sticky;
   top: 0;
   z-index: 5;
+  background: #f8fbff;
 }
 
 .skill-matrix-table thead .sticky-col {
   z-index: 6;
+}
+
+.skill-matrix-table tbody .sticky-col {
+  z-index: 3;
 }
 
 .employee-avatar {
