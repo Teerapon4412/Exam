@@ -58,6 +58,7 @@ const els = {
   correctCount: $("correctCount"),
   wrongCount: $("wrongCount"),
   resultMessage: $("resultMessage"),
+  nextPartBtn: $("nextPartBtn"),
   restartExamBtn: $("restartExamBtn"),
   historyStats: $("historyStats"),
   historyList: $("historyList"),
@@ -347,6 +348,14 @@ function getSelectedExam() {
   return state.bank.examSets.find((exam) => exam.id === state.selectedExamId) || null;
 }
 
+function getNextExamInCurrentModel() {
+  const currentGroup = state.groupedExams.get(state.selectedModelCode);
+  const exams = currentGroup?.exams || [];
+  const currentIndex = exams.findIndex((exam) => exam.id === state.selectedExamId);
+  if (currentIndex < 0) return null;
+  return exams[currentIndex + 1] || null;
+}
+
 function resetExamSession() {
   state.currentQuestionIndex = 0;
   state.answers = [];
@@ -354,6 +363,11 @@ function resetExamSession() {
   state.submitted = false;
   state.currentExam = getSelectedExam();
   els.resultPanel.classList.add("hidden");
+  if (els.nextPartBtn) {
+    els.nextPartBtn.classList.add("hidden");
+    els.nextPartBtn.disabled = true;
+    els.nextPartBtn.textContent = "Next Part";
+  }
   renderExamMeta();
   renderQuestion();
   renderQuestionNav();
@@ -660,6 +674,14 @@ function renderResult(result) {
   els.resultMessage.textContent = result.passed
     ? `ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`
     : `ไม่ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`;
+  const nextExam = getNextExamInCurrentModel();
+  if (els.nextPartBtn) {
+    els.nextPartBtn.classList.toggle("hidden", !nextExam);
+    els.nextPartBtn.disabled = !nextExam;
+    els.nextPartBtn.textContent = nextExam
+      ? `Next Part: ${nextExam.partCode || nextExam.title || "ถัดไป"}`
+      : "Next Part";
+  }
   showMessage(els.loadStatus, "ส่งข้อสอบแล้ว");
   updateExamStatus();
 }
@@ -1741,6 +1763,15 @@ function bindEvents() {
   els.logoutBtn.addEventListener("click", logout);
   els.startExamBtn.addEventListener("click", startExam);
   els.submitExamBtn.addEventListener("click", submitExam);
+  if (els.nextPartBtn) {
+    els.nextPartBtn.addEventListener("click", () => {
+      const nextExam = getNextExamInCurrentModel();
+      if (!nextExam) return;
+      state.selectedExamId = nextExam.id;
+      resetExamSession();
+      renderSelectors();
+    });
+  }
   els.restartExamBtn.addEventListener("click", resetExamSession);
   els.prevBtn.addEventListener("click", () => {
     state.currentQuestionIndex = Math.max(state.currentQuestionIndex - 1, 0);
