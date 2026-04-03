@@ -1041,7 +1041,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .skill-matrix-table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
 }
 
@@ -1077,13 +1078,14 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .matrix-layout {
-  min-width: 1260px;
-  table-layout: fixed;
+  min-width: 1600px;
+  table-layout: auto;
 }
 
 .matrix-layout th,
 .matrix-layout td {
-  min-width: 160px;
+  width: 180px;
+  min-width: 180px;
 }
 
 .sticky-col {
@@ -1113,24 +1115,34 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .matrix-part-head {
-  min-width: 170px;
+  width: 180px;
+  min-width: 180px;
   text-align: center;
 }
 
 .skill-cell {
   text-align: center;
+  width: 180px;
 }
 
 .matrix-part-head-inner {
   display: grid;
   gap: 8px;
+  align-content: start;
+}
+
+.matrix-part-head strong {
+  display: block;
+  line-height: 1.35;
+  color: #314766;
 }
 
 .matrix-part-name {
-  max-height: 58px;
+  max-height: 72px;
   overflow: auto;
   line-height: 1.4;
   padding-right: 4px;
+  word-break: break-word;
 }
 
 .employee-cell-copy {
@@ -1150,6 +1162,12 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   max-height: 42px;
   overflow: auto;
   padding-right: 4px;
+}
+
+.skill-matrix-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }
 
 .employee-avatar {
