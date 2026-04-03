@@ -189,7 +189,7 @@ function setText(element, value) {
 }
 
 function applyPreviewMode(mode = "auto") {
-  const safeMode = ["auto", "mobile", "tablet", "desktop"].includes(mode) ? mode : "auto";
+  const safeMode = ["auto", "mobile", "tablet"].includes(mode) ? mode : "auto";
   if (safeMode === "auto") {
     document.body.removeAttribute("data-preview-mode");
   } else {

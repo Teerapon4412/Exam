@@ -251,11 +251,6 @@ body[data-preview-mode="tablet"] .shell {
   width: min(820px, calc(100vw - 28px));
 }
 
-body[data-preview-mode="desktop"] .login-panel,
-body[data-preview-mode="desktop"] .shell {
-  width: min(1280px, calc(100vw - 28px));
-}
-
 body[data-preview-mode="mobile"] .shell,
 body[data-preview-mode="tablet"] .shell {
   grid-template-columns: 1fr;
