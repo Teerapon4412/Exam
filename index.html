@@ -281,34 +281,39 @@
           </section>
 
           <section id="skillMatrixView" class="view-section hidden">
-            <section class="panel">
-              <div class="panel-head">
+            <section class="panel skill-matrix-panel">
+              <div class="panel-head skill-matrix-head">
                 <div>
                   <p class="card-label">Skill Matrix</p>
                   <h3>ตารางสรุประดับทักษะ</h3>
                 </div>
               </div>
 
-              <div id="skillMatrixConfig" class="skill-matrix-config"></div>
-              <div id="skillMatrixSummary" class="skill-matrix-summary"></div>
+              <div class="skill-matrix-overview">
+                <div id="skillMatrixConfig" class="skill-matrix-config"></div>
+                <div id="skillMatrixSummary" class="skill-matrix-summary"></div>
+              </div>
 
-              <div class="skill-matrix-filters">
-                <label class="field">
-                  <span>ค้นหาพนักงาน</span>
-                  <input id="skillMatrixSearchInput" type="search" placeholder="รหัสพนักงาน หรือ ชื่อพนักงาน" />
-                </label>
-                <label class="field">
-                  <span>Model</span>
-                  <select id="skillMatrixModelFilter"></select>
-                </label>
-                <label class="field">
-                  <span>Part</span>
-                  <select id="skillMatrixPartFilter"></select>
-                </label>
-                <label class="field">
-                  <span>ระดับ Skill</span>
-                  <select id="skillMatrixBandFilter"></select>
-                </label>
+              <div class="skill-matrix-toolbar">
+                <div class="skill-matrix-filters">
+                  <label class="field">
+                    <span>ค้นหาพนักงาน</span>
+                    <input id="skillMatrixSearchInput" type="search" placeholder="รหัสพนักงาน หรือ ชื่อพนักงาน" />
+                  </label>
+                  <label class="field">
+                    <span>Model</span>
+                    <select id="skillMatrixModelFilter"></select>
+                  </label>
+                  <label class="field">
+                    <span>Part</span>
+                    <select id="skillMatrixPartFilter"></select>
+                  </label>
+                  <label class="field">
+                    <span>ระดับ Skill</span>
+                    <select id="skillMatrixBandFilter"></select>
+                  </label>
+                </div>
+                <p class="skill-matrix-scroll-hint">เลื่อนซ้ายหรือขวาเพื่อดู Part อื่น ๆ ได้</p>
               </div>
 
               <div class="table-wrap skill-matrix-table-wrap">
