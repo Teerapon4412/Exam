@@ -730,6 +730,15 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
+.exam-action-panel {
+  align-self: start;
+}
+
+.exam-side-actions {
+  display: grid;
+  gap: 14px;
+}
+
 .panel {
   padding: 22px;
 }

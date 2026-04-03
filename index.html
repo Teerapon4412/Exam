@@ -93,14 +93,13 @@
               <p class="eyebrow">Online Examination Dashboard</p>
               <h2 id="pageHeading">ทำข้อสอบออนไลน์</h2>
             </div>
-            <div class="topbar-actions">
-              <div class="status-chip">
-                <span class="status-dot"></span>
-                <span id="examStatus">ยังไม่ได้เริ่มสอบ</span>
+              <div class="topbar-actions">
+                <div class="status-chip">
+                  <span class="status-dot"></span>
+                  <span id="examStatus">ยังไม่ได้เริ่มสอบ</span>
+                </div>
               </div>
-              <button id="submitExamBtn" class="primary-btn danger submit-exam-btn" type="button">ส่งข้อสอบ</button>
-            </div>
-          </header>
+            </header>
 
           <section id="examView" class="view-section">
             <section class="exam-hero-shell">
@@ -177,19 +176,16 @@
                 </div>
               </article>
 
-              <aside class="panel navigator-panel exam-side-rail">
+              <aside class="panel exam-action-panel exam-side-rail">
                 <div class="panel-head">
                   <div>
-                    <p class="card-label">นำทาง</p>
-                    <h3>เลขข้อสอบ</h3>
+                    <p class="card-label">คำสั่ง</p>
+                    <h3>ส่งข้อสอบ</h3>
                   </div>
                 </div>
-                <div id="questionNav" class="question-nav"></div>
-
-                <div class="legend-list">
-                  <div><span class="legend-dot current"></span> ข้อปัจจุบัน</div>
-                  <div><span class="legend-dot answered"></span> ตอบแล้ว</div>
-                  <div><span class="legend-dot empty"></span> ยังไม่ตอบ</div>
+                <div class="exam-side-actions">
+                  <button id="submitExamBtn" class="primary-btn danger wide submit-exam-btn" type="button">ส่งข้อสอบ</button>
+                  <button id="nextPartBtn" class="secondary-btn wide" type="button" disabled>Next Part</button>
                 </div>
               </aside>
             </section>

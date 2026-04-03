@@ -626,6 +626,7 @@ function renderQuestion() {
 }
 
 function renderQuestionNav() {
+  if (!els.questionNav) return;
   const exam = state.currentExam;
   els.questionNav.innerHTML = "";
   (exam?.questions || []).forEach((question, index) => {
