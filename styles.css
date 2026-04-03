@@ -423,6 +423,161 @@ textarea {
   grid-template-columns: 1.3fr 1fr;
 }
 
+.exam-hero-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
+  gap: 20px;
+}
+
+.exam-spotlight {
+  position: relative;
+  overflow: hidden;
+  padding: 28px;
+  border-radius: 30px;
+  color: #fff;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 28%),
+    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.12), transparent 34%),
+    linear-gradient(135deg, #12355b 0%, #1f5f8b 38%, #ff885b 100%);
+  box-shadow: 0 24px 50px rgba(18, 53, 91, 0.22);
+}
+
+.exam-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: auto -60px -90px auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  filter: blur(8px);
+}
+
+.exam-spotlight-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.exam-spotlight-copy h3 {
+  margin: 6px 0 10px;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.exam-spotlight-copy p {
+  max-width: 720px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.exam-spotlight-meta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.exam-spotlight-meta span {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-weight: 600;
+}
+
+.exam-spotlight .inline-message {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.exam-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.exam-kpi-card {
+  padding: 22px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 30px rgba(161, 180, 205, 0.14);
+}
+
+.exam-kpi-card h3 {
+  margin: 6px 0 8px;
+  font-size: 1.8rem;
+  line-height: 1.1;
+  color: #18324a;
+}
+
+.exam-kpi-card p:last-child {
+  margin: 0;
+  color: var(--muted);
+}
+
+.exam-progress-card {
+  display: grid;
+  gap: 14px;
+}
+
+.exam-start-card {
+  display: grid;
+  gap: 16px;
+  align-content: space-between;
+  background: linear-gradient(180deg, #fff8ef 0%, #fff 100%);
+}
+
+.exam-control-shell {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 20px;
+}
+
+.exam-command-panel {
+  background: linear-gradient(180deg, #fdfefe 0%, #f6faff 100%);
+}
+
+.exam-command-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.exam-command-grid + .exam-command-grid {
+  margin-top: 14px;
+}
+
+.exam-command-panel .danger {
+  margin-top: 18px;
+}
+
+.exam-workspace {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.exam-question-shell {
+  padding: 26px;
+}
+
+.exam-side-rail {
+  position: sticky;
+  top: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
 .panel {
   padding: 22px;
 }
@@ -570,6 +725,7 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 24px;
   padding: 22px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .question-text {
@@ -1066,6 +1222,9 @@ textarea {
 }
 
 @media (max-width: 1380px) {
+  .exam-hero-shell,
+  .exam-control-shell,
+  .exam-workspace,
   .hero-grid,
   .dashboard-grid,
   .exam-layout,
@@ -1079,6 +1238,10 @@ textarea {
   }
 
   .admin-builder-sidebar {
+    position: static;
+  }
+
+  .exam-side-rail {
     position: static;
   }
 }
@@ -1106,6 +1269,8 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  .exam-kpi-grid,
+  .exam-command-grid,
   .info-grid,
   .hero-grid,
   .stat-grid,
@@ -1120,6 +1285,16 @@ textarea {
 
   .question-nav {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .exam-spotlight,
+  .exam-question-shell,
+  .exam-side-rail {
+    padding: 20px;
+  }
+
+  .exam-spotlight-copy h3 {
+    font-size: 1.85rem;
   }
 
   .question-actions,

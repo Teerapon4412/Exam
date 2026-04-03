@@ -103,40 +103,52 @@
           </header>
 
           <section id="examView" class="view-section">
-            <section class="hero-grid">
-              <article class="hero-card gradient-card">
-                <p class="card-label">ชุดข้อสอบ</p>
-                <h3 id="examTitle">-</h3>
-                <p id="examDescription">-</p>
-                <div class="hero-meta">
+            <section class="exam-hero-shell">
+              <article class="exam-spotlight">
+                <div class="exam-spotlight-copy">
+                  <p class="card-label">พร้อมสอบ</p>
+                  <h3 id="examTitle">-</h3>
+                  <p id="examDescription">-</p>
+                </div>
+                <div class="exam-spotlight-meta">
                   <span id="examMetaQuestions">0 ข้อ</span>
                   <span id="examMetaTime">0 นาที</span>
                   <span id="examMetaPassScore">ผ่าน 0 คะแนน</span>
                 </div>
+                <div id="loadStatus" class="inline-message">กำลังโหลดชุดข้อสอบ...</div>
               </article>
 
-              <article class="hero-card mini-card">
-                <p class="card-label">เวลาคงเหลือ</p>
-                <h3 id="timeRemaining">00:00</h3>
-                <p>เริ่มนับถอยหลังเมื่อกดเริ่มสอบ</p>
-              </article>
-
-              <article class="hero-card mini-card">
-                <p class="card-label">ตอบแล้ว</p>
-                <h3 id="answeredCount">0 / 0</h3>
-                <p>ระบบบันทึกคำตอบทันที</p>
-              </article>
-
-              <article class="hero-card mini-card">
-                <p class="card-label">ความคืบหน้า</p>
-                <h3 id="progressPercent">0%</h3>
-                <div class="progress-track">
-                  <div id="progressBar" class="progress-bar"></div>
-                </div>
-              </article>
+              <div class="exam-kpi-grid">
+                <article class="exam-kpi-card">
+                  <p class="card-label">เวลาคงเหลือ</p>
+                  <h3 id="timeRemaining">00:00</h3>
+                  <p>เริ่มนับถอยหลังเมื่อกดเริ่มสอบ</p>
+                </article>
+                <article class="exam-kpi-card">
+                  <p class="card-label">ตอบแล้ว</p>
+                  <h3 id="answeredCount">0 / 0</h3>
+                  <p>ระบบบันทึกคำตอบทันที</p>
+                </article>
+                <article class="exam-kpi-card exam-progress-card">
+                  <div>
+                    <p class="card-label">ความคืบหน้า</p>
+                    <h3 id="progressPercent">0%</h3>
+                  </div>
+                  <div class="progress-track">
+                    <div id="progressBar" class="progress-bar"></div>
+                  </div>
+                </article>
+                <article class="exam-kpi-card exam-start-card">
+                  <div>
+                    <p class="card-label">เริ่มทำข้อสอบ</p>
+                    <h3 id="summaryStatus">รอเริ่มสอบ</h3>
+                  </div>
+                  <button id="startExamBtn" class="primary-btn wide" type="button">เริ่มสอบ</button>
+                </article>
+              </div>
             </section>
 
-            <section class="dashboard-grid">
+            <section class="exam-control-shell">
               <article class="panel exam-selector-panel">
                 <div class="panel-head">
                   <div>
@@ -148,14 +160,14 @@
                 <div id="examSelector" class="exam-selector"></div>
               </article>
 
-              <article class="panel summary-panel">
+              <article class="panel exam-command-panel">
                 <div class="panel-head">
                   <div>
                     <p class="card-label">ภาพรวม</p>
                     <h3>สถานะการทำข้อสอบ</h3>
                   </div>
                 </div>
-                <div class="stat-grid">
+                <div class="exam-command-grid">
                   <div class="stat-box">
                     <span>ข้อปัจจุบัน</span>
                     <strong id="currentQuestionText">ข้อ 1</strong>
@@ -164,22 +176,23 @@
                     <span>ยังไม่ตอบ</span>
                     <strong id="unansweredCount">0 ข้อ</strong>
                   </div>
+                </div>
+                <div class="exam-command-grid">
                   <div class="stat-box">
                     <span>ตอบแล้ว</span>
                     <strong id="summaryAnsweredCount">0 ข้อ</strong>
                   </div>
                   <div class="stat-box">
                     <span>สถานะ</span>
-                    <strong id="summaryStatus">รอเริ่มสอบ</strong>
+                    <strong id="examStatus">ยังไม่ได้เริ่มสอบ</strong>
                   </div>
                 </div>
-                <div id="loadStatus" class="inline-message">กำลังโหลดชุดข้อสอบ...</div>
-                <button id="startExamBtn" class="primary-btn wide" type="button">เริ่มสอบ</button>
+                <button id="submitExamBtn" class="primary-btn danger wide" type="button">ส่งข้อสอบ</button>
               </article>
             </section>
 
-            <section class="exam-layout">
-              <article class="panel question-panel">
+            <section class="exam-workspace">
+              <article class="panel question-panel exam-question-shell">
                 <div class="panel-head">
                   <div>
                     <p class="card-label">คำถาม</p>
@@ -200,7 +213,7 @@
                 </div>
               </article>
 
-              <aside class="panel navigator-panel">
+              <aside class="panel navigator-panel exam-side-rail">
                 <div class="panel-head">
                   <div>
                     <p class="card-label">นำทาง</p>
