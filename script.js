@@ -352,8 +352,14 @@ function getNextExamInCurrentModel() {
   const currentGroup = state.groupedExams.get(state.selectedModelCode);
   const exams = currentGroup?.exams || [];
   const currentIndex = exams.findIndex((exam) => exam.id === state.selectedExamId);
-  if (currentIndex < 0) return null;
-  return exams[currentIndex + 1] || null;
+  if (currentIndex >= 0 && exams[currentIndex + 1]) {
+    return exams[currentIndex + 1];
+  }
+
+  const allExams = state.bank.examSets || [];
+  const globalIndex = allExams.findIndex((exam) => exam.id === state.selectedExamId);
+  if (globalIndex < 0) return null;
+  return allExams[globalIndex + 1] || null;
 }
 
 function resetExamSession() {
