@@ -1019,16 +1019,17 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .skill-matrix-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
 
 .skill-matrix-filters {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(280px, 1.35fr) repeat(3, minmax(180px, 0.85fr));
   gap: 14px;
   margin-bottom: 18px;
+  align-items: end;
 }
 
 .table-wrap {
@@ -1096,21 +1097,21 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .employee-col {
   left: 0;
-  min-width: 190px;
-  max-width: 190px;
+  min-width: 220px;
+  max-width: 220px;
 }
 
 .code-col {
-  left: 190px;
-  min-width: 96px;
-  max-width: 96px;
+  left: 220px;
+  min-width: 110px;
+  max-width: 110px;
   text-align: center;
 }
 
 .photo-col {
-  left: 286px;
-  min-width: 90px;
-  max-width: 90px;
+  left: 330px;
+  min-width: 110px;
+  max-width: 110px;
   text-align: center;
 }
 
@@ -1171,8 +1172,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .employee-avatar {
-  width: 56px;
-  height: 56px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
   display: inline-block;
@@ -1218,6 +1219,12 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 .skill-circle-meta {
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+@media (max-width: 1320px) {
+  .skill-matrix-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .exam-layout {
