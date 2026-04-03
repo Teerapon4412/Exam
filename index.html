@@ -360,41 +360,45 @@
               </section>
 
               <section class="panel">
-                <div class="panel-head">
-                  <div>
-                    <p class="card-label">Evaluation Sheet</p>
-                    <h3 id="evaluationSheetTitle">หัวข้อที่ 1 : การประเมินหน้างาน และทักษะงาน</h3>
-                  </div>
+                <div class="evaluation-sheet-head">
+                  <p class="card-label">Evaluation Sheet</p>
+                  <h3 id="evaluationSheetTitle">หัวข้อที่ 1 : การประเมินหน้างาน และทักษะงาน</h3>
                 </div>
 
                 <div class="evaluation-sheet-meta">
-                  <span>รหัสพนักงาน: <strong id="evaluationMetaCode">-</strong></span>
-                  <span>ชื่อพนักงาน: <strong id="evaluationMetaName">-</strong></span>
-                  <span>Model / Part: <strong id="evaluationMetaPart">-</strong></span>
-                  <span>ผู้ประเมิน: <strong id="evaluationMetaEvaluator">-</strong></span>
+                  <span class="hidden">รหัสพนักงาน: <strong id="evaluationMetaCode">-</strong></span>
+                  <span class="hidden">ชื่อพนักงาน: <strong id="evaluationMetaName">-</strong></span>
+                  <span id="evaluationMetaPart">Model / Part: <strong>-</strong></span>
+                  <span class="hidden">ผู้ประเมิน: <strong id="evaluationMetaEvaluator">-</strong></span>
                 </div>
 
-                <div class="dashboard-table-wrap">
+                <div class="dashboard-table-wrap evaluation-sheet-wrap">
                   <table class="evaluation-table">
                     <thead>
                       <tr>
-                        <th>ลำดับ</th>
-                        <th>หัวข้อการประเมิน</th>
-                        <th>วิธีประเมิน</th>
-                        <th>คะแนนเต็ม</th>
-                        <th>น้ำหนัก</th>
-                        <th>คะแนน</th>
-                        <th>หมายเหตุ</th>
+                        <th rowspan="2">ลำดับ<br />No</th>
+                        <th rowspan="2">หัวข้อประเมิน<br />Item</th>
+                        <th colspan="4">ระดับคะแนน<br />Score Level</th>
+                        <th rowspan="2">วิธีประเมิน</th>
+                        <th rowspan="2">คะแนน<br />Score (A)</th>
+                        <th rowspan="2">น้ำหนัก<br />Weight (B)</th>
+                        <th rowspan="2">คะแนนรวม<br />(A) x (B)</th>
+                      </tr>
+                      <tr>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
                       </tr>
                     </thead>
                     <tbody id="evaluationRows"></tbody>
                     <tfoot>
                       <tr>
-                        <td colspan="6">คะแนนรวม</td>
+                        <td colspan="9">รวมคะแนน</td>
                         <td id="evaluationTotal">0</td>
                       </tr>
                       <tr>
-                        <td colspan="6">คะแนนเต็ม</td>
+                        <td colspan="9">คะแนนเต็ม</td>
                         <td id="evaluationMax">0</td>
                       </tr>
                     </tfoot>

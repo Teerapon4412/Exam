@@ -889,6 +889,15 @@ textarea {
   gap: 18px;
 }
 
+.evaluation-title-input {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  border-radius: 22px;
+  padding-block: 18px;
+}
+
 .evaluation-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -902,38 +911,143 @@ textarea {
 .evaluation-summary-strip,
 .evaluation-sheet-meta {
   display: flex;
-  gap: 12px;
+  gap: 20px;
   flex-wrap: wrap;
+  align-items: center;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  color: #223249;
+  background: #f7fbff;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  font-weight: 600;
 }
 
-.evaluation-sheet-meta {
-  margin-bottom: 18px;
-  color: var(--muted);
+.evaluation-sheet-head {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.evaluation-sheet-head h3 {
+  margin: 6px 0 0;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.evaluation-sheet-wrap {
+  overflow-x: auto;
 }
 
 .evaluation-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .evaluation-table th,
 .evaluation-table td {
   padding: 12px 10px;
   border: 1px solid var(--line);
-  text-align: left;
+  text-align: center;
   vertical-align: middle;
 }
 
 .evaluation-table thead th,
 .evaluation-table tfoot td {
-  background: #f6f9fd;
+  background: #eef3f8;
   font-weight: 700;
 }
 
-.evaluation-score-options {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.evaluation-table th:nth-child(2),
+.evaluation-table td:nth-child(2) {
+  width: 260px;
+}
+
+.evaluation-level-cell {
+  width: 72px;
+}
+
+.evaluation-no-cell,
+.evaluation-score-cell,
+.evaluation-total-cell {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #17324d;
+}
+
+.evaluation-item-cell {
+  padding: 10px;
+}
+
+.evaluation-item-textarea {
+  width: 100%;
+  min-height: 76px;
+  resize: vertical;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  padding: 14px 16px;
+  line-height: 1.5;
+  background: #fff;
+}
+
+.evaluation-level-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.evaluation-level-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.evaluation-level-option span {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1.5px solid #7f8da3;
+  background: #fff;
+  display: inline-block;
+  position: relative;
+}
+
+.evaluation-level-option input:checked + span {
+  border-color: #0b7cff;
+}
+
+.evaluation-level-option input:checked + span::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 999px;
+  background: #0b7cff;
+}
+
+.evaluation-method-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  padding: 12px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-weight: 600;
+}
+
+.evaluation-weight-input {
+  width: 100%;
+  max-width: 110px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  text-align: center;
+  font-size: 1rem;
+  background: #fff;
 }
 
 .evaluation-score-pill {

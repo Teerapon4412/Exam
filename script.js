@@ -119,31 +119,31 @@ const TEXT = {
   ],
   evaluationRows: [
     {
-      title: "ความเข้าใจขั้นตอนการทำงานและการอ้างอิง WI อย่างถูกต้อง",
+      title: "การเตรียมตัวก่อนปฏิบัติงาน\nการเตรียมงานและเอกสารการตรวจเช็คอุปกรณ์ต่างๆ",
       method: "สังเกต",
-      maxScore: 5,
+      maxScore: 4,
       weight: 1
     },
     {
-      title: "ความถูกต้องของการปฏิบัติงานตามมาตรฐานที่กำหนด",
+      title: "ปริมาณงาน\nปริมาณผลงานที่ทำได้ตามเป้าหมาย คุณภาพ และตามเวลา",
       method: "ตรวจงาน",
-      maxScore: 5,
-      weight: 1
+      maxScore: 4,
+      weight: 3
     },
     {
-      title: "ความสามารถในการทำงานได้อย่างต่อเนื่องและปลอดภัย",
-      method: "ทดสอบ",
-      maxScore: 5,
-      weight: 1
+      title: "คุณภาพ\nความถูกต้องของผลงานที่ทำได้",
+      method: "ประเมิน",
+      maxScore: 4,
+      weight: 5
     },
     {
-      title: "การตอบสนองเมื่อพบความผิดปกติและการแยกชิ้นงาน NG ได้เหมาะสม",
+      title: "การเปลี่ยนแม่พิมพ์และการตรวจสอบ ความถูกต้องของผลงานที่ทำได้",
       method: "สัมภาษณ์",
-      maxScore: 5,
-      weight: 1
+      maxScore: 4,
+      weight: 6
     }
   ],
-  evaluationSectionTitle: "หัวข้อที่ 1 : การประเมินหน้างาน และทักษะงาน"
+  evaluationSectionTitle: "ส่วนที่ 1 : การปฏิบัติงาน และ ความร่วมมือ"
 };
 
 const state = {
@@ -802,17 +802,32 @@ function renderEvaluationRows(rows = TEXT.evaluationRows) {
       const sum = score * weight;
       total += sum;
       max += maxScore * weight;
+      const scoreLevels = Array.from({ length: maxScore }, (_, levelIndex) => {
+        const level = levelIndex + 1;
+        return `
+          <td class="evaluation-level-cell">
+            <label class="evaluation-level-option">
+              <input type="radio" name="evaluation-score-${index}" value="${level}" ${score === level ? "checked" : ""} data-evaluation-field="score-radio" data-row-index="${index}" />
+              <span></span>
+            </label>
+          </td>
+        `;
+      }).join("");
       return `
         <tr>
-          <td>${index + 1}</td>
-          <td>${row.title}</td>
-          <td>0 - ${maxScore}</td>
-          <td>${row.method}</td>
-          <td>
-            <input class="score-input" type="number" min="0" max="${maxScore}" step="1" value="${score}" data-row-index="${index}" />
+          <td class="evaluation-no-cell">${index + 1}</td>
+          <td class="evaluation-item-cell">
+            <textarea class="evaluation-item-textarea" data-evaluation-field="title-input" data-row-index="${index}" rows="3">${row.title || ""}</textarea>
           </td>
-          <td>${weight}</td>
-          <td>${sum}</td>
+          ${scoreLevels}
+          <td class="evaluation-method-cell">
+            <span class="evaluation-method-badge">${row.method || "-"}</span>
+          </td>
+          <td class="evaluation-score-cell">${score}</td>
+          <td class="evaluation-weight-cell">
+            <input class="evaluation-weight-input" type="number" min="1" max="10" step="1" value="${weight}" data-evaluation-field="weight-input" data-row-index="${index}" />
+          </td>
+          <td class="evaluation-total-cell">${sum}</td>
         </tr>
       `;
     })
@@ -821,13 +836,29 @@ function renderEvaluationRows(rows = TEXT.evaluationRows) {
   setText(els.evaluationTotal, String(total));
   setText(els.evaluationMax, String(max));
 
-  Array.from(document.querySelectorAll(".score-input")).forEach((input) => {
-    input.addEventListener("input", () => {
+  Array.from(document.querySelectorAll("[data-evaluation-field='score-radio']")).forEach((input) => {
+    input.addEventListener("change", () => {
       const index = Number(input.dataset.rowIndex);
       const maxScore = Number(TEXT.evaluationRows[index].maxScore) || 0;
-      const nextValue = Math.max(0, Math.min(maxScore, Number(input.value) || 0));
+      const nextValue = Math.max(1, Math.min(maxScore, Number(input.value) || 1));
       TEXT.evaluationRows[index].score = nextValue;
       renderEvaluationRows(TEXT.evaluationRows);
+    });
+  });
+
+  Array.from(document.querySelectorAll("[data-evaluation-field='weight-input']")).forEach((input) => {
+    input.addEventListener("input", () => {
+      const index = Number(input.dataset.rowIndex);
+      const nextValue = Math.max(1, Math.min(10, Number(input.value) || 1));
+      TEXT.evaluationRows[index].weight = nextValue;
+      renderEvaluationRows(TEXT.evaluationRows);
+    });
+  });
+
+  Array.from(document.querySelectorAll("[data-evaluation-field='title-input']")).forEach((input) => {
+    input.addEventListener("input", () => {
+      const index = Number(input.dataset.rowIndex);
+      TEXT.evaluationRows[index].title = input.value;
     });
   });
 }
@@ -837,6 +868,7 @@ function renderEvaluationForm() {
 
   setText(els.evaluationSheetTitle, TEXT.evaluationSectionTitle);
   els.evaluationSectionTitle.value = TEXT.evaluationSectionTitle;
+  els.evaluationSectionTitle.classList.add("evaluation-title-input");
 
   const models = Array.from(state.groupedExams.values()).map((group) => ({
     value: group.modelCode,
@@ -923,6 +955,17 @@ function syncEvaluationSelectors(source = "code") {
     els.evaluationLatestExam,
     latestExam ? `${latestExam.score}/${latestExam.total_score} (${latestExam.percent}%)` : "-"
   );
+
+  const modelPartLabel = exam ? `${exam.modelName || exam.modelCode} / ${exam.partCode || exam.title}` : "-";
+  if (els.evaluationMetaPart) {
+    els.evaluationMetaPart.innerHTML = `
+      <span>รหัสพนักงาน: <strong>${employee?.employeeCode || "-"}</strong></span>
+      <span>ชื่อพนักงาน: <strong>${employee?.fullName || "-"}</strong></span>
+      <span>Model/Part: <strong>${modelPartLabel}</strong></span>
+      <span>ผู้ประเมิน: <strong>${evaluator || "-"}</strong></span>
+      <span>ผลสอบล่าสุด: <strong>${latestExam ? `${latestExam.score}/${latestExam.total_score} (${latestExam.percent}%)` : "-"}</strong></span>
+    `;
+  }
 }
 
 async function loadEmployees() {
@@ -1737,6 +1780,9 @@ function bindEvents() {
   els.evaluationEmployeeCodeSelect.addEventListener("change", () => syncEvaluationSelectors("code"));
   els.evaluationEmployeeNameSelect.addEventListener("change", () => syncEvaluationSelectors("name"));
   els.evaluationEvaluatorSelect.addEventListener("change", () => syncEvaluationSelectors());
+  els.evaluationSectionTitle.addEventListener("input", () => {
+    setText(els.evaluationSheetTitle, els.evaluationSectionTitle.value || TEXT.evaluationSectionTitle);
+  });
   els.evaluationSearchInput.addEventListener("input", renderEvaluationHistory);
   els.evaluationHistoryPartFilter.addEventListener("change", renderEvaluationHistory);
   els.evaluationHistoryEvaluatorFilter.addEventListener("change", renderEvaluationHistory);
