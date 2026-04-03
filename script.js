@@ -33,7 +33,6 @@ const els = {
   examMetaQuestions: $("examMetaQuestions"),
   examMetaTime: $("examMetaTime"),
   examMetaPassScore: $("examMetaPassScore"),
-  timeRemaining: $("timeRemaining"),
   answeredCount: $("answeredCount"),
   progressPercent: $("progressPercent"),
   progressBar: $("progressBar"),
@@ -157,8 +156,6 @@ const state = {
   currentQuestionIndex: 0,
   answers: [],
   startedAt: null,
-  remainingSeconds: 0,
-  timerId: null,
   submitted: false,
   results: [],
   employees: [],
@@ -206,13 +203,6 @@ function formatDateTime(value) {
 
 function formatMinutes(minutes) {
   return `${Number(minutes) || 0} นาที`;
-}
-
-function formatClock(totalSeconds) {
-  const safe = Math.max(0, Number(totalSeconds) || 0);
-  const minutes = String(Math.floor(safe / 60)).padStart(2, "0");
-  const seconds = String(safe % 60).padStart(2, "0");
-  return `${minutes}:${seconds}`;
 }
 
 async function api(url, options = {}) {
@@ -357,19 +347,10 @@ function getSelectedExam() {
   return state.bank.examSets.find((exam) => exam.id === state.selectedExamId) || null;
 }
 
-function clearTimer() {
-  if (state.timerId) {
-    window.clearInterval(state.timerId);
-    state.timerId = null;
-  }
-}
-
 function resetExamSession() {
-  clearTimer();
   state.currentQuestionIndex = 0;
   state.answers = [];
   state.startedAt = null;
-  state.remainingSeconds = 0;
   state.submitted = false;
   state.currentExam = getSelectedExam();
   els.resultPanel.classList.add("hidden");
@@ -532,7 +513,6 @@ function renderExamMeta() {
   setText(els.examMetaQuestions, `${questionCount} ข้อ`);
   setText(els.examMetaTime, formatMinutes(exam?.durationMinutes));
   setText(els.examMetaPassScore, `ผ่าน ${Number(exam?.passScore) || 0} คะแนน`);
-  setText(els.timeRemaining, formatClock(state.remainingSeconds));
   setText(els.answeredCount, `${state.answers.filter((value) => value !== null && value !== undefined).length} / ${questionCount}`);
 }
 
@@ -647,25 +627,12 @@ function startExam() {
   if (!state.currentExam || state.startedAt || state.submitted) return;
   state.answers = new Array(state.currentExam.questions.length).fill(null);
   state.startedAt = Date.now();
-  state.remainingSeconds = (Number(state.currentExam.durationMinutes) || 0) * 60;
-  setText(els.timeRemaining, formatClock(state.remainingSeconds));
   updateExamStatus();
-  clearTimer();
-  state.timerId = window.setInterval(() => {
-    state.remainingSeconds -= 1;
-    setText(els.timeRemaining, formatClock(state.remainingSeconds));
-    if (state.remainingSeconds <= 0) {
-      clearTimer();
-      showMessage(els.loadStatus, "หมดเวลา ระบบส่งข้อสอบให้อัตโนมัติแล้ว");
-      submitExam(true);
-    }
-  }, 1000);
 }
 
-async function submitExam(isAutoSubmit = false) {
+async function submitExam() {
   if (!state.currentExam || state.submitted) return;
 
-  clearTimer();
   const exam = state.currentExam;
 
   try {
@@ -677,14 +644,14 @@ async function submitExam(isAutoSubmit = false) {
       })
     });
     state.submitted = true;
-    renderResult(response.result, isAutoSubmit);
+    renderResult(response.result);
     await loadResults();
   } catch (error) {
     showMessage(els.loadStatus, `ส่งข้อสอบไม่สำเร็จ: ${error.message}`, true);
   }
 }
 
-function renderResult(result, isAutoSubmit) {
+function renderResult(result) {
   els.resultPanel.classList.remove("hidden");
   setText(els.scoreValue, `${result.score} / ${result.total_score}`);
   setText(els.scorePercent, `${result.percent}%`);
@@ -693,11 +660,7 @@ function renderResult(result, isAutoSubmit) {
   els.resultMessage.textContent = result.passed
     ? `ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`
     : `ไม่ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`;
-  if (isAutoSubmit) {
-    showMessage(els.loadStatus, "หมดเวลา ระบบส่งข้อสอบให้อัตโนมัติแล้ว");
-  } else {
-    showMessage(els.loadStatus, "ส่งข้อสอบแล้ว");
-  }
+  showMessage(els.loadStatus, "ส่งข้อสอบแล้ว");
   updateExamStatus();
 }
 
@@ -1760,7 +1723,6 @@ async function handleLogin(event) {
 }
 
 function logout() {
-  clearTimer();
   state.user = null;
   state.authToken = "";
   state.results = [];
@@ -1778,7 +1740,7 @@ function bindEvents() {
   els.loginForm.addEventListener("submit", handleLogin);
   els.logoutBtn.addEventListener("click", logout);
   els.startExamBtn.addEventListener("click", startExam);
-  els.submitExamBtn.addEventListener("click", () => submitExam(false));
+  els.submitExamBtn.addEventListener("click", submitExam);
   els.restartExamBtn.addEventListener("click", resetExamSession);
   els.prevBtn.addEventListener("click", () => {
     state.currentQuestionIndex = Math.max(state.currentQuestionIndex - 1, 0);
@@ -1886,8 +1848,8 @@ function applyStaticThaiText() {
     if (summaryLabels[index]) summaryLabels[index].textContent = text;
   });
 
-  const heroLabels = document.querySelectorAll(".hero-card .card-label");
-  ["ชุดข้อสอบ", "เวลาคงเหลือ", "ตอบแล้ว", "ความคืบหน้า"].forEach((text, index) => {
+  const heroLabels = document.querySelectorAll(".exam-hero-shell .card-label");
+  ["พร้อมสอบ", "ตอบแล้ว", "ความคืบหน้า", "เริ่มทำข้อสอบ"].forEach((text, index) => {
     if (heroLabels[index]) heroLabels[index].textContent = text;
   });
 
