@@ -370,7 +370,6 @@ function resetExamSession() {
   state.currentExam = getSelectedExam();
   els.resultPanel.classList.add("hidden");
   if (els.nextPartBtn) {
-    els.nextPartBtn.classList.add("hidden");
     els.nextPartBtn.disabled = true;
     els.nextPartBtn.textContent = "Next Part";
   }
@@ -682,11 +681,10 @@ function renderResult(result) {
     : `ไม่ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`;
   const nextExam = getNextExamInCurrentModel();
   if (els.nextPartBtn) {
-    els.nextPartBtn.classList.toggle("hidden", !nextExam);
     els.nextPartBtn.disabled = !nextExam;
     els.nextPartBtn.textContent = nextExam
       ? `Next Part: ${nextExam.partCode || nextExam.title || "ถัดไป"}`
-      : "Next Part";
+      : "ไม่มี Part ถัดไป";
   }
   showMessage(els.loadStatus, "ส่งข้อสอบแล้ว");
   updateExamStatus();
