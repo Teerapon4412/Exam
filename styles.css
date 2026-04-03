@@ -997,6 +997,83 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   color: #52627e;
 }
 
+.skill-matrix-config {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.skill-matrix-config span,
+.skill-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #f8fbff;
+  font-weight: 700;
+}
+
+.skill-matrix-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.skill-matrix-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fff;
+}
+
+.skill-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.skill-matrix-table th,
+.skill-matrix-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.skill-matrix-table th {
+  background: #f8fbff;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.table-subline {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.skill-pill {
+  background: color-mix(in srgb, var(--skill-pill) 16%, white);
+  border-color: color-mix(in srgb, var(--skill-pill) 35%, #dbe5f0);
+  color: #18324a;
+}
+
+.empty-state {
+  padding: 24px;
+  color: var(--muted);
+}
+
 .exam-layout {
   margin-top: 18px;
   grid-template-columns: 1.65fr 0.85fr;
@@ -1568,6 +1645,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   .history-stats,
   .result-grid,
   .evaluation-grid,
+  .skill-matrix-summary,
+  .skill-matrix-filters,
   .admin-quick-grid,
   .admin-choice-grid {
     grid-template-columns: 1fr;

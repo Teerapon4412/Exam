@@ -25,6 +25,7 @@ const els = {
   examView: $("examView"),
   historyView: $("historyView"),
   profileView: $("profileView"),
+  skillMatrixView: $("skillMatrixView"),
   evaluationView: $("evaluationView"),
   adminView: $("adminView"),
   pageHeading: $("pageHeading"),
@@ -96,6 +97,14 @@ const els = {
   evaluationHistoryEmpty: $("evaluationHistoryEmpty"),
   evaluationHistoryTableWrap: $("evaluationHistoryTableWrap"),
   evaluationHistoryBody: $("evaluationHistoryBody"),
+  skillMatrixConfig: $("skillMatrixConfig"),
+  skillMatrixSummary: $("skillMatrixSummary"),
+  skillMatrixSearchInput: $("skillMatrixSearchInput"),
+  skillMatrixModelFilter: $("skillMatrixModelFilter"),
+  skillMatrixPartFilter: $("skillMatrixPartFilter"),
+  skillMatrixBandFilter: $("skillMatrixBandFilter"),
+  skillMatrixTableBody: $("skillMatrixTableBody"),
+  skillMatrixEmpty: $("skillMatrixEmpty"),
   previewToolbar: $("previewToolbar")
 };
 
@@ -144,6 +153,20 @@ const TEXT = {
     }
   ],
   evaluationSectionTitle: "ส่วนที่ 1 : การปฏิบัติงาน และ ความร่วมมือ"
+};
+
+TEXT.titleByView.skillMatrix = "Skill Matrix";
+
+const SKILL_MATRIX_CONFIG = {
+  examWeight: 40,
+  evaluationWeight: 60,
+  totalWeight: 100,
+  skillBands: [
+    { min: 0, max: 25, skillPct: 0, color: "transparent", label: "0%" },
+    { min: 26, max: 50, skillPct: 50, color: "#dc2626", label: "50%" },
+    { min: 51, max: 75, skillPct: 75, color: "#f59e0b", label: "75%" },
+    { min: 76, max: 100, skillPct: 100, color: "#16a34a", label: "100%" }
+  ]
 };
 
 const state = {
@@ -402,6 +425,7 @@ function setView(view) {
     exam: els.examView,
     history: els.historyView,
     profile: els.profileView,
+    skillMatrix: els.skillMatrixView,
     evaluation: els.evaluationView,
     admin: els.adminView
   };
@@ -424,6 +448,8 @@ function setView(view) {
     renderHistory();
   } else if (view === "profile") {
     renderProfile();
+  } else if (view === "skillMatrix") {
+    renderSkillMatrix();
   } else if (view === "evaluation") {
     renderEvaluationForm();
     renderEvaluationHistory();
@@ -733,6 +759,7 @@ async function loadResults() {
   state.results = Array.isArray(payload.results) ? payload.results : [];
   renderHistory();
   renderProfile();
+  renderSkillMatrix();
   renderEvaluationForm();
   renderEvaluationHistory();
 }
@@ -794,6 +821,170 @@ function renderProfile() {
     els.profileLastScore,
     latest ? `${latest.score}/${latest.total_score} (${latest.percent}%)` : "-"
   );
+}
+
+function getSkillBand(percent) {
+  return SKILL_MATRIX_CONFIG.skillBands.find(
+    (band) => percent >= Number(band.min) && percent <= Number(band.max)
+  ) || SKILL_MATRIX_CONFIG.skillBands[0];
+}
+
+function buildSkillMatrixRows() {
+  if (state.user?.role !== "admin") return [];
+
+  const employees = Array.isArray(state.employees) ? state.employees : [];
+  const allResults = Array.isArray(state.results) ? state.results : [];
+  const evaluations = Array.isArray(state.evaluations) ? state.evaluations : [];
+  const latestResultMap = new Map();
+  const latestEvaluationMap = new Map();
+
+  allResults.forEach((result) => {
+    const key = `${result.employee_code || result.employeeCode || ""}::${result.part_code || result.partCode || ""}`;
+    const current = latestResultMap.get(key);
+    if (!current || new Date(result.submitted_at || 0).getTime() > new Date(current.submitted_at || 0).getTime()) {
+      latestResultMap.set(key, result);
+    }
+  });
+
+  evaluations.forEach((evaluation) => {
+    const key = `${evaluation.employeeCode || ""}::${evaluation.partCode || ""}`;
+    const current = latestEvaluationMap.get(key);
+    if (!current || new Date(evaluation.updatedAt || 0).getTime() > new Date(current.updatedAt || 0).getTime()) {
+      latestEvaluationMap.set(key, evaluation);
+    }
+  });
+
+  const keys = new Set([...latestResultMap.keys(), ...latestEvaluationMap.keys()]);
+  const rows = [];
+
+  keys.forEach((key) => {
+    const [employeeCode, partCode] = key.split("::");
+    const result = latestResultMap.get(key) || null;
+    const evaluation = latestEvaluationMap.get(key) || null;
+    const employee = employees.find((item) => item.employeeCode === employeeCode);
+    const examPercent = Number(result?.percent || 0);
+    const evaluationPercent = evaluation
+      ? Math.round((Number(evaluation.totalScore || 0) / Math.max(Number(evaluation.maxScore || 0), 1)) * 100)
+      : 0;
+    const finalPercent = Math.round(
+      ((examPercent * SKILL_MATRIX_CONFIG.examWeight) + (evaluationPercent * SKILL_MATRIX_CONFIG.evaluationWeight))
+      / SKILL_MATRIX_CONFIG.totalWeight
+    );
+    const band = getSkillBand(finalPercent);
+
+    rows.push({
+      employeeCode,
+      employeeName: employee?.fullName || result?.full_name || evaluation?.employeeName || employeeCode,
+      department: employee?.department || "",
+      modelName: result?.model_name || evaluation?.modelName || "",
+      partName: result?.exam_title || evaluation?.partName || partCode,
+      examPercent,
+      evaluationPercent,
+      finalPercent,
+      skillPct: band.skillPct,
+      bandLabel: band.label,
+      bandColor: band.color,
+      hasExam: Boolean(result),
+      hasEvaluation: Boolean(evaluation),
+      status: result && evaluation ? "ครบ" : result ? "รอประเมิน" : "ยังไม่มีผลสอบ"
+    });
+  });
+
+  return rows.sort((left, right) => {
+    const employeeCompare = String(left.employeeName || "").localeCompare(String(right.employeeName || ""), "th");
+    if (employeeCompare !== 0) return employeeCompare;
+    const modelCompare = String(left.modelName || "").localeCompare(String(right.modelName || ""), "en");
+    if (modelCompare !== 0) return modelCompare;
+    return String(left.partName || "").localeCompare(String(right.partName || ""), "en");
+  });
+}
+
+function renderSkillMatrix() {
+  if (state.user?.role !== "admin") return;
+
+  const rows = buildSkillMatrixRows();
+  const searchValue = String(els.skillMatrixSearchInput?.value || "").trim().toLowerCase();
+  const selectedModel = String(els.skillMatrixModelFilter?.value || "");
+  const selectedPart = String(els.skillMatrixPartFilter?.value || "");
+  const selectedBand = String(els.skillMatrixBandFilter?.value || "");
+  const modelOptions = [...new Set(rows.map((row) => row.modelName).filter(Boolean))];
+  const partOptions = [...new Set(rows.map((row) => row.partName).filter(Boolean))];
+
+  if (els.skillMatrixModelFilter) {
+    els.skillMatrixModelFilter.innerHTML = `<option value="">ทุก Model</option>${modelOptions
+      .map((item) => `<option value="${item}" ${item === selectedModel ? "selected" : ""}>${item}</option>`)
+      .join("")}`;
+  }
+
+  if (els.skillMatrixPartFilter) {
+    els.skillMatrixPartFilter.innerHTML = `<option value="">ทุก Part</option>${partOptions
+      .map((item) => `<option value="${item}" ${item === selectedPart ? "selected" : ""}>${item}</option>`)
+      .join("")}`;
+  }
+
+  if (els.skillMatrixBandFilter && !els.skillMatrixBandFilter.options.length) {
+    els.skillMatrixBandFilter.innerHTML = [
+      `<option value="">ทุกระดับ</option>`,
+      ...SKILL_MATRIX_CONFIG.skillBands.map((band) => `<option value="${band.skillPct}">${band.label}</option>`)
+    ].join("");
+  }
+
+  const filteredRows = rows.filter((row) => {
+    const matchesSearch = !searchValue
+      || String(row.employeeCode || "").toLowerCase().includes(searchValue)
+      || String(row.employeeName || "").toLowerCase().includes(searchValue);
+    const matchesModel = !selectedModel || row.modelName === selectedModel;
+    const matchesPart = !selectedPart || row.partName === selectedPart;
+    const matchesBand = !selectedBand || String(row.skillPct) === selectedBand;
+    return matchesSearch && matchesModel && matchesPart && matchesBand;
+  });
+
+  const completeCount = filteredRows.filter((row) => row.hasExam && row.hasEvaluation).length;
+  const avgFinal = filteredRows.length
+    ? Math.round(filteredRows.reduce((sum, row) => sum + row.finalPercent, 0) / filteredRows.length)
+    : 0;
+  const readyCount = filteredRows.filter((row) => row.skillPct >= 75).length;
+
+  if (els.skillMatrixConfig) {
+    els.skillMatrixConfig.innerHTML = `
+      <span>Exam ${SKILL_MATRIX_CONFIG.examWeight}%</span>
+      <span>Evaluation ${SKILL_MATRIX_CONFIG.evaluationWeight}%</span>
+      <span>Total ${SKILL_MATRIX_CONFIG.totalWeight}%</span>
+    `;
+  }
+
+  if (els.skillMatrixSummary) {
+    els.skillMatrixSummary.innerHTML = `
+      <div class="stat-box"><span>รายการทั้งหมด</span><strong>${filteredRows.length}</strong></div>
+      <div class="stat-box"><span>ข้อมูลครบ</span><strong>${completeCount}</strong></div>
+      <div class="stat-box"><span>ค่าเฉลี่ย Final</span><strong>${avgFinal}%</strong></div>
+      <div class="stat-box"><span>Skill 75% ขึ้นไป</span><strong>${readyCount}</strong></div>
+    `;
+  }
+
+  if (els.skillMatrixTableBody) {
+    els.skillMatrixTableBody.innerHTML = filteredRows.map((row) => `
+      <tr>
+        <td>
+          <strong>${row.employeeName}</strong>
+          <div class="table-subline">${row.employeeCode}${row.department ? ` • ${row.department}` : ""}</div>
+        </td>
+        <td>
+          <strong>${row.modelName || "-"}</strong>
+          <div class="table-subline">${row.partName || "-"}</div>
+        </td>
+        <td>${row.hasExam ? `${row.examPercent}%` : "-"}</td>
+        <td>${row.hasEvaluation ? `${row.evaluationPercent}%` : "-"}</td>
+        <td><strong>${row.finalPercent}%</strong></td>
+        <td><span class="skill-pill" style="--skill-pill:${row.bandColor || "#cbd5e1"}">${row.bandLabel}</span></td>
+        <td>${row.status}</td>
+      </tr>
+    `).join("");
+  }
+
+  if (els.skillMatrixEmpty) {
+    els.skillMatrixEmpty.classList.toggle("hidden", filteredRows.length > 0);
+  }
 }
 
 function populateSelect(element, options, valueKey, labelKey, selectedValue = "") {
@@ -998,6 +1189,7 @@ async function loadEmployees() {
   if (state.user?.role !== "admin") return;
   const payload = await api("/api/admin/employees");
   state.employees = Array.isArray(payload.employees) ? payload.employees : [];
+  renderSkillMatrix();
   renderEvaluationForm();
 }
 
@@ -1005,6 +1197,7 @@ async function loadEvaluations() {
   if (state.user?.role !== "admin") return;
   const payload = await api("/api/evaluations");
   state.evaluations = Array.isArray(payload.evaluations) ? payload.evaluations : [];
+  renderSkillMatrix();
   renderEvaluationHistory();
 }
 
@@ -1825,6 +2018,18 @@ function bindEvents() {
   els.evaluationSearchInput.addEventListener("input", renderEvaluationHistory);
   els.evaluationHistoryPartFilter.addEventListener("change", renderEvaluationHistory);
   els.evaluationHistoryEvaluatorFilter.addEventListener("change", renderEvaluationHistory);
+  if (els.skillMatrixSearchInput) {
+    els.skillMatrixSearchInput.addEventListener("input", renderSkillMatrix);
+  }
+  if (els.skillMatrixModelFilter) {
+    els.skillMatrixModelFilter.addEventListener("change", renderSkillMatrix);
+  }
+  if (els.skillMatrixPartFilter) {
+    els.skillMatrixPartFilter.addEventListener("change", renderSkillMatrix);
+  }
+  if (els.skillMatrixBandFilter) {
+    els.skillMatrixBandFilter.addEventListener("change", renderSkillMatrix);
+  }
 }
 
 function applyStaticThaiText() {
@@ -1873,6 +2078,7 @@ function applyStaticThaiText() {
     exam: "หน้าสอบ",
     history: "ผลคะแนน",
     profile: "บัญชีผู้ใช้",
+    skillMatrix: "Skill Matrix",
     evaluation: "Evaluation",
     admin: "Admin Upload"
   };
