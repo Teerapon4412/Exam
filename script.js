@@ -184,6 +184,12 @@ function setText(element, value) {
   }
 }
 
+function updatePreviewAccess() {
+  if (!els.previewToolbar) return;
+  const isAdmin = state.user?.role === "admin";
+  els.previewToolbar.classList.toggle("hidden", !isAdmin);
+}
+
 function applyPreviewMode(mode = "auto") {
   const safeMode = ["auto", "mobile", "tablet"].includes(mode) ? mode : "auto";
   if (safeMode === "auto") {
@@ -436,6 +442,7 @@ function updateUserPanel() {
 
   const isAdmin = user.role === "admin";
   adminOnlyNodes.forEach((node) => node.classList.toggle("hidden", !isAdmin));
+  updatePreviewAccess();
 }
 
 function renderBankSummary() {
@@ -1765,6 +1772,7 @@ function logout() {
   els.loginShell.classList.remove("hidden");
   els.appShell.classList.add("hidden");
   showMessage(els.loginMessage, "");
+  updatePreviewAccess();
 }
 
 function bindEvents() {
@@ -1930,6 +1938,7 @@ function applyStaticThaiText() {
 function init() {
   applyStaticThaiText();
   applyPreviewMode(window.localStorage.getItem(STORAGE_KEYS.previewMode) || "auto");
+  updatePreviewAccess();
   bindEvents();
   renderBankSummary();
   resetExamSession();
