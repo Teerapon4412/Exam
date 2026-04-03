@@ -771,6 +771,10 @@ textarea {
   gap: 12px;
 }
 
+.admin-single-field {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .admin-part-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

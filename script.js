@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 
 const STORAGE_KEYS = {
   authToken: "factory_exam_auth_token",
@@ -106,44 +106,44 @@ const adminOnlyNodes = Array.from(document.querySelectorAll(".admin-only"));
 
 const TEXT = {
   titleByView: {
-    exam: "ทำข้อสอบออนไลน์",
-    history: "ผลคะแนนย้อนหลัง",
-    profile: "ข้อมูลพนักงาน",
-    evaluation: "ประเมินผลหน้างาน",
-    admin: "จัดการคลังข้อสอบ"
+    exam: "à¸—à¸³à¸‚à¹‰à¸­à¸ªà¸­à¸šà¸­à¸­à¸™à¹„à¸¥à¸™à¹Œ",
+    history: "à¸œà¸¥à¸„à¸°à¹à¸™à¸™à¸¢à¹‰à¸­à¸™à¸«à¸¥à¸±à¸‡",
+    profile: "à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸žà¸™à¸±à¸à¸‡à¸²à¸™",
+    evaluation: "à¸›à¸£à¸°à¹€à¸¡à¸´à¸™à¸œà¸¥à¸«à¸™à¹‰à¸²à¸‡à¸²à¸™",
+    admin: "à¸ˆà¸±à¸”à¸à¸²à¸£à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸š"
   },
   evaluators: [
-    "206006 - ผู้ประเมิน",
-    "206018 - ผู้ประเมิน",
-    "206022 - ผู้ประเมิน"
+    "206006 - à¸œà¸¹à¹‰à¸›à¸£à¸°à¹€à¸¡à¸´à¸™",
+    "206018 - à¸œà¸¹à¹‰à¸›à¸£à¸°à¹€à¸¡à¸´à¸™",
+    "206022 - à¸œà¸¹à¹‰à¸›à¸£à¸°à¹€à¸¡à¸´à¸™"
   ],
   evaluationRows: [
     {
-      title: "ความเข้าใจขั้นตอนการทำงานและการอ้างอิง WI อย่างถูกต้อง",
-      method: "สังเกต",
+      title: "à¸„à¸§à¸²à¸¡à¹€à¸‚à¹‰à¸²à¹ƒà¸ˆà¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸à¸²à¸£à¸—à¸³à¸‡à¸²à¸™à¹à¸¥à¸°à¸à¸²à¸£à¸­à¹‰à¸²à¸‡à¸­à¸´à¸‡ WI à¸­à¸¢à¹ˆà¸²à¸‡à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡",
+      method: "à¸ªà¸±à¸‡à¹€à¸à¸•",
       maxScore: 5,
       weight: 1
     },
     {
-      title: "ความถูกต้องของการปฏิบัติงานตามมาตรฐานที่กำหนด",
-      method: "ตรวจงาน",
+      title: "à¸„à¸§à¸²à¸¡à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡à¸‚à¸­à¸‡à¸à¸²à¸£à¸›à¸à¸´à¸šà¸±à¸•à¸´à¸‡à¸²à¸™à¸•à¸²à¸¡à¸¡à¸²à¸•à¸£à¸à¸²à¸™à¸—à¸µà¹ˆà¸à¸³à¸«à¸™à¸”",
+      method: "à¸•à¸£à¸§à¸ˆà¸‡à¸²à¸™",
       maxScore: 5,
       weight: 1
     },
     {
-      title: "ความสามารถในการทำงานได้อย่างต่อเนื่องและปลอดภัย",
-      method: "ทดสอบ",
+      title: "à¸„à¸§à¸²à¸¡à¸ªà¸²à¸¡à¸²à¸£à¸–à¹ƒà¸™à¸à¸²à¸£à¸—à¸³à¸‡à¸²à¸™à¹„à¸”à¹‰à¸­à¸¢à¹ˆà¸²à¸‡à¸•à¹ˆà¸­à¹€à¸™à¸·à¹ˆà¸­à¸‡à¹à¸¥à¸°à¸›à¸¥à¸­à¸”à¸ à¸±à¸¢",
+      method: "à¸—à¸”à¸ªà¸­à¸š",
       maxScore: 5,
       weight: 1
     },
     {
-      title: "การตอบสนองเมื่อพบความผิดปกติและการแยกชิ้นงาน NG ได้เหมาะสม",
-      method: "สัมภาษณ์",
+      title: "à¸à¸²à¸£à¸•à¸­à¸šà¸ªà¸™à¸­à¸‡à¹€à¸¡à¸·à¹ˆà¸­à¸žà¸šà¸„à¸§à¸²à¸¡à¸œà¸´à¸”à¸›à¸à¸•à¸´à¹à¸¥à¸°à¸à¸²à¸£à¹à¸¢à¸à¸Šà¸´à¹‰à¸™à¸‡à¸²à¸™ NG à¹„à¸”à¹‰à¹€à¸«à¸¡à¸²à¸°à¸ªà¸¡",
+      method: "à¸ªà¸±à¸¡à¸ à¸²à¸©à¸“à¹Œ",
       maxScore: 5,
       weight: 1
     }
   ],
-  evaluationSectionTitle: "หัวข้อที่ 1 : การประเมินหน้างาน และทักษะงาน"
+  evaluationSectionTitle: "à¸«à¸±à¸§à¸‚à¹‰à¸­à¸—à¸µà¹ˆ 1 : à¸à¸²à¸£à¸›à¸£à¸°à¹€à¸¡à¸´à¸™à¸«à¸™à¹‰à¸²à¸‡à¸²à¸™ à¹à¸¥à¸°à¸—à¸±à¸à¸©à¸°à¸‡à¸²à¸™"
 };
 
 const state = {
@@ -168,7 +168,6 @@ const state = {
     draft: null,
     selectedModelCode: "",
     selectedExamId: "",
-    newModelCode: "",
     newModelName: "",
     newPartCode: "",
     newPartTitle: ""
@@ -189,7 +188,7 @@ function setText(element, value) {
 }
 
 function roleLabel(role) {
-  return role === "admin" ? "ผู้ดูแลระบบ" : "พนักงาน";
+  return role === "admin" ? "à¸œà¸¹à¹‰à¸”à¸¹à¹à¸¥à¸£à¸°à¸šà¸š" : "à¸žà¸™à¸±à¸à¸‡à¸²à¸™";
 }
 
 function formatDateTime(value) {
@@ -206,7 +205,7 @@ function formatDateTime(value) {
 }
 
 function formatMinutes(minutes) {
-  return `${Number(minutes) || 0} นาที`;
+  return `${Number(minutes) || 0} à¸™à¸²à¸—à¸µ`;
 }
 
 function formatClock(totalSeconds) {
@@ -231,7 +230,7 @@ async function api(url, options = {}) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || "เกิดข้อผิดพลาดจากระบบ");
+    throw new Error(data.error || "à¹€à¸à¸´à¸”à¸‚à¹‰à¸­à¸œà¸´à¸”à¸žà¸¥à¸²à¸”à¸ˆà¸²à¸à¸£à¸°à¸šà¸š");
   }
   return data;
 }
@@ -388,8 +387,8 @@ function updateUserPanel() {
   if (!user) return;
 
   setText(els.sidebarUserName, user.fullName || user.username || "-");
-  setText(els.sidebarUserRole, `สิทธิ์: ${roleLabel(user.role)}`);
-  setText(els.sidebarUserId, `รหัสพนักงาน: ${user.employeeCode || "-"}`);
+  setText(els.sidebarUserRole, `à¸ªà¸´à¸—à¸˜à¸´à¹Œ: ${roleLabel(user.role)}`);
+  setText(els.sidebarUserId, `à¸£à¸«à¸±à¸ªà¸žà¸™à¸±à¸à¸‡à¸²à¸™: ${user.employeeCode || "-"}`);
 
   const isAdmin = user.role === "admin";
   adminOnlyNodes.forEach((node) => node.classList.toggle("hidden", !isAdmin));
@@ -399,9 +398,9 @@ function renderBankSummary() {
   const examCount = state.bank.examSets.length;
   setText(
     els.dataSourceLabel,
-    state.bank.source === "custom" ? "ใช้คลังข้อสอบแบบอัปโหลด" : "ใช้คลังข้อสอบหลักของระบบ"
+    state.bank.source === "custom" ? "à¹ƒà¸Šà¹‰à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹à¸šà¸šà¸­à¸±à¸›à¹‚à¸«à¸¥à¸”" : "à¹ƒà¸Šà¹‰à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¸«à¸¥à¸±à¸à¸‚à¸­à¸‡à¸£à¸°à¸šà¸š"
   );
-  setText(els.dataSummaryLabel, `${examCount} ชุดข้อสอบ`);
+  setText(els.dataSummaryLabel, `${examCount} à¸Šà¸¸à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸š`);
   setText(els.systemTitle, state.bank.title || "Factory Online Exam");
 }
 
@@ -440,9 +439,9 @@ function renderExamSelector() {
       button.classList.add("active");
     }
     button.innerHTML = `
-      <strong>${exam.title || exam.partCode || "ชุดข้อสอบ"}</strong>
+      <strong>${exam.title || exam.partCode || "à¸Šà¸¸à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸š"}</strong>
       <span>${exam.partCode || "-"}</span>
-      <span>${(exam.questions || []).length} ข้อ</span>
+      <span>${(exam.questions || []).length} à¸‚à¹‰à¸­</span>
     `;
     button.addEventListener("click", () => {
       state.selectedExamId = exam.id;
@@ -456,8 +455,8 @@ function renderExamSelector() {
   showMessage(
     els.loadStatus,
     count
-      ? `โมเดลนี้มี ${count} ชุดข้อสอบ | ชุดปัจจุบัน ${state.currentExam?.title || "-"}`
-      : "ไม่พบชุดข้อสอบในระบบ"
+      ? `à¹‚à¸¡à¹€à¸”à¸¥à¸™à¸µà¹‰à¸¡à¸µ ${count} à¸Šà¸¸à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸š | à¸Šà¸¸à¸”à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™ ${state.currentExam?.title || "-"}`
+      : "à¹„à¸¡à¹ˆà¸žà¸šà¸Šà¸¸à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹ƒà¸™à¸£à¸°à¸šà¸š"
   );
 }
 
@@ -474,11 +473,11 @@ function renderExamMeta() {
   const exam = state.currentExam;
   const questionCount = exam?.questions?.length || 0;
 
-  setText(els.examTitle, exam?.title || "ยังไม่ได้เลือกชุดข้อสอบ");
+  setText(els.examTitle, exam?.title || "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¹€à¸¥à¸·à¸­à¸à¸Šà¸¸à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸š");
   setText(els.examDescription, exam?.description || "-");
-  setText(els.examMetaQuestions, `${questionCount} ข้อ`);
+  setText(els.examMetaQuestions, `${questionCount} à¸‚à¹‰à¸­`);
   setText(els.examMetaTime, formatMinutes(exam?.durationMinutes));
-  setText(els.examMetaPassScore, `ผ่าน ${Number(exam?.passScore) || 0} คะแนน`);
+  setText(els.examMetaPassScore, `à¸œà¹ˆà¸²à¸™ ${Number(exam?.passScore) || 0} à¸„à¸°à¹à¸™à¸™`);
   setText(els.timeRemaining, formatClock(state.remainingSeconds));
   setText(els.answeredCount, `${state.answers.filter((value) => value !== null && value !== undefined).length} / ${questionCount}`);
 }
@@ -490,20 +489,20 @@ function updateExamStatus() {
   const unansweredCount = Math.max(questionCount - answeredCount, 0);
   const progress = questionCount ? Math.round((answeredCount / questionCount) * 100) : 0;
 
-  setText(els.currentQuestionText, questionCount ? `ข้อ ${state.currentQuestionIndex + 1}` : "ข้อ 0");
-  setText(els.unansweredCount, `${unansweredCount} ข้อ`);
-  setText(els.summaryAnsweredCount, `${answeredCount} ข้อ`);
+  setText(els.currentQuestionText, questionCount ? `à¸‚à¹‰à¸­ ${state.currentQuestionIndex + 1}` : "à¸‚à¹‰à¸­ 0");
+  setText(els.unansweredCount, `${unansweredCount} à¸‚à¹‰à¸­`);
+  setText(els.summaryAnsweredCount, `${answeredCount} à¸‚à¹‰à¸­`);
   setText(els.progressPercent, `${progress}%`);
   els.progressBar.style.width = `${progress}%`;
   setText(els.answeredCount, `${answeredCount} / ${questionCount}`);
 
-  let statusText = "รอเริ่มสอบ";
+  let statusText = "à¸£à¸­à¹€à¸£à¸´à¹ˆà¸¡à¸ªà¸­à¸š";
   if (state.submitted) {
-    statusText = "เสร็จสิ้น";
+    statusText = "à¹€à¸ªà¸£à¹‡à¸ˆà¸ªà¸´à¹‰à¸™";
   } else if (state.startedAt) {
-    statusText = "กำลังสอบ";
+    statusText = "à¸à¸³à¸¥à¸±à¸‡à¸ªà¸­à¸š";
   } else if (exam) {
-    statusText = "ยังไม่ได้เริ่มสอบ";
+    statusText = "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¹€à¸£à¸´à¹ˆà¸¡à¸ªà¸­à¸š";
   }
 
   setText(els.summaryStatus, statusText);
@@ -515,9 +514,9 @@ function renderQuestion() {
   const exam = state.currentExam;
   const question = exam?.questions?.[state.currentQuestionIndex];
   if (!question) {
-    setText(els.questionTitle, "ข้อ 0");
-    setText(els.questionText, "ยังไม่มีคำถามสำหรับชุดข้อสอบนี้");
-    setText(els.questionBadge, "ยังไม่ได้เลือกคำตอบ");
+    setText(els.questionTitle, "à¸‚à¹‰à¸­ 0");
+    setText(els.questionText, "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸„à¸³à¸–à¸²à¸¡à¸ªà¸³à¸«à¸£à¸±à¸šà¸Šà¸¸à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸šà¸™à¸µà¹‰");
+    setText(els.questionBadge, "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¹€à¸¥à¸·à¸­à¸à¸„à¸³à¸•à¸­à¸š");
     els.questionImage.classList.add("hidden");
     els.choicesContainer.innerHTML = "";
     updateExamStatus();
@@ -525,13 +524,13 @@ function renderQuestion() {
   }
 
   const selectedAnswer = state.answers[state.currentQuestionIndex];
-  setText(els.questionTitle, `ข้อ ${question.number || state.currentQuestionIndex + 1}`);
+  setText(els.questionTitle, `à¸‚à¹‰à¸­ ${question.number || state.currentQuestionIndex + 1}`);
   setText(els.questionText, question.text || "-");
   setText(
     els.questionBadge,
     selectedAnswer === null || selectedAnswer === undefined
-      ? "ยังไม่ได้เลือกคำตอบ"
-      : `เลือกข้อ ${question.choiceKeys?.[selectedAnswer] || selectedAnswer + 1} แล้ว`
+      ? "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¹€à¸¥à¸·à¸­à¸à¸„à¸³à¸•à¸­à¸š"
+      : `à¹€à¸¥à¸·à¸­à¸à¸‚à¹‰à¸­ ${question.choiceKeys?.[selectedAnswer] || selectedAnswer + 1} à¹à¸¥à¹‰à¸§`
   );
 
   if (question.imageUrl) {
@@ -603,7 +602,7 @@ function startExam() {
     setText(els.timeRemaining, formatClock(state.remainingSeconds));
     if (state.remainingSeconds <= 0) {
       clearTimer();
-      showMessage(els.loadStatus, "หมดเวลา ระบบส่งข้อสอบให้อัตโนมัติแล้ว");
+      showMessage(els.loadStatus, "à¸«à¸¡à¸”à¹€à¸§à¸¥à¸² à¸£à¸°à¸šà¸šà¸ªà¹ˆà¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹ƒà¸«à¹‰à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´à¹à¸¥à¹‰à¸§");
       submitExam(true);
     }
   }, 1000);
@@ -627,7 +626,7 @@ async function submitExam(isAutoSubmit = false) {
     renderResult(response.result, isAutoSubmit);
     await loadResults();
   } catch (error) {
-    showMessage(els.loadStatus, `ส่งข้อสอบไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.loadStatus, `à¸ªà¹ˆà¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ: ${error.message}`, true);
   }
 }
 
@@ -635,21 +634,21 @@ function renderResult(result, isAutoSubmit) {
   els.resultPanel.classList.remove("hidden");
   setText(els.scoreValue, `${result.score} / ${result.total_score}`);
   setText(els.scorePercent, `${result.percent}%`);
-  setText(els.correctCount, `ตอบถูก ${result.correct_count} ข้อ`);
-  setText(els.wrongCount, `${result.wrong_count} ข้อ`);
+  setText(els.correctCount, `à¸•à¸­à¸šà¸–à¸¹à¸ ${result.correct_count} à¸‚à¹‰à¸­`);
+  setText(els.wrongCount, `${result.wrong_count} à¸‚à¹‰à¸­`);
   els.resultMessage.textContent = result.passed
-    ? `ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`
-    : `ไม่ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`;
+    ? `à¸œà¹ˆà¸²à¸™à¹€à¸à¸“à¸‘à¹Œ: à¸•à¸­à¸šà¸–à¸¹à¸ ${result.correct_count} à¸‚à¹‰à¸­ à¸ˆà¸²à¸ ${result.question_count} à¸‚à¹‰à¸­`
+    : `à¹„à¸¡à¹ˆà¸œà¹ˆà¸²à¸™à¹€à¸à¸“à¸‘à¹Œ: à¸•à¸­à¸šà¸–à¸¹à¸ ${result.correct_count} à¸‚à¹‰à¸­ à¸ˆà¸²à¸ ${result.question_count} à¸‚à¹‰à¸­`;
   if (isAutoSubmit) {
-    showMessage(els.loadStatus, "หมดเวลา ระบบส่งข้อสอบให้อัตโนมัติแล้ว");
+    showMessage(els.loadStatus, "à¸«à¸¡à¸”à¹€à¸§à¸¥à¸² à¸£à¸°à¸šà¸šà¸ªà¹ˆà¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹ƒà¸«à¹‰à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´à¹à¸¥à¹‰à¸§");
   } else {
-    showMessage(els.loadStatus, "ส่งข้อสอบแล้ว");
+    showMessage(els.loadStatus, "à¸ªà¹ˆà¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹à¸¥à¹‰à¸§");
   }
   updateExamStatus();
 }
 
 async function loadExams() {
-  showMessage(els.loadStatus, "กำลังโหลดชุดข้อสอบ...");
+  showMessage(els.loadStatus, "à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”à¸Šà¸¸à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸š...");
   try {
     const payload = await api("/api/exams");
     state.bank = payload;
@@ -669,7 +668,7 @@ async function loadExams() {
     state.selectedModelCode = "";
     state.selectedExamId = "";
     resetExamSession();
-    showMessage(els.loadStatus, `โหลดข้อสอบไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.loadStatus, `à¹‚à¸«à¸¥à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ: ${error.message}`, true);
   }
 }
 
@@ -692,14 +691,14 @@ function renderHistory() {
   const passedCount = results.filter((item) => item.passed).length;
 
   els.historyStats.innerHTML = `
-    <div class="stat-box"><span>ผลสอบทั้งหมด</span><strong>${total}</strong></div>
-    <div class="stat-box"><span>จำนวนครั้งที่สอบ</span><strong>${total}</strong></div>
-    <div class="stat-box"><span>ค่าเฉลี่ย</span><strong>${avgPercent}%</strong></div>
-    <div class="stat-box"><span>รายการผ่านเกณฑ์</span><strong>${passedCount}</strong></div>
+    <div class="stat-box"><span>à¸œà¸¥à¸ªà¸­à¸šà¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”</span><strong>${total}</strong></div>
+    <div class="stat-box"><span>à¸ˆà¸³à¸™à¸§à¸™à¸„à¸£à¸±à¹‰à¸‡à¸—à¸µà¹ˆà¸ªà¸­à¸š</span><strong>${total}</strong></div>
+    <div class="stat-box"><span>à¸„à¹ˆà¸²à¹€à¸‰à¸¥à¸µà¹ˆà¸¢</span><strong>${avgPercent}%</strong></div>
+    <div class="stat-box"><span>à¸£à¸²à¸¢à¸à¸²à¸£à¸œà¹ˆà¸²à¸™à¹€à¸à¸“à¸‘à¹Œ</span><strong>${passedCount}</strong></div>
   `;
 
   if (!total) {
-    els.historyList.innerHTML = `<div class="inline-message">ยังไม่มีข้อมูลผลสอบ</div>`;
+    els.historyList.innerHTML = `<div class="inline-message">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸œà¸¥à¸ªà¸­à¸š</div>`;
     return;
   }
 
@@ -717,7 +716,7 @@ function renderHistory() {
           </div>
           <div class="history-score ${item.passed ? "pass" : "fail"}">
             <strong>${item.percent}%</strong>
-            <span>${item.passed ? "ผ่านเกณฑ์" : "ไม่ผ่าน"}</span>
+            <span>${item.passed ? "à¸œà¹ˆà¸²à¸™à¹€à¸à¸“à¸‘à¹Œ" : "à¹„à¸¡à¹ˆà¸œà¹ˆà¸²à¸™"}</span>
           </div>
         </article>
       `;
@@ -914,10 +913,10 @@ async function loadEvaluations() {
 function renderEvaluationHistory() {
   if (state.user?.role !== "admin") return;
 
-  const partOptions = ["ทุก Part"].concat(
+  const partOptions = ["à¸—à¸¸à¸ Part"].concat(
     Array.from(new Set(state.evaluations.map((item) => item.partCode).filter(Boolean)))
   );
-  const evaluatorOptions = ["ผู้ประเมินทั้งหมด"].concat(
+  const evaluatorOptions = ["à¸œà¸¹à¹‰à¸›à¸£à¸°à¹€à¸¡à¸´à¸™à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”"].concat(
     Array.from(new Set(state.evaluations.map((item) => item.evaluator).filter(Boolean)))
   );
 
@@ -929,8 +928,8 @@ function renderEvaluationHistory() {
     .join("");
 
   const keyword = (els.evaluationSearchInput.value || "").trim().toLowerCase();
-  const partFilter = els.evaluationHistoryPartFilter.value || "ทุก Part";
-  const evaluatorFilter = els.evaluationHistoryEvaluatorFilter.value || "ผู้ประเมินทั้งหมด";
+  const partFilter = els.evaluationHistoryPartFilter.value || "à¸—à¸¸à¸ Part";
+  const evaluatorFilter = els.evaluationHistoryEvaluatorFilter.value || "à¸œà¸¹à¹‰à¸›à¸£à¸°à¹€à¸¡à¸´à¸™à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”";
 
   const filtered = state.evaluations.filter((item) => {
     const matchedKeyword = !keyword || [
@@ -941,9 +940,9 @@ function renderEvaluationHistory() {
       item.evaluator
     ].some((entry) => String(entry || "").toLowerCase().includes(keyword));
 
-    const matchedPart = partFilter === "ทุก Part" || item.partCode === partFilter;
+    const matchedPart = partFilter === "à¸—à¸¸à¸ Part" || item.partCode === partFilter;
     const matchedEvaluator =
-      evaluatorFilter === "ผู้ประเมินทั้งหมด" || item.evaluator === evaluatorFilter;
+      evaluatorFilter === "à¸œà¸¹à¹‰à¸›à¸£à¸°à¹€à¸¡à¸´à¸™à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”" || item.evaluator === evaluatorFilter;
 
     return matchedKeyword && matchedPart && matchedEvaluator;
   });
@@ -965,14 +964,14 @@ function renderEvaluationHistory() {
   els.evaluationHistoryEmpty.classList.toggle("hidden", hasRows);
   els.evaluationHistoryTableWrap.classList.toggle("hidden", !hasRows);
   if (!hasRows) {
-    setText(els.evaluationHistoryEmpty, "ยังไม่มีข้อมูลการประเมิน");
+    setText(els.evaluationHistoryEmpty, "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸à¸²à¸£à¸›à¸£à¸°à¹€à¸¡à¸´à¸™");
   }
 }
 
 async function saveEvaluation() {
   const { employee, exam, evaluator } = getEvaluationContext();
   if (!employee || !exam) {
-    showMessage(els.evaluationMessage, "กรุณาเลือกพนักงานและ Part ที่ต้องการประเมิน", true);
+    showMessage(els.evaluationMessage, "à¸à¸£à¸¸à¸“à¸²à¹€à¸¥à¸·à¸­à¸à¸žà¸™à¸±à¸à¸‡à¸²à¸™à¹à¸¥à¸° Part à¸—à¸µà¹ˆà¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¸›à¸£à¸°à¹€à¸¡à¸´à¸™", true);
     return;
   }
 
@@ -1005,10 +1004,10 @@ async function saveEvaluation() {
         rows
       })
     });
-    showMessage(els.evaluationMessage, "บันทึกผลการประเมินเรียบร้อยแล้ว");
+    showMessage(els.evaluationMessage, "à¸šà¸±à¸™à¸—à¸¶à¸à¸œà¸¥à¸à¸²à¸£à¸›à¸£à¸°à¹€à¸¡à¸´à¸™à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢à¹à¸¥à¹‰à¸§");
     await loadEvaluations();
   } catch (error) {
-    showMessage(els.evaluationMessage, `บันทึกผลการประเมินไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.evaluationMessage, `à¸šà¸±à¸™à¸—à¸¶à¸à¸œà¸¥à¸à¸²à¸£à¸›à¸£à¸°à¹€à¸¡à¸´à¸™à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ: ${error.message}`, true);
   }
 }
 
@@ -1059,79 +1058,75 @@ function renderAdminEditor() {
     <div class="panel-head">
       <div>
         <p class="card-label">Exam Builder</p>
-        <h3>สร้างข้อสอบได้เร็วขึ้นจากหน้าเดียว</h3>
+        <h3>à¸ªà¸£à¹‰à¸²à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹„à¸”à¹‰à¹€à¸£à¹‡à¸§à¸‚à¸¶à¹‰à¸™à¸ˆà¸²à¸à¸«à¸™à¹‰à¸²à¹€à¸”à¸µà¸¢à¸§</h3>
       </div>
     </div>
     <div class="admin-builder-layout">
       <div class="admin-card admin-builder-sidebar">
         <label class="field">
-          <span>ชื่อระบบข้อสอบ</span>
+          <span>à¸Šà¸·à¹ˆà¸­à¸£à¸°à¸šà¸šà¸‚à¹‰à¸­à¸ªà¸­à¸š</span>
           <input id="adminDraftTitleInput" type="text" value="${state.adminEditor.draft.title || ""}" />
         </label>
         <div class="admin-flow-card">
           <div class="admin-flow-head">
             <span class="card-label">Step 1</span>
-            <strong>เพิ่ม Model</strong>
+            <strong>à¹€à¸žà¸´à¹ˆà¸¡ Model</strong>
           </div>
-          <div class="admin-quick-grid" style="margin-top: 14px;">
+          <div class="admin-quick-grid admin-single-field" style="margin-top: 14px;">
             <label class="field">
-              <span>รหัส Model</span>
-              <input id="adminNewModelCodeInput" type="text" value="${state.adminEditor.newModelCode || ""}" placeholder="เช่น RJ08" />
-            </label>
-            <label class="field">
-              <span>ชื่อ Model</span>
-              <input id="adminNewModelNameInput" type="text" value="${state.adminEditor.newModelName || ""}" placeholder="ถ้าไม่กรอกจะใช้รหัสเดียวกัน" />
+              <span>à¸Šà¸·à¹ˆà¸­ Model</span>
+              <input id="adminNewModelNameInput" type="text" value="${state.adminEditor.newModelName || ""}" placeholder="à¹€à¸Šà¹ˆà¸™ RJ08 à¸«à¸£à¸·à¸­ R21" />
             </label>
           </div>
           <div class="result-actions" style="margin-top: 14px;">
-            <button id="adminAddModelBtn" class="primary-btn" type="button">เพิ่ม Model</button>
+            <button id="adminAddModelBtn" class="primary-btn" type="button">à¹€à¸žà¸´à¹ˆà¸¡ Model</button>
           </div>
         </div>
         <div class="admin-divider"></div>
         <div class="admin-flow-card">
           <div class="admin-flow-head">
             <span class="card-label">Step 2</span>
-            <strong>เพิ่ม Part ใต้ Model ที่เลือก</strong>
+            <strong>à¹€à¸žà¸´à¹ˆà¸¡ Part à¹ƒà¸•à¹‰ Model à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸</strong>
           </div>
           <div class="admin-info-list" style="margin-top: 10px;">
-            <div class="mini-note">Model ที่เลือกตอนนี้: <strong>${selectedGroup?.modelCode || "-"}</strong></div>
+            <div class="mini-note">Model à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸à¸•à¸­à¸™à¸™à¸µà¹‰: <strong>${selectedGroup?.modelName || "-"}</strong></div>
           </div>
           <div class="admin-quick-grid" style="margin-top: 14px;">
             <label class="field">
-              <span>รหัส Part</span>
-              <input id="adminNewPartCodeInput" type="text" value="${state.adminEditor.newPartCode || ""}" placeholder="เช่น P1 หรือ PART-01" />
+              <span>à¸£à¸«à¸±à¸ª Part</span>
+              <input id="adminNewPartCodeInput" type="text" value="${state.adminEditor.newPartCode || ""}" placeholder="à¹€à¸Šà¹ˆà¸™ P1 à¸«à¸£à¸·à¸­ PART-01" />
             </label>
             <label class="field">
-              <span>ชื่อ Part</span>
-              <input id="adminNewPartTitleInput" type="text" value="${state.adminEditor.newPartTitle || ""}" placeholder="เช่น การตรวจสอบขั้นต้น" />
+              <span>à¸Šà¸·à¹ˆà¸­ Part</span>
+              <input id="adminNewPartTitleInput" type="text" value="${state.adminEditor.newPartTitle || ""}" placeholder="à¹€à¸Šà¹ˆà¸™ à¸à¸²à¸£à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸‚à¸±à¹‰à¸™à¸•à¹‰à¸™" />
             </label>
           </div>
           <div class="result-actions" style="margin-top: 14px;">
-            <button id="adminAddPartBtn" class="primary-btn" type="button">เพิ่ม Part</button>
+            <button id="adminAddPartBtn" class="primary-btn" type="button">à¹€à¸žà¸´à¹ˆà¸¡ Part</button>
           </div>
         </div>
         <div class="admin-divider"></div>
         <div class="result-actions" style="margin-top: 14px;">
-          <button id="adminSaveBuilderBtn" class="secondary-btn" type="button">บันทึกคลังข้อสอบ</button>
+          <button id="adminSaveBuilderBtn" class="secondary-btn" type="button">à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸š</button>
         </div>
         <div class="evaluation-grid">
           <label class="field">
-            <span>เลือก Model</span>
+            <span>à¹€à¸¥à¸·à¸­à¸ Model</span>
             <select id="adminModelSelect">
-              ${groups.map((group) => `<option value="${group.modelCode}" ${group.modelCode === state.adminEditor.selectedModelCode ? "selected" : ""}>${group.modelCode} - ${group.modelName} (${group.exams.length} Part)</option>`).join("")}
+              ${groups.map((group) => `<option value="${group.modelCode}" ${group.modelCode === state.adminEditor.selectedModelCode ? "selected" : ""}>${group.modelName} (${group.exams.length} Part)</option>`).join("")}
             </select>
           </label>
           <label class="field">
-            <span>เลือก Part ใต้ Model นี้</span>
+            <span>à¹€à¸¥à¸·à¸­à¸ Part à¹ƒà¸•à¹‰ Model à¸™à¸µà¹‰</span>
             <select id="adminPartSelect">
               ${(groups.find((group) => group.modelCode === state.adminEditor.selectedModelCode)?.exams || []).map((exam) => `<option value="${exam.id}" ${exam.id === state.adminEditor.selectedExamId ? "selected" : ""}>${exam.partCode} - ${exam.title}</option>`).join("")}
             </select>
           </label>
         </div>
         <div class="admin-info-list">
-          <div class="mini-note">Model ปัจจุบัน: <strong>${selectedExam?.modelName || "-"}</strong></div>
-          <div class="mini-note">Part ปัจจุบัน: <strong>${selectedExam?.partCode || "-"}</strong></div>
-          <div class="mini-note">จำนวนข้อ: <strong>${questionCount}</strong></div>
+          <div class="mini-note">Model à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™: <strong>${selectedExam?.modelName || "-"}</strong></div>
+          <div class="mini-note">Part à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™: <strong>${selectedExam?.partCode || "-"}</strong></div>
+          <div class="mini-note">à¸ˆà¸³à¸™à¸§à¸™à¸‚à¹‰à¸­: <strong>${questionCount}</strong></div>
         </div>
       </div>
       <div class="admin-builder-main">
@@ -1139,41 +1134,37 @@ function renderAdminEditor() {
           ${selectedExam ? `
             <div class="evaluation-grid admin-part-grid">
               <label class="field">
-                <span>ชื่อ Model</span>
+                <span>à¸Šà¸·à¹ˆà¸­ Model</span>
                 <input id="adminExamModelNameInput" type="text" value="${selectedExam.modelName || ""}" />
               </label>
               <label class="field">
-                <span>รหัส Model</span>
-                <input id="adminExamModelCodeInput" type="text" value="${selectedExam.modelCode || ""}" />
-              </label>
-              <label class="field">
-                <span>ชื่อ Part</span>
+                <span>à¸Šà¸·à¹ˆà¸­ Part</span>
                 <input id="adminExamTitleInput" type="text" value="${selectedExam.title || ""}" />
               </label>
               <label class="field">
-                <span>รหัส Part</span>
+                <span>à¸£à¸«à¸±à¸ª Part</span>
                 <input id="adminExamPartCodeInput" type="text" value="${selectedExam.partCode || ""}" />
               </label>
               <label class="field">
-                <span>เวลา (นาที)</span>
+                <span>à¹€à¸§à¸¥à¸² (à¸™à¸²à¸—à¸µ)</span>
                 <input id="adminExamDurationInput" type="number" min="1" value="${selectedExam.durationMinutes || 10}" />
               </label>
               <label class="field">
-                <span>คะแนนผ่าน</span>
+                <span>à¸„à¸°à¹à¸™à¸™à¸œà¹ˆà¸²à¸™</span>
                 <input id="adminExamPassScoreInput" type="number" min="0" value="${selectedExam.passScore || 0}" />
               </label>
             </div>
             <label class="field" style="margin-top: 14px;">
-              <span>คำอธิบาย</span>
+              <span>à¸„à¸³à¸­à¸˜à¸´à¸šà¸²à¸¢</span>
               <input id="adminExamDescriptionInput" type="text" value="${selectedExam.description || ""}" />
             </label>
             <div class="admin-toolbar">
-              <button id="adminAddQuestionBtn" class="primary-btn" type="button">เพิ่มข้อสอบเปล่า</button>
-              <button id="adminAddTemplateBtn" class="secondary-btn" type="button">เพิ่มข้อสอบตัวอย่าง</button>
-              <button id="adminDeletePartBtn" class="secondary-btn" type="button">ลบ Part นี้</button>
+              <button id="adminAddQuestionBtn" class="primary-btn" type="button">à¹€à¸žà¸´à¹ˆà¸¡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹€à¸›à¸¥à¹ˆà¸²</button>
+              <button id="adminAddTemplateBtn" class="secondary-btn" type="button">à¹€à¸žà¸´à¹ˆà¸¡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡</button>
+              <button id="adminDeletePartBtn" class="secondary-btn" type="button">à¸¥à¸š Part à¸™à¸µà¹‰</button>
             </div>
           ` : `
-            <p class="inline-message">เริ่มจากกรอก Model และ Part ด้านซ้าย แล้วกดเพิ่ม Model / Part</p>
+            <p class="inline-message">à¹€à¸£à¸´à¹ˆà¸¡à¸ˆà¸²à¸à¸à¸£à¸­à¸ Model à¹à¸¥à¸° Part à¸”à¹‰à¸²à¸™à¸‹à¹‰à¸²à¸¢ à¹à¸¥à¹‰à¸§à¸à¸”à¹€à¸žà¸´à¹ˆà¸¡ Model / Part</p>
           `}
         </div>
         ${selectedExam ? `
@@ -1184,12 +1175,12 @@ function renderAdminEditor() {
       </div>
     </div>
     <div class="admin-card" style="margin-top: 18px;">
-        <strong>ภาพรวมชุดที่เลือก</strong>
+        <strong>à¸ à¸²à¸žà¸£à¸§à¸¡à¸Šà¸¸à¸”à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸</strong>
         <div class="admin-summary-grid">
           <div class="mini-note">Model: <strong>${selectedExam?.modelName || "-"}</strong></div>
           <div class="mini-note">Part: <strong>${selectedExam?.partCode || "-"}</strong></div>
-          <div class="mini-note">จำนวนข้อ: <strong>${questionCount}</strong></div>
-          <div class="mini-note">คลังข้อสอบทั้งหมด: <strong>${state.adminEditor.draft.examSets.length} ชุด</strong></div>
+          <div class="mini-note">à¸ˆà¸³à¸™à¸§à¸™à¸‚à¹‰à¸­: <strong>${questionCount}</strong></div>
+          <div class="mini-note">à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”: <strong>${state.adminEditor.draft.examSets.length} à¸Šà¸¸à¸”</strong></div>
         </div>
       </div>
     </div>
@@ -1206,32 +1197,32 @@ function updateAdminDraftExam(examId, updater) {
 }
 
 function addAdminModel() {
-  const modelCode = String(state.adminEditor.newModelCode || "").trim().toUpperCase();
   const modelName = String(state.adminEditor.newModelName || "").trim();
 
-  if (!modelCode) {
-    showMessage(els.adminMessage, "กรุณากรอกรหัส Model ก่อน", true);
+  if (!modelName) {
+    showMessage(els.adminMessage, "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸Šà¸·à¹ˆà¸­ Model à¸à¹ˆà¸­à¸™", true);
     return;
   }
 
+  const modelCode = modelName;
   const duplicateModel = state.adminEditor.draft.examSets.some((exam) => exam.modelCode === modelCode);
   if (duplicateModel) {
-    showMessage(els.adminMessage, "มี Model นี้อยู่แล้ว", true);
+    showMessage(els.adminMessage, "à¸¡à¸µ Model à¸™à¸µà¹‰à¸­à¸¢à¸¹à¹ˆà¹à¸¥à¹‰à¸§", true);
     return;
   }
 
   state.adminEditor.selectedModelCode = modelCode;
   state.adminEditor.selectedExamId = "";
-  state.adminEditor.newModelName = modelName || modelCode;
+  state.adminEditor.newModelName = "";
   state.adminEditor.newPartCode = "";
   state.adminEditor.newPartTitle = "";
-  showMessage(els.adminMessage, `สร้าง Model ${modelCode} แล้ว ตอนนี้เพิ่ม Part ใต้ Model นี้ได้เลย`);
+  showMessage(els.adminMessage, `à¸ªà¸£à¹‰à¸²à¸‡ Model ${modelName} à¹à¸¥à¹‰à¸§ à¸•à¸­à¸™à¸™à¸µà¹‰à¹€à¸žà¸´à¹ˆà¸¡ Part à¹ƒà¸•à¹‰ Model à¸™à¸µà¹‰à¹„à¸”à¹‰à¹€à¸¥à¸¢`);
   renderAdminEditor();
 }
 
 function addAdminPartToSelectedModel() {
   const selectedGroup = getAdminDraftGroups().get(state.adminEditor.selectedModelCode);
-  const modelCode = String(state.adminEditor.selectedModelCode || "").trim().toUpperCase();
+  const modelCode = String(state.adminEditor.selectedModelCode || "").trim();
   const modelName = String(
     state.adminEditor.newModelName || selectedGroup?.modelName || modelCode
   ).trim();
@@ -1239,12 +1230,12 @@ function addAdminPartToSelectedModel() {
   const partTitle = String(state.adminEditor.newPartTitle || "").trim();
 
   if (!modelCode) {
-    showMessage(els.adminMessage, "กรุณาเพิ่มหรือเลือก Model ก่อน", true);
+    showMessage(els.adminMessage, "à¸à¸£à¸¸à¸“à¸²à¹€à¸žà¸´à¹ˆà¸¡à¸«à¸£à¸·à¸­à¹€à¸¥à¸·à¸­à¸ Model à¸à¹ˆà¸­à¸™", true);
     return;
   }
 
   if (!partCode || !partTitle) {
-    showMessage(els.adminMessage, "กรุณากรอก Part ให้ครบก่อนเพิ่ม", true);
+    showMessage(els.adminMessage, "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸ Part à¹ƒà¸«à¹‰à¸„à¸£à¸šà¸à¹ˆà¸­à¸™à¹€à¸žà¸´à¹ˆà¸¡", true);
     return;
   }
 
@@ -1252,7 +1243,7 @@ function addAdminPartToSelectedModel() {
     (exam) => exam.modelCode === modelCode && exam.partCode === partCode
   );
   if (duplicatePart) {
-    showMessage(els.adminMessage, "มี Part นี้อยู่แล้วใน Model ที่เลือก", true);
+    showMessage(els.adminMessage, "à¸¡à¸µ Part à¸™à¸µà¹‰à¸­à¸¢à¸¹à¹ˆà¹à¸¥à¹‰à¸§à¹ƒà¸™ Model à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸", true);
     return;
   }
 
@@ -1262,7 +1253,7 @@ function addAdminPartToSelectedModel() {
   state.adminEditor.selectedExamId = exam.id;
   state.adminEditor.newPartCode = "";
   state.adminEditor.newPartTitle = "";
-  showMessage(els.adminMessage, `เพิ่ม Part ${partCode} ใต้ Model ${modelCode} เรียบร้อยแล้ว`);
+  showMessage(els.adminMessage, `à¹€à¸žà¸´à¹ˆà¸¡ Part ${partCode} à¹ƒà¸•à¹‰ Model ${modelName} à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢à¹à¸¥à¹‰à¸§`);
   renderAdminEditor();
 }
 
@@ -1300,25 +1291,25 @@ function buildAdminQuestionCard(question, index) {
     <article class="admin-question-card" data-question-card="${question.id}">
       <div class="admin-question-head">
         <div>
-          <span class="card-label">ข้อ ${index + 1}</span>
+          <span class="card-label">à¸‚à¹‰à¸­ ${index + 1}</span>
           <strong>Question ${index + 1}</strong>
         </div>
         <div class="admin-question-actions">
-          <button class="secondary-btn" data-admin-action="duplicate-question" data-question-id="${question.id}" type="button">คัดลอกข้อ</button>
-          <button class="secondary-btn" data-admin-action="delete-question" data-question-id="${question.id}" type="button">ลบข้อ</button>
+          <button class="secondary-btn" data-admin-action="duplicate-question" data-question-id="${question.id}" type="button">à¸„à¸±à¸”à¸¥à¸­à¸à¸‚à¹‰à¸­</button>
+          <button class="secondary-btn" data-admin-action="delete-question" data-question-id="${question.id}" type="button">à¸¥à¸šà¸‚à¹‰à¸­</button>
         </div>
       </div>
       <div class="evaluation-grid admin-question-grid">
         <label class="field admin-question-main">
-          <span>คำถาม</span>
-          <textarea data-admin-field="question-text" data-question-id="${question.id}" rows="3" placeholder="พิมพ์คำถามที่นี่">${question.text || ""}</textarea>
+          <span>à¸„à¸³à¸–à¸²à¸¡</span>
+          <textarea data-admin-field="question-text" data-question-id="${question.id}" rows="3" placeholder="à¸žà¸´à¸¡à¸žà¹Œà¸„à¸³à¸–à¸²à¸¡à¸—à¸µà¹ˆà¸™à¸µà¹ˆ">${question.text || ""}</textarea>
         </label>
         <label class="field">
-          <span>คะแนน</span>
+          <span>à¸„à¸°à¹à¸™à¸™</span>
           <input data-admin-field="question-score" data-question-id="${question.id}" type="number" min="1" value="${question.score || 1}" />
         </label>
         <label class="field">
-          <span>เฉลย</span>
+          <span>à¹€à¸‰à¸¥à¸¢</span>
           <select data-admin-field="question-answer" data-question-id="${question.id}">
             ${["A", "B", "C", "D"].map((label, answerIndex) => `<option value="${answerIndex}" ${Number(question.answer) === answerIndex ? "selected" : ""}>${label}</option>`).join("")}
           </select>
@@ -1327,8 +1318,8 @@ function buildAdminQuestionCard(question, index) {
       <div class="admin-choice-grid">
         ${["A", "B", "C", "D"].map((label, choiceIndex) => `
           <label class="field">
-            <span>ตัวเลือก ${label}</span>
-            <input data-admin-field="question-choice" data-choice-index="${choiceIndex}" data-question-id="${question.id}" type="text" value="${question.choices?.[choiceIndex] || ""}" placeholder="พิมพ์ตัวเลือก ${label}" />
+            <span>à¸•à¸±à¸§à¹€à¸¥à¸·à¸­à¸ ${label}</span>
+            <input data-admin-field="question-choice" data-choice-index="${choiceIndex}" data-question-id="${question.id}" type="text" value="${question.choices?.[choiceIndex] || ""}" placeholder="à¸žà¸´à¸¡à¸žà¹Œà¸•à¸±à¸§à¹€à¸¥à¸·à¸­à¸ ${label}" />
           </label>
         `).join("")}
       </div>
@@ -1346,9 +1337,6 @@ function bindAdminEditorEvents() {
 
   setInputValue("adminDraftTitleInput", (event) => {
     state.adminEditor.draft.title = event.target.value;
-  });
-  setInputValue("adminNewModelCodeInput", (event) => {
-    state.adminEditor.newModelCode = String(event.target.value || "").trim().toUpperCase();
   });
   setInputValue("adminNewModelNameInput", (event) => {
     state.adminEditor.newModelName = event.target.value;
@@ -1383,11 +1371,8 @@ function bindAdminEditorEvents() {
   const selectedExam = getAdminSelectedExam();
   if (selectedExam) {
     setInputValue("adminExamModelNameInput", (event) => {
-      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelName: event.target.value }));
-    });
-    setInputValue("adminExamModelCodeInput", (event) => {
-      const nextValue = String(event.target.value || "").trim().toUpperCase();
-      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelCode: nextValue }));
+      const nextValue = String(event.target.value || "").trim();
+      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelName: nextValue, modelCode: nextValue }));
       state.adminEditor.selectedModelCode = nextValue;
     });
     setInputValue("adminExamTitleInput", (event) => {
@@ -1446,8 +1431,8 @@ function bindAdminEditorEvents() {
           ...(exam.questions || []),
           {
             ...createBlankQuestion((exam.questions || []).length + 1),
-            text: "ตัวอย่างคำถามใหม่",
-            choices: ["ตัวเลือก A", "ตัวเลือก B", "ตัวเลือก C", "ตัวเลือก D"]
+            text: "à¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡à¸„à¸³à¸–à¸²à¸¡à¹ƒà¸«à¸¡à¹ˆ",
+            choices: ["à¸•à¸±à¸§à¹€à¸¥à¸·à¸­à¸ A", "à¸•à¸±à¸§à¹€à¸¥à¸·à¸­à¸ B", "à¸•à¸±à¸§à¹€à¸¥à¸·à¸­à¸ C", "à¸•à¸±à¸§à¹€à¸¥à¸·à¸­à¸ D"]
           }
         ]
       }));
@@ -1546,7 +1531,7 @@ async function saveAdminBuilder() {
     !exam.modelCode || !exam.modelName || !exam.partCode || !exam.title || !exam.questions.length
   );
   if (invalidExam) {
-    showMessage(els.adminMessage, "กรุณากรอกข้อมูล Model, Part และคำถามให้ครบก่อนบันทึก", true);
+    showMessage(els.adminMessage, "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥ Model, Part à¹à¸¥à¸°à¸„à¸³à¸–à¸²à¸¡à¹ƒà¸«à¹‰à¸„à¸£à¸šà¸à¹ˆà¸­à¸™à¸šà¸±à¸™à¸—à¸¶à¸", true);
     return;
   }
 
@@ -1554,7 +1539,7 @@ async function saveAdminBuilder() {
     !question.text || (question.choices || []).some((choice) => !String(choice || "").trim())
   );
   if (invalidQuestion) {
-    showMessage(els.adminMessage, "ทุกข้อสอบต้องมีคำถามและตัวเลือกให้ครบ 4 ตัวเลือก", true);
+    showMessage(els.adminMessage, "à¸—à¸¸à¸à¸‚à¹‰à¸­à¸ªà¸­à¸šà¸•à¹‰à¸­à¸‡à¸¡à¸µà¸„à¸³à¸–à¸²à¸¡à¹à¸¥à¸°à¸•à¸±à¸§à¹€à¸¥à¸·à¸­à¸à¹ƒà¸«à¹‰à¸„à¸£à¸š 4 à¸•à¸±à¸§à¹€à¸¥à¸·à¸­à¸", true);
     return;
   }
 
@@ -1563,19 +1548,19 @@ async function saveAdminBuilder() {
       method: "POST",
       body: JSON.stringify({ payload: draft })
     });
-    showMessage(els.adminMessage, `บันทึกคลังข้อสอบเรียบร้อยแล้ว ${response.examSetCount} ชุด`);
+    showMessage(els.adminMessage, `à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢à¹à¸¥à¹‰à¸§ ${response.examSetCount} à¸Šà¸¸à¸”`);
     await loadExams();
     renderAdminEditor();
   } catch (error) {
-    showMessage(els.adminMessage, `บันทึกคลังข้อสอบไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.adminMessage, `à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ: ${error.message}`, true);
   }
 }
 
 function renderAdminInfo() {
   els.adminDataInfo.innerHTML = `
-    <div class="mini-note">แหล่งข้อมูล: <strong>${state.bank.source === "custom" ? "ใช้คลังข้อสอบแบบอัปโหลด" : "ใช้คลังข้อสอบหลักของระบบ"}</strong></div>
-    <div class="mini-note">ชื่อระบบ: <strong>${state.bank.title || "-"}</strong></div>
-    <div class="mini-note">จำนวนชุดข้อสอบ: <strong>${state.bank.examSets.length}</strong></div>
+    <div class="mini-note">à¹à¸«à¸¥à¹ˆà¸‡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥: <strong>${state.bank.source === "custom" ? "à¹ƒà¸Šà¹‰à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹à¸šà¸šà¸­à¸±à¸›à¹‚à¸«à¸¥à¸”" : "à¹ƒà¸Šà¹‰à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¸«à¸¥à¸±à¸à¸‚à¸­à¸‡à¸£à¸°à¸šà¸š"}</strong></div>
+    <div class="mini-note">à¸Šà¸·à¹ˆà¸­à¸£à¸°à¸šà¸š: <strong>${state.bank.title || "-"}</strong></div>
+    <div class="mini-note">à¸ˆà¸³à¸™à¸§à¸™à¸Šà¸¸à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸š: <strong>${state.bank.examSets.length}</strong></div>
   `;
   renderAdminEditor();
 }
@@ -1583,7 +1568,7 @@ function renderAdminInfo() {
 async function importExamBank() {
   const file = els.adminFileInput.files?.[0];
   if (!file) {
-    showMessage(els.adminMessage, "กรุณาเลือกไฟล์ JSON ก่อน", true);
+    showMessage(els.adminMessage, "à¸à¸£à¸¸à¸“à¸²à¹€à¸¥à¸·à¸­à¸à¹„à¸Ÿà¸¥à¹Œ JSON à¸à¹ˆà¸­à¸™", true);
     return;
   }
 
@@ -1594,10 +1579,10 @@ async function importExamBank() {
       method: "POST",
       body: JSON.stringify({ payload })
     });
-    showMessage(els.adminMessage, `นำเข้าข้อสอบสำเร็จ ${response.examSetCount} ชุด`);
+    showMessage(els.adminMessage, `à¸™à¸³à¹€à¸‚à¹‰à¸²à¸‚à¹‰à¸­à¸ªà¸­à¸šà¸ªà¸³à¹€à¸£à¹‡à¸ˆ ${response.examSetCount} à¸Šà¸¸à¸”`);
     await loadExams();
   } catch (error) {
-    showMessage(els.adminMessage, `นำเข้าไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.adminMessage, `à¸™à¸³à¹€à¸‚à¹‰à¸²à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ: ${error.message}`, true);
   }
 }
 
@@ -1607,10 +1592,10 @@ async function resetExamBank() {
       method: "POST",
       body: JSON.stringify({})
     });
-    showMessage(els.adminMessage, "กลับไปใช้คลังข้อสอบเดิมแล้ว");
+    showMessage(els.adminMessage, "à¸à¸¥à¸±à¸šà¹„à¸›à¹ƒà¸Šà¹‰à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸šà¹€à¸”à¸´à¸¡à¹à¸¥à¹‰à¸§");
     await loadExams();
   } catch (error) {
-    showMessage(els.adminMessage, `รีเซ็ตไม่สำเร็จ: ${error.message}`, true);
+    showMessage(els.adminMessage, `à¸£à¸µà¹€à¸‹à¹‡à¸•à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ: ${error.message}`, true);
   }
 }
 
@@ -1618,7 +1603,7 @@ async function handleLogin(event) {
   event.preventDefault();
   const employeeCode = (els.employeeCodeInput.value || "").trim().toUpperCase();
   if (!employeeCode) {
-    showMessage(els.loginMessage, "กรุณากรอกรหัสพนักงาน", true);
+    showMessage(els.loginMessage, "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ªà¸žà¸™à¸±à¸à¸‡à¸²à¸™", true);
     return;
   }
 
@@ -1707,43 +1692,43 @@ function applyStaticThaiText() {
     });
   };
 
-  replaceText(".login-brand p", "ระบบสอบออนไลน์พร้อมประวัติผลสอบและแผงจัดการข้อสอบ");
-  replaceText(".info-card:nth-of-type(1) strong", "ผู้เข้าสอบ");
-  replaceText(".info-card:nth-of-type(1) p", "ล็อกอินเป็นพนักงานหรือผู้ดูแลระบบ");
-  replaceText(".info-card:nth-of-type(2) strong", "ประวัติผลสอบ");
-  replaceText(".info-card:nth-of-type(2) p", "บันทึกคะแนนและตรวจสอบผลย้อนหลังได้ทันที");
-  replaceText(".info-card:nth-of-type(3) strong", "อัปโหลดข้อสอบ");
-  replaceText(".info-card:nth-of-type(3) p", "อัปโหลดไฟล์ JSON ใหม่ผ่านหน้าเว็บได้ทันที");
-  replaceText(".side-block .side-label", "เมนูหลัก");
-  replaceText(".side-card:first-of-type .side-label", "ผู้ใช้งานปัจจุบัน");
-  replaceText(".side-card.highlight .side-label", "แหล่งข้อสอบ");
+  replaceText(".login-brand p", "à¸£à¸°à¸šà¸šà¸ªà¸­à¸šà¸­à¸­à¸™à¹„à¸¥à¸™à¹Œà¸žà¸£à¹‰à¸­à¸¡à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸œà¸¥à¸ªà¸­à¸šà¹à¸¥à¸°à¹à¸œà¸‡à¸ˆà¸±à¸”à¸à¸²à¸£à¸‚à¹‰à¸­à¸ªà¸­à¸š");
+  replaceText(".info-card:nth-of-type(1) strong", "à¸œà¸¹à¹‰à¹€à¸‚à¹‰à¸²à¸ªà¸­à¸š");
+  replaceText(".info-card:nth-of-type(1) p", "à¸¥à¹‡à¸­à¸à¸­à¸´à¸™à¹€à¸›à¹‡à¸™à¸žà¸™à¸±à¸à¸‡à¸²à¸™à¸«à¸£à¸·à¸­à¸œà¸¹à¹‰à¸”à¸¹à¹à¸¥à¸£à¸°à¸šà¸š");
+  replaceText(".info-card:nth-of-type(2) strong", "à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸œà¸¥à¸ªà¸­à¸š");
+  replaceText(".info-card:nth-of-type(2) p", "à¸šà¸±à¸™à¸—à¸¶à¸à¸„à¸°à¹à¸™à¸™à¹à¸¥à¸°à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸œà¸¥à¸¢à¹‰à¸­à¸™à¸«à¸¥à¸±à¸‡à¹„à¸”à¹‰à¸—à¸±à¸™à¸—à¸µ");
+  replaceText(".info-card:nth-of-type(3) strong", "à¸­à¸±à¸›à¹‚à¸«à¸¥à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸š");
+  replaceText(".info-card:nth-of-type(3) p", "à¸­à¸±à¸›à¹‚à¸«à¸¥à¸”à¹„à¸Ÿà¸¥à¹Œ JSON à¹ƒà¸«à¸¡à¹ˆà¸œà¹ˆà¸²à¸™à¸«à¸™à¹‰à¸²à¹€à¸§à¹‡à¸šà¹„à¸”à¹‰à¸—à¸±à¸™à¸—à¸µ");
+  replaceText(".side-block .side-label", "à¹€à¸¡à¸™à¸¹à¸«à¸¥à¸±à¸");
+  replaceText(".side-card:first-of-type .side-label", "à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰à¸‡à¸²à¸™à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™");
+  replaceText(".side-card.highlight .side-label", "à¹à¸«à¸¥à¹ˆà¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸š");
   replaceText(".eyebrow", "Online Examination Dashboard");
   replaceText("#historyView .card-label", "History");
-  replaceText("#historyView h3", "ประวัติผลสอบ");
+  replaceText("#historyView h3", "à¸›à¸£à¸°à¸§à¸±à¸•à¸´à¸œà¸¥à¸ªà¸­à¸š");
   replaceText("#profileView .card-label", "Profile");
-  replaceText("#profileView h3", "ข้อมูลบัญชีผู้ใช้");
+  replaceText("#profileView h3", "à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸šà¸±à¸à¸Šà¸µà¸œà¸¹à¹‰à¹ƒà¸Šà¹‰");
   replaceText("#evaluationView .card-label", "Evaluation", true);
-  replaceText("#evaluationView h3", "แบบฟอร์มประเมินหน้างาน");
+  replaceText("#evaluationView h3", "à¹à¸šà¸šà¸Ÿà¸­à¸£à¹Œà¸¡à¸›à¸£à¸°à¹€à¸¡à¸´à¸™à¸«à¸™à¹‰à¸²à¸‡à¸²à¸™");
   replaceText("#adminView .card-label", "Admin");
-  replaceText("#adminView h3", "อัปโหลดคลังข้อสอบ JSON");
+  replaceText("#adminView h3", "à¸­à¸±à¸›à¹‚à¸«à¸¥à¸”à¸„à¸¥à¸±à¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸š JSON");
 
   const loginFieldLabel = document.querySelector(".login-form .field span");
   if (loginFieldLabel) {
-    loginFieldLabel.textContent = "รหัสพนักงาน";
+    loginFieldLabel.textContent = "à¸£à¸«à¸±à¸ªà¸žà¸™à¸±à¸à¸‡à¸²à¸™";
   }
 
   const hintNodes = document.querySelectorAll(".login-hint span");
   if (hintNodes[0]) {
-    hintNodes[0].textContent = "ใช้รหัสพนักงานอย่างเดียวในการเข้าใช้งาน";
+    hintNodes[0].textContent = "à¹ƒà¸Šà¹‰à¸£à¸«à¸±à¸ªà¸žà¸™à¸±à¸à¸‡à¸²à¸™à¸­à¸¢à¹ˆà¸²à¸‡à¹€à¸”à¸µà¸¢à¸§à¹ƒà¸™à¸à¸²à¸£à¹€à¸‚à¹‰à¸²à¹ƒà¸Šà¹‰à¸‡à¸²à¸™";
   }
   if (hintNodes[1]) {
-    hintNodes[1].textContent = "สำหรับผู้มีสิทธิ์ในระบบเท่านั้น";
+    hintNodes[1].textContent = "à¸ªà¸³à¸«à¸£à¸±à¸šà¸œà¸¹à¹‰à¸¡à¸µà¸ªà¸´à¸—à¸˜à¸´à¹Œà¹ƒà¸™à¸£à¸°à¸šà¸šà¹€à¸—à¹ˆà¸²à¸™à¸±à¹‰à¸™";
   }
 
   const navMap = {
-    exam: "หน้าสอบ",
-    history: "ผลคะแนน",
-    profile: "บัญชีผู้ใช้",
+    exam: "à¸«à¸™à¹‰à¸²à¸ªà¸­à¸š",
+    history: "à¸œà¸¥à¸„à¸°à¹à¸™à¸™",
+    profile: "à¸šà¸±à¸à¸Šà¸µà¸œà¸¹à¹‰à¹ƒà¸Šà¹‰",
     evaluation: "Evaluation",
     admin: "Admin Upload"
   };
@@ -1755,56 +1740,56 @@ function applyStaticThaiText() {
 
   const profileLabels = document.querySelectorAll("#profileView .stat-box span");
   [
-    "ชื่อพนักงาน",
-    "รหัสพนักงาน",
-    "สิทธิ์การใช้งาน",
-    "แผนก",
-    "ตำแหน่ง",
-    "จำนวนครั้งที่สอบ",
-    "คะแนนล่าสุด"
+    "à¸Šà¸·à¹ˆà¸­à¸žà¸™à¸±à¸à¸‡à¸²à¸™",
+    "à¸£à¸«à¸±à¸ªà¸žà¸™à¸±à¸à¸‡à¸²à¸™",
+    "à¸ªà¸´à¸—à¸˜à¸´à¹Œà¸à¸²à¸£à¹ƒà¸Šà¹‰à¸‡à¸²à¸™",
+    "à¹à¸œà¸™à¸",
+    "à¸•à¸³à¹à¸«à¸™à¹ˆà¸‡",
+    "à¸ˆà¸³à¸™à¸§à¸™à¸„à¸£à¸±à¹‰à¸‡à¸—à¸µà¹ˆà¸ªà¸­à¸š",
+    "à¸„à¸°à¹à¸™à¸™à¸¥à¹ˆà¸²à¸ªà¸¸à¸”"
   ].forEach((text, index) => {
     if (profileLabels[index]) profileLabels[index].textContent = text;
   });
 
   const summaryLabels = document.querySelectorAll(".summary-panel .stat-box span");
-  ["ข้อปัจจุบัน", "ยังไม่ตอบ", "ตอบแล้ว", "สถานะ"].forEach((text, index) => {
+  ["à¸‚à¹‰à¸­à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™", "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸•à¸­à¸š", "à¸•à¸­à¸šà¹à¸¥à¹‰à¸§", "à¸ªà¸–à¸²à¸™à¸°"].forEach((text, index) => {
     if (summaryLabels[index]) summaryLabels[index].textContent = text;
   });
 
   const heroLabels = document.querySelectorAll(".hero-card .card-label");
-  ["ชุดข้อสอบ", "เวลาคงเหลือ", "ตอบแล้ว", "ความคืบหน้า"].forEach((text, index) => {
+  ["à¸Šà¸¸à¸”à¸‚à¹‰à¸­à¸ªà¸­à¸š", "à¹€à¸§à¸¥à¸²à¸„à¸‡à¹€à¸«à¸¥à¸·à¸­", "à¸•à¸­à¸šà¹à¸¥à¹‰à¸§", "à¸„à¸§à¸²à¸¡à¸„à¸·à¸šà¸«à¸™à¹‰à¸²"].forEach((text, index) => {
     if (heroLabels[index]) heroLabels[index].textContent = text;
   });
 
   const legendNodes = document.querySelectorAll(".legend-list div");
-  ["ข้อปัจจุบัน", "ตอบแล้ว", "ยังไม่ตอบ"].forEach((text, index) => {
+  ["à¸‚à¹‰à¸­à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™", "à¸•à¸­à¸šà¹à¸¥à¹‰à¸§", "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸•à¸­à¸š"].forEach((text, index) => {
     if (legendNodes[index]) {
       legendNodes[index].lastChild.textContent = ` ${text}`;
     }
   });
 
   const resultBoxLabels = document.querySelectorAll(".result-box span");
-  ["คะแนนรวม", "คิดเป็นร้อยละ", "คำตอบถูก", "คำตอบผิด"].forEach((text, index) => {
+  ["à¸„à¸°à¹à¸™à¸™à¸£à¸§à¸¡", "à¸„à¸´à¸”à¹€à¸›à¹‡à¸™à¸£à¹‰à¸­à¸¢à¸¥à¸°", "à¸„à¸³à¸•à¸­à¸šà¸–à¸¹à¸", "à¸„à¸³à¸•à¸­à¸šà¸œà¸´à¸”"].forEach((text, index) => {
     if (resultBoxLabels[index]) resultBoxLabels[index].textContent = text;
   });
 
   const buttons = [
-    [els.startExamBtn, "เริ่มสอบ"],
-    [els.submitExamBtn, "ส่งข้อสอบ"],
-    [els.prevBtn, "ย้อนกลับ"],
-    [els.nextBtn, "ถัดไป"],
-    [els.restartExamBtn, "เริ่มทำใหม่"],
-    [els.logoutBtn, "ออกจากระบบ"],
-    [els.saveEvaluationBtn, "บันทึกการประเมิน"],
-    [els.resetEvaluationBtn, "ล้างแบบฟอร์ม"],
-    [els.importJsonBtn, "นำเข้าข้อสอบ"],
-    [els.resetJsonBtn, "กลับไปใช้ไฟล์เดิม"]
+    [els.startExamBtn, "à¹€à¸£à¸´à¹ˆà¸¡à¸ªà¸­à¸š"],
+    [els.submitExamBtn, "à¸ªà¹ˆà¸‡à¸‚à¹‰à¸­à¸ªà¸­à¸š"],
+    [els.prevBtn, "à¸¢à¹‰à¸­à¸™à¸à¸¥à¸±à¸š"],
+    [els.nextBtn, "à¸–à¸±à¸”à¹„à¸›"],
+    [els.restartExamBtn, "à¹€à¸£à¸´à¹ˆà¸¡à¸—à¸³à¹ƒà¸«à¸¡à¹ˆ"],
+    [els.logoutBtn, "à¸­à¸­à¸à¸ˆà¸²à¸à¸£à¸°à¸šà¸š"],
+    [els.saveEvaluationBtn, "à¸šà¸±à¸™à¸—à¸¶à¸à¸à¸²à¸£à¸›à¸£à¸°à¹€à¸¡à¸´à¸™"],
+    [els.resetEvaluationBtn, "à¸¥à¹‰à¸²à¸‡à¹à¸šà¸šà¸Ÿà¸­à¸£à¹Œà¸¡"],
+    [els.importJsonBtn, "à¸™à¸³à¹€à¸‚à¹‰à¸²à¸‚à¹‰à¸­à¸ªà¸­à¸š"],
+    [els.resetJsonBtn, "à¸à¸¥à¸±à¸šà¹„à¸›à¹ƒà¸Šà¹‰à¹„à¸Ÿà¸¥à¹Œà¹€à¸”à¸´à¸¡"]
   ];
   buttons.forEach(([node, text]) => {
     if (node) node.textContent = text;
   });
 
-  els.employeeCodeInput.placeholder = "เช่น L00489";
+  els.employeeCodeInput.placeholder = "à¹€à¸Šà¹ˆà¸™ L00489";
 }
 
 function init() {
@@ -1848,3 +1833,4 @@ function init() {
 }
 
 init();
+
