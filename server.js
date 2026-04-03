@@ -179,7 +179,7 @@ const getAllResults = db.prepare(`
 `);
 
 const getActiveEmployees = db.prepare(`
-  SELECT id, employee_code, full_name, department, position, role, is_active
+  SELECT id, employee_code, full_name, department, position, photo_url, role, is_active
   FROM users
   WHERE is_active = 1
     AND COALESCE(employee_code, '') <> ''
