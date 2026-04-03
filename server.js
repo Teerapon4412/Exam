@@ -681,7 +681,15 @@ app.get("/api/results", requireAuth, (req, res) => {
 });
 
 app.get("/api/admin/employees", requireAdmin, (req, res) => {
-  return res.json({ employees: getActiveEmployees.all().map(serializeEmployee) });
+  let employees = getActiveEmployees.all();
+
+  // Self-heal persisted databases that were created before the employee dataset was seeded.
+  if (!employees.length && fs.existsSync(EMPLOYEE_DATA_PATH)) {
+    seedEmployees();
+    employees = getActiveEmployees.all();
+  }
+
+  return res.json({ employees: employees.map(serializeEmployee) });
 });
 
 app.get("/api/evaluations", requireAdmin, (req, res) => {
