@@ -562,6 +562,14 @@ function renderExamSelector() {
   );
 }
 
+function renderSelectors() {
+  if (!els.modelSelector || !els.examSelector) return;
+
+  state.currentExam = getSelectedExam();
+  renderModelSelector();
+  renderExamSelector();
+}
+
 function renderExamMeta() {
   const exam = state.currentExam;
   const questionCount = exam?.questions?.length || 0;
