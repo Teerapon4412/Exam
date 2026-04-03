@@ -14,6 +14,7 @@ const els = {
   loginForm: $("loginForm"),
   employeeCodeInput: $("employeeCodeInput"),
   loginMessage: $("loginMessage"),
+  topbar: document.querySelector(".topbar"),
   systemTitle: $("systemTitle"),
   sidebarUserName: $("sidebarUserName"),
   sidebarUserRole: $("sidebarUserRole"),
@@ -402,6 +403,10 @@ function setView(view) {
   Object.entries(views).forEach(([key, node]) => {
     node.classList.toggle("hidden", key !== view);
   });
+
+  if (els.topbar) {
+    els.topbar.classList.toggle("hidden", view === "exam");
+  }
 
   navItems.forEach((button) => {
     button.classList.toggle("active", button.dataset.view === view);
