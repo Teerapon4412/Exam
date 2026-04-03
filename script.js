@@ -261,13 +261,23 @@ function makeId(prefix) {
 
 function ensureAdminDraft() {
   if (!state.adminEditor.draft) {
+    const models = Array.from(
+      new Map(
+        (state.bank.examSets || []).map((exam) => {
+          const modelCode = String(exam.modelCode || exam.modelName || "").trim();
+          return [modelCode, { modelCode, modelName: String(exam.modelName || modelCode).trim() }];
+        })
+      ).values()
+    ).filter((model) => model.modelCode);
+
     state.adminEditor.draft = {
       title: state.bank.title || "Factory Online Exam",
-      examSets: deepClone(state.bank.examSets || [])
+      examSets: deepClone(state.bank.examSets || []),
+      models
     };
   }
 
-  const groups = groupExamSets(state.adminEditor.draft.examSets || []);
+  const groups = getAdminDraftGroups();
   const selectedGroup = groups.get(state.adminEditor.selectedModelCode) || Array.from(groups.values())[0];
   state.adminEditor.selectedModelCode = selectedGroup?.modelCode || "";
   state.adminEditor.selectedExamId = selectedGroup?.exams?.some((exam) => exam.id === state.adminEditor.selectedExamId)
@@ -276,18 +286,37 @@ function ensureAdminDraft() {
 }
 
 function syncAdminDraftFromBank() {
+  const models = Array.from(
+    new Map(
+      (state.bank.examSets || []).map((exam) => {
+        const modelCode = String(exam.modelCode || exam.modelName || "").trim();
+        return [modelCode, { modelCode, modelName: String(exam.modelName || modelCode).trim() }];
+      })
+    ).values()
+  ).filter((model) => model.modelCode);
+
   state.adminEditor.draft = {
     title: state.bank.title || "Factory Online Exam",
-    examSets: deepClone(state.bank.examSets || [])
+    examSets: deepClone(state.bank.examSets || []),
+    models
   };
   const firstExam = state.adminEditor.draft.examSets[0] || null;
-  state.adminEditor.selectedModelCode = firstExam?.modelCode || "";
+  state.adminEditor.selectedModelCode = firstExam?.modelCode || models[0]?.modelCode || "";
   state.adminEditor.selectedExamId = firstExam?.id || "";
 }
 
 function getAdminDraftGroups() {
-  ensureAdminDraft();
-  return groupExamSets(state.adminEditor.draft.examSets || []);
+  const grouped = groupExamSets(state.adminEditor.draft?.examSets || []);
+  (state.adminEditor.draft?.models || []).forEach((model) => {
+    const modelCode = String(model.modelCode || model.modelName || "").trim();
+    if (!modelCode || grouped.has(modelCode)) return;
+    grouped.set(modelCode, {
+      modelCode,
+      modelName: String(model.modelName || modelCode).trim(),
+      exams: []
+    });
+  });
+  return grouped;
 }
 
 function getAdminSelectedExam() {
@@ -1206,14 +1235,16 @@ function addAdminModel() {
 
   const modelCode = modelName;
   const duplicateModel = state.adminEditor.draft.examSets.some((exam) => exam.modelCode === modelCode);
-  if (duplicateModel) {
+  const duplicateDraftModel = (state.adminEditor.draft.models || []).some((model) => model.modelCode === modelCode);
+  if (duplicateModel || duplicateDraftModel) {
     showMessage(els.adminMessage, "มี Model นี้อยู่แล้ว", true);
     return;
   }
 
+  state.adminEditor.draft.models = [...(state.adminEditor.draft.models || []), { modelCode, modelName }];
   state.adminEditor.selectedModelCode = modelCode;
   state.adminEditor.selectedExamId = "";
-  state.adminEditor.newModelName = "";
+  state.adminEditor.newModelName = modelName;
   state.adminEditor.newPartCode = "";
   state.adminEditor.newPartTitle = "";
   showMessage(els.adminMessage, `สร้าง Model ${modelName} แล้ว ตอนนี้เพิ่ม Part ใต้ Model นี้ได้เลย`);
@@ -1249,6 +1280,11 @@ function addAdminPartToSelectedModel() {
 
   const exam = createBlankExam(modelCode, modelName, partCode, partTitle);
   state.adminEditor.draft.examSets.push(exam);
+  state.adminEditor.draft.models = (state.adminEditor.draft.models || []).some((model) => model.modelCode === modelCode)
+    ? (state.adminEditor.draft.models || []).map((model) => (
+      model.modelCode === modelCode ? { ...model, modelName } : model
+    ))
+    : [...(state.adminEditor.draft.models || []), { modelCode, modelName }];
   state.adminEditor.selectedModelCode = modelCode;
   state.adminEditor.selectedExamId = exam.id;
   state.adminEditor.newPartCode = "";
@@ -1373,6 +1409,9 @@ function bindAdminEditorEvents() {
     setInputValue("adminExamModelNameInput", (event) => {
       const nextValue = String(event.target.value || "").trim();
       updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelName: nextValue, modelCode: nextValue }));
+      state.adminEditor.draft.models = (state.adminEditor.draft.models || []).map((model) => (
+        model.modelCode === selectedExam.modelCode ? { modelCode: nextValue, modelName: nextValue } : model
+      ));
       state.adminEditor.selectedModelCode = nextValue;
     });
     setInputValue("adminExamTitleInput", (event) => {
@@ -1507,6 +1546,15 @@ async function saveAdminBuilder() {
   ensureAdminDraft();
 
   const draft = deepClone(state.adminEditor.draft);
+  draft.models = Array.from(
+    new Map(
+      (draft.models || []).map((model) => {
+        const modelCode = String(model.modelCode || model.modelName || "").trim();
+        const modelName = String(model.modelName || modelCode).trim();
+        return [modelCode, { modelCode, modelName }];
+      })
+    ).values()
+  ).filter((model) => model.modelCode);
   draft.examSets = (draft.examSets || []).map((exam) => ({
     ...exam,
     modelCode: String(exam.modelCode || "").trim().toUpperCase(),
