@@ -43,8 +43,8 @@ const els = {
   summaryStatus: $("summaryStatus"),
   examStatus: $("examStatus"),
   loadStatus: $("loadStatus"),
-  startExamBtn: $("startExamBtn"),
   submitExamBtn: $("submitExamBtn"),
+  submitExamBtnSecondary: $("submitExamBtnSecondary"),
   questionTitle: $("questionTitle"),
   questionBadge: $("questionBadge"),
   questionText: $("questionText"),
@@ -106,6 +106,7 @@ const els = {
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
 const adminOnlyNodes = Array.from(document.querySelectorAll(".admin-only"));
 const previewButtons = Array.from(document.querySelectorAll("[data-preview-mode]"));
+const submitExamButtons = Array.from(document.querySelectorAll(".submit-exam-btn"));
 
 const TEXT = {
   titleByView: {
@@ -159,7 +160,6 @@ const state = {
   currentExam: null,
   currentQuestionIndex: 0,
   answers: [],
-  startedAt: null,
   submitted: false,
   results: [],
   employees: [],
@@ -380,10 +380,9 @@ function getNextExamInCurrentModel() {
 
 function resetExamSession() {
   state.currentQuestionIndex = 0;
-  state.answers = [];
-  state.startedAt = null;
-  state.submitted = false;
   state.currentExam = getSelectedExam();
+  state.answers = state.currentExam ? new Array(state.currentExam.questions.length).fill(null) : [];
+  state.submitted = false;
   els.resultPanel.classList.add("hidden");
   if (els.nextPartBtn) {
     els.nextPartBtn.disabled = true;
@@ -565,18 +564,18 @@ function updateExamStatus() {
   els.progressBar.style.width = `${progress}%`;
   setText(els.answeredCount, `${answeredCount} / ${questionCount}`);
 
-  let statusText = "รอเริ่มสอบ";
+  let statusText = "ยังไม่ได้เลือกชุดข้อสอบ";
   if (state.submitted) {
     statusText = "เสร็จสิ้น";
-  } else if (state.startedAt) {
-    statusText = "กำลังสอบ";
   } else if (exam) {
-    statusText = "ยังไม่ได้เริ่มสอบ";
+    statusText = "กำลังทำข้อสอบ";
   }
 
   setText(els.summaryStatus, statusText);
   setText(els.examStatus, statusText);
-  els.submitExamBtn.disabled = !state.startedAt || state.submitted;
+  submitExamButtons.forEach((button) => {
+    button.disabled = !exam || state.submitted;
+  });
 }
 
 function renderQuestion() {
@@ -656,13 +655,6 @@ function renderQuestionNav() {
     });
     els.questionNav.appendChild(button);
   });
-}
-
-function startExam() {
-  if (!state.currentExam || state.startedAt || state.submitted) return;
-  state.answers = new Array(state.currentExam.questions.length).fill(null);
-  state.startedAt = Date.now();
-  updateExamStatus();
 }
 
 async function submitExam() {
@@ -1781,8 +1773,9 @@ function logout() {
 function bindEvents() {
   els.loginForm.addEventListener("submit", handleLogin);
   els.logoutBtn.addEventListener("click", logout);
-  els.startExamBtn.addEventListener("click", startExam);
-  els.submitExamBtn.addEventListener("click", submitExam);
+  submitExamButtons.forEach((button) => {
+    button.addEventListener("click", submitExam);
+  });
   previewButtons.forEach((button) => {
     button.addEventListener("click", () => applyPreviewMode(button.dataset.previewMode));
   });
@@ -1903,7 +1896,7 @@ function applyStaticThaiText() {
   });
 
   const heroLabels = document.querySelectorAll(".exam-hero-shell .card-label");
-  ["พร้อมสอบ", "ตอบแล้ว", "ความคืบหน้า", "เริ่มทำข้อสอบ"].forEach((text, index) => {
+  ["พร้อมสอบ", "ตอบแล้ว", "ความคืบหน้า", "สถานะการทำข้อสอบ"].forEach((text, index) => {
     if (heroLabels[index]) heroLabels[index].textContent = text;
   });
 
@@ -1920,8 +1913,8 @@ function applyStaticThaiText() {
   });
 
   const buttons = [
-    [els.startExamBtn, "เริ่มสอบ"],
     [els.submitExamBtn, "ส่งข้อสอบ"],
+    [els.submitExamBtnSecondary, "ส่งข้อสอบ"],
     [els.prevBtn, "ย้อนกลับ"],
     [els.nextBtn, "ถัดไป"],
     [els.restartExamBtn, "เริ่มทำใหม่"],
