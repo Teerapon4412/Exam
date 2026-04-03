@@ -231,8 +231,8 @@ textarea {
 }
 
 .shell {
-  width: min(1760px, calc(100vw - 36px));
-  margin: 20px auto;
+  width: min(1920px, calc(100vw - 12px));
+  margin: 10px auto;
   display: grid;
   grid-template-columns: 300px 1fr;
   background: var(--shell);
