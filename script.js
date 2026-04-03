@@ -434,64 +434,75 @@ function renderBankSummary() {
 }
 
 function renderModelSelector() {
-  els.modelSelector.innerHTML = "";
   const groups = Array.from(state.groupedExams.values());
+  els.modelSelector.innerHTML = `
+    <label class="field exam-select-field">
+      <span>เลือก Model</span>
+      <select id="examModelDropdown" class="exam-select-dropdown">
+        ${groups.map((group) => `
+          <option value="${group.modelCode}" ${group.modelCode === state.selectedModelCode ? "selected" : ""}>
+            ${group.modelName} (${group.exams.length} ชุด)
+          </option>
+        `).join("")}
+      </select>
+    </label>
+  `;
 
-  groups.forEach((group) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "model-pill";
-    if (group.modelCode === state.selectedModelCode) {
-      button.classList.add("active");
-    }
-    button.innerHTML = `
-      <span class="model-pill-name">${group.modelName}</span>
-      <span class="model-pill-count">${group.exams.length} ชุด</span>
-    `;
-    button.addEventListener("click", () => {
-      state.selectedModelCode = group.modelCode;
-      state.selectedExamId = group.exams[0]?.id || "";
+  const dropdown = document.getElementById("examModelDropdown");
+  if (dropdown) {
+    dropdown.addEventListener("change", (event) => {
+      const nextModelCode = event.target.value;
+      const nextGroup = state.groupedExams.get(nextModelCode);
+      state.selectedModelCode = nextModelCode;
+      state.selectedExamId = nextGroup?.exams?.[0]?.id || "";
       resetExamSession();
       renderSelectors();
     });
-    els.modelSelector.appendChild(button);
-  });
+  }
 }
 
 function renderExamSelector() {
-  els.examSelector.innerHTML = "";
   const currentGroup = state.groupedExams.get(state.selectedModelCode);
   const exams = currentGroup?.exams || [];
-
-  exams.forEach((exam) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "exam-card exam-library-card";
-    if (exam.id === state.selectedExamId) {
-      button.classList.add("active");
-    }
-    const questionCount = (exam.questions || []).length;
-    button.innerHTML = `
-      <div class="exam-library-card-head">
-        <strong>${exam.title || exam.partCode || "ชุดข้อสอบ"}</strong>
-        <span class="exam-library-card-code">${exam.partCode || "-"}</span>
-      </div>
-      <div class="exam-tags exam-library-card-tags">
-        <span>${exam.modelName || exam.modelCode || "-"}</span>
-        <span>${questionCount} ข้อ</span>
-        <span>${formatMinutes(exam.durationMinutes)}</span>
-      </div>
-    `;
-    button.addEventListener("click", () => {
-      state.selectedExamId = exam.id;
-      resetExamSession();
-      renderSelectors();
-    });
-    els.examSelector.appendChild(button);
-  });
+  const selectedExam = exams.find((exam) => exam.id === state.selectedExamId) || exams[0] || null;
 
   if (!exams.length) {
     els.examSelector.innerHTML = `<div class="exam-empty-state">ยังไม่มี Part ใน Model นี้</div>`;
+  } else {
+    els.examSelector.innerHTML = `
+      <div class="exam-select-stack">
+        <label class="field exam-select-field">
+          <span>เลือก Part</span>
+          <select id="examPartDropdown" class="exam-select-dropdown">
+            ${exams.map((exam) => `
+              <option value="${exam.id}" ${exam.id === state.selectedExamId ? "selected" : ""}>
+                ${exam.partCode || "-"} - ${exam.title || "ชุดข้อสอบ"}
+              </option>
+            `).join("")}
+          </select>
+        </label>
+        <div class="exam-select-summary">
+          <div class="exam-select-summary-head">
+            <strong>${selectedExam?.title || selectedExam?.partCode || "ชุดข้อสอบ"}</strong>
+            <span>${selectedExam?.partCode || "-"}</span>
+          </div>
+          <div class="exam-tags exam-library-card-tags">
+            <span>${selectedExam?.modelName || selectedExam?.modelCode || "-"}</span>
+            <span>${(selectedExam?.questions || []).length} ข้อ</span>
+            <span>${formatMinutes(selectedExam?.durationMinutes)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const dropdown = document.getElementById("examPartDropdown");
+    if (dropdown) {
+      dropdown.addEventListener("change", (event) => {
+        state.selectedExamId = event.target.value;
+        resetExamSession();
+        renderSelectors();
+      });
+    }
   }
 
   const count = exams.length;
