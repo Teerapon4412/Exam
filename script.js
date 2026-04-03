@@ -440,11 +440,14 @@ function renderModelSelector() {
   groups.forEach((group) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "choice-pill";
+    button.className = "model-pill";
     if (group.modelCode === state.selectedModelCode) {
       button.classList.add("active");
     }
-    button.textContent = `${group.modelName} (${group.exams.length})`;
+    button.innerHTML = `
+      <span class="model-pill-name">${group.modelName}</span>
+      <span class="model-pill-count">${group.exams.length} ชุด</span>
+    `;
     button.addEventListener("click", () => {
       state.selectedModelCode = group.modelCode;
       state.selectedExamId = group.exams[0]?.id || "";
@@ -463,14 +466,21 @@ function renderExamSelector() {
   exams.forEach((exam) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "exam-set-card";
+    button.className = "exam-card exam-library-card";
     if (exam.id === state.selectedExamId) {
       button.classList.add("active");
     }
+    const questionCount = (exam.questions || []).length;
     button.innerHTML = `
-      <strong>${exam.title || exam.partCode || "ชุดข้อสอบ"}</strong>
-      <span>${exam.partCode || "-"}</span>
-      <span>${(exam.questions || []).length} ข้อ</span>
+      <div class="exam-library-card-head">
+        <strong>${exam.title || exam.partCode || "ชุดข้อสอบ"}</strong>
+        <span class="exam-library-card-code">${exam.partCode || "-"}</span>
+      </div>
+      <div class="exam-tags exam-library-card-tags">
+        <span>${exam.modelName || exam.modelCode || "-"}</span>
+        <span>${questionCount} ข้อ</span>
+        <span>${formatMinutes(exam.durationMinutes)}</span>
+      </div>
     `;
     button.addEventListener("click", () => {
       state.selectedExamId = exam.id;
@@ -479,6 +489,10 @@ function renderExamSelector() {
     });
     els.examSelector.appendChild(button);
   });
+
+  if (!exams.length) {
+    els.examSelector.innerHTML = `<div class="exam-empty-state">ยังไม่มี Part ใน Model นี้</div>`;
+  }
 
   const count = exams.length;
   showMessage(

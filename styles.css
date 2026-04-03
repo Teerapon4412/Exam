@@ -602,12 +602,16 @@ textarea {
 }
 
 .model-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   border: 1px solid var(--line);
   background: #f8fbff;
   color: #33415e;
   border-radius: 999px;
-  padding: 10px 14px;
+  padding: 10px 12px;
   cursor: pointer;
+  font-weight: 700;
 }
 
 .model-pill.active {
@@ -615,6 +619,28 @@ textarea {
   color: white;
   border-color: transparent;
   box-shadow: 0 14px 24px rgba(255, 113, 95, 0.18);
+}
+
+.model-pill-name {
+  font-size: 0.98rem;
+}
+
+.model-pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #33507a;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.model-pill.active .model-pill-count {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
 }
 
 .exam-selector,
@@ -641,6 +667,50 @@ textarea {
 .exam-card.active {
   border-color: #ff9b54;
   box-shadow: 0 14px 28px rgba(255, 142, 84, 0.18);
+}
+
+.exam-library-card {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.exam-library-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 30px rgba(165, 183, 206, 0.16);
+}
+
+.exam-library-card-head {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.exam-library-card-head strong {
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: #1b3149;
+}
+
+.exam-library-card-code {
+  flex-shrink: 0;
+  color: #3e5b81;
+  font-weight: 700;
+}
+
+.exam-library-card-tags {
+  margin-top: 12px;
+}
+
+.exam-empty-state {
+  padding: 18px;
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  background: #f9fbff;
+  color: var(--muted);
+  text-align: center;
 }
 
 .exam-card h4,
