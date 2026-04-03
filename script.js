@@ -1,5 +1,10 @@
 "use strict";
 
+const STORAGE_KEYS = {
+  authToken: "factory_exam_auth_token",
+  authUser: "factory_exam_auth_user"
+};
+
 const $ = (id) => document.getElementById(id);
 
 const els = {
@@ -143,6 +148,7 @@ const TEXT = {
 
 const state = {
   user: null,
+  authToken: "",
   bank: { title: "Factory Online Exam", source: "default", examSets: [] },
   groupedExams: new Map(),
   selectedModelCode: "",
@@ -157,7 +163,12 @@ const state = {
   results: [],
   employees: [],
   evaluations: [],
-  activeView: "exam"
+  activeView: "exam",
+  adminEditor: {
+    draft: null,
+    selectedModelCode: "",
+    selectedExamId: ""
+  }
 };
 
 function showMessage(element, message, isError = false) {
@@ -202,8 +213,16 @@ function formatClock(totalSeconds) {
 }
 
 async function api(url, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (!(options.body instanceof FormData) && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (state.authToken) {
+    headers.Authorization = `Bearer ${state.authToken}`;
+  }
+
   const response = await fetch(url, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    headers,
     ...options
   });
   const data = await response.json().catch(() => ({}));
@@ -227,6 +246,79 @@ function groupExamSets(examSets) {
     grouped.get(key).exams.push(exam);
   });
   return grouped;
+}
+
+function deepClone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function makeId(prefix) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+}
+
+function ensureAdminDraft() {
+  if (!state.adminEditor.draft) {
+    state.adminEditor.draft = {
+      title: state.bank.title || "Factory Online Exam",
+      examSets: deepClone(state.bank.examSets || [])
+    };
+  }
+
+  const groups = groupExamSets(state.adminEditor.draft.examSets || []);
+  const selectedGroup = groups.get(state.adminEditor.selectedModelCode) || Array.from(groups.values())[0];
+  state.adminEditor.selectedModelCode = selectedGroup?.modelCode || "";
+  state.adminEditor.selectedExamId = selectedGroup?.exams?.some((exam) => exam.id === state.adminEditor.selectedExamId)
+    ? state.adminEditor.selectedExamId
+    : (selectedGroup?.exams?.[0]?.id || "");
+}
+
+function syncAdminDraftFromBank() {
+  state.adminEditor.draft = {
+    title: state.bank.title || "Factory Online Exam",
+    examSets: deepClone(state.bank.examSets || [])
+  };
+  const firstExam = state.adminEditor.draft.examSets[0] || null;
+  state.adminEditor.selectedModelCode = firstExam?.modelCode || "";
+  state.adminEditor.selectedExamId = firstExam?.id || "";
+}
+
+function getAdminDraftGroups() {
+  ensureAdminDraft();
+  return groupExamSets(state.adminEditor.draft.examSets || []);
+}
+
+function getAdminSelectedExam() {
+  ensureAdminDraft();
+  return state.adminEditor.draft.examSets.find((exam) => exam.id === state.adminEditor.selectedExamId) || null;
+}
+
+function createBlankQuestion(nextNumber) {
+  return {
+    id: makeId("Q"),
+    number: nextNumber,
+    text: "",
+    imageUrl: null,
+    choiceKeys: ["A", "B", "C", "D"],
+    choices: ["", "", "", ""],
+    answer: 0,
+    score: 1
+  };
+}
+
+function createBlankExam(modelCode, modelName, partCode, title) {
+  return {
+    id: makeId("PART"),
+    title,
+    description: modelName || "",
+    modelCode,
+    modelName,
+    partCode,
+    durationMinutes: 10,
+    passScore: 0,
+    randomizeQuestions: false,
+    showResultImmediately: true,
+    questions: [createBlankQuestion(1)]
+  };
 }
 
 function getSelectedExam() {
@@ -518,52 +610,17 @@ async function submitExam(isAutoSubmit = false) {
 
   clearTimer();
   const exam = state.currentExam;
-  const questions = exam.questions || [];
-  let score = 0;
-  let totalScore = 0;
-  let correctCount = 0;
-
-  questions.forEach((question, index) => {
-    const weight = Number(question.score) || 1;
-    totalScore += weight;
-    if (state.answers[index] === question.answer) {
-      score += weight;
-      correctCount += 1;
-    }
-  });
-
-  const wrongCount = Math.max(questions.length - correctCount, 0);
-  const percent = totalScore ? Math.round((score / totalScore) * 100) : 0;
-  const passed = score >= (Number(exam.passScore) || 0);
-
-  const payload = {
-    user_id: state.user.id,
-    username: state.user.username,
-    employee_code: state.user.employeeCode,
-    full_name: state.user.fullName,
-    role: state.user.role,
-    exam_id: exam.id,
-    exam_title: exam.title,
-    model_code: exam.modelCode || "",
-    model_name: exam.modelName || "",
-    part_code: exam.partCode || "",
-    score,
-    total_score: totalScore,
-    percent,
-    correct_count: correctCount,
-    wrong_count: wrongCount,
-    question_count: questions.length,
-    passed,
-    submitted_at: new Date().toISOString()
-  };
 
   try {
-    await api("/api/results", {
+    const response = await api("/api/results", {
       method: "POST",
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        examId: exam.id,
+        answers: state.answers
+      })
     });
     state.submitted = true;
-    renderResult(payload, isAutoSubmit);
+    renderResult(response.result, isAutoSubmit);
     await loadResults();
   } catch (error) {
     showMessage(els.loadStatus, `ส่งข้อสอบไม่สำเร็จ: ${error.message}`, true);
@@ -592,6 +649,7 @@ async function loadExams() {
   try {
     const payload = await api("/api/exams");
     state.bank = payload;
+    syncAdminDraftFromBank();
     state.groupedExams = groupExamSets(payload.examSets || []);
 
     const firstGroup = Array.from(state.groupedExams.values())[0];
@@ -602,6 +660,7 @@ async function loadExams() {
     renderSelectors();
   } catch (error) {
     state.bank = { title: "Factory Online Exam", source: "default", examSets: [] };
+    syncAdminDraftFromBank();
     state.groupedExams = new Map();
     state.selectedModelCode = "";
     state.selectedExamId = "";
@@ -612,12 +671,7 @@ async function loadExams() {
 
 async function loadResults() {
   if (!state.user) return;
-  const params = new URLSearchParams(
-    state.user.role === "admin"
-      ? { role: "admin" }
-      : { role: state.user.role, userId: state.user.id }
-  );
-  const payload = await api(`/api/results?${params.toString()}`);
+  const payload = await api("/api/results");
   state.results = Array.isArray(payload.results) ? payload.results : [];
   renderHistory();
   renderProfile();
@@ -841,14 +895,14 @@ function syncEvaluationSelectors(source = "code") {
 
 async function loadEmployees() {
   if (state.user?.role !== "admin") return;
-  const payload = await api("/api/admin/employees?role=admin");
+  const payload = await api("/api/admin/employees");
   state.employees = Array.isArray(payload.employees) ? payload.employees : [];
   renderEvaluationForm();
 }
 
 async function loadEvaluations() {
   if (state.user?.role !== "admin") return;
-  const payload = await api("/api/evaluations?role=admin");
+  const payload = await api("/api/evaluations");
   state.evaluations = Array.isArray(payload.evaluations) ? payload.evaluations : [];
   renderEvaluationHistory();
 }
@@ -933,7 +987,6 @@ async function saveEvaluation() {
     await api("/api/evaluations", {
       method: "POST",
       body: JSON.stringify({
-        role: "admin",
         employeeId: employee.id,
         employeeCode: employee.employeeCode,
         employeeName: employee.fullName,
@@ -964,12 +1017,406 @@ function resetEvaluationForm() {
   syncEvaluationSelectors();
 }
 
+function getAdminEditorRoot() {
+  const panel = document.getElementById("adminPanel");
+  if (!panel) return null;
+
+  let root = document.getElementById("adminEditorRoot");
+  if (!root) {
+    root = document.createElement("div");
+    root.id = "adminEditorRoot";
+    root.className = "panel";
+    root.style.marginTop = "18px";
+    panel.appendChild(root);
+  }
+  return root;
+}
+
+function renderAdminEditor() {
+  if (state.user?.role !== "admin") return;
+
+  ensureAdminDraft();
+  const root = getAdminEditorRoot();
+  if (!root) return;
+
+  const groups = Array.from(getAdminDraftGroups().values());
+  const selectedExam = getAdminSelectedExam();
+  const questionCount = selectedExam?.questions?.length || 0;
+
+  root.innerHTML = `
+    <div class="panel-head">
+      <div>
+        <p class="card-label">Exam Builder</p>
+        <h3>เพิ่ม Model, Part และข้อสอบ</h3>
+      </div>
+    </div>
+    <div class="admin-grid">
+      <div class="admin-card">
+        <label class="field">
+          <span>ชื่อระบบข้อสอบ</span>
+          <input id="adminDraftTitleInput" type="text" value="${state.adminEditor.draft.title || ""}" />
+        </label>
+        <div class="evaluation-grid" style="margin-top: 14px;">
+          <label class="field">
+            <span>เลือก Model</span>
+            <select id="adminModelSelect">
+              ${groups.map((group) => `<option value="${group.modelCode}" ${group.modelCode === state.adminEditor.selectedModelCode ? "selected" : ""}>${group.modelName} (${group.exams.length} Part)</option>`).join("")}
+            </select>
+          </label>
+          <label class="field">
+            <span>เลือก Part</span>
+            <select id="adminPartSelect">
+              ${(groups.find((group) => group.modelCode === state.adminEditor.selectedModelCode)?.exams || []).map((exam) => `<option value="${exam.id}" ${exam.id === state.adminEditor.selectedExamId ? "selected" : ""}>${exam.partCode} - ${exam.title}</option>`).join("")}
+            </select>
+          </label>
+        </div>
+        <div class="result-actions" style="margin-top: 14px;">
+          <button id="adminAddModelBtn" class="secondary-btn" type="button">เพิ่ม Model</button>
+          <button id="adminAddPartBtn" class="secondary-btn" type="button">เพิ่ม Part</button>
+          <button id="adminSaveBuilderBtn" class="primary-btn" type="button">บันทึกคลังข้อสอบ</button>
+        </div>
+      </div>
+      <div class="admin-card">
+        <strong>ภาพรวมชุดที่เลือก</strong>
+        <div class="admin-info-list">
+          <div class="mini-note">Model: <strong>${selectedExam?.modelName || "-"}</strong></div>
+          <div class="mini-note">Part: <strong>${selectedExam?.partCode || "-"}</strong></div>
+          <div class="mini-note">จำนวนข้อ: <strong>${questionCount}</strong></div>
+        </div>
+      </div>
+    </div>
+    ${selectedExam ? `
+      <div class="admin-card" style="margin-top: 18px;">
+        <div class="evaluation-grid">
+          <label class="field">
+            <span>ชื่อ Model</span>
+            <input id="adminExamModelNameInput" type="text" value="${selectedExam.modelName || ""}" />
+          </label>
+          <label class="field">
+            <span>รหัส Model</span>
+            <input id="adminExamModelCodeInput" type="text" value="${selectedExam.modelCode || ""}" />
+          </label>
+          <label class="field">
+            <span>ชื่อ Part</span>
+            <input id="adminExamTitleInput" type="text" value="${selectedExam.title || ""}" />
+          </label>
+          <label class="field">
+            <span>รหัส Part</span>
+            <input id="adminExamPartCodeInput" type="text" value="${selectedExam.partCode || ""}" />
+          </label>
+          <label class="field">
+            <span>เวลา (นาที)</span>
+            <input id="adminExamDurationInput" type="number" min="1" value="${selectedExam.durationMinutes || 10}" />
+          </label>
+          <label class="field">
+            <span>คะแนนผ่าน</span>
+            <input id="adminExamPassScoreInput" type="number" min="0" value="${selectedExam.passScore || 0}" />
+          </label>
+        </div>
+        <label class="field" style="margin-top: 14px;">
+          <span>คำอธิบาย</span>
+          <input id="adminExamDescriptionInput" type="text" value="${selectedExam.description || ""}" />
+        </label>
+        <div class="result-actions" style="margin-top: 14px;">
+          <button id="adminAddQuestionBtn" class="secondary-btn" type="button">เพิ่มข้อสอบ</button>
+          <button id="adminDeletePartBtn" class="secondary-btn" type="button">ลบ Part นี้</button>
+        </div>
+      </div>
+      <div class="dashboard-table-wrap" style="margin-top: 18px;">
+        <table class="dashboard-table">
+          <thead>
+            <tr>
+              <th>ข้อ</th>
+              <th>คำถาม</th>
+              <th>ตัวเลือก</th>
+              <th>เฉลย</th>
+              <th>คะแนน</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${selectedExam.questions.map((question, index) => `
+              <tr>
+                <td style="min-width: 60px;">
+                  <input data-admin-field="question-number" data-question-id="${question.id}" type="number" min="1" value="${question.number || index + 1}" />
+                </td>
+                <td style="min-width: 260px;">
+                  <textarea data-admin-field="question-text" data-question-id="${question.id}" rows="4">${question.text || ""}</textarea>
+                </td>
+                <td style="min-width: 280px;">
+                  ${["A", "B", "C", "D"].map((label, choiceIndex) => `
+                    <label class="field" style="margin-bottom: 8px;">
+                      <span>${label}</span>
+                      <input data-admin-field="question-choice" data-choice-index="${choiceIndex}" data-question-id="${question.id}" type="text" value="${question.choices?.[choiceIndex] || ""}" />
+                    </label>
+                  `).join("")}
+                </td>
+                <td style="min-width: 90px;">
+                  <select data-admin-field="question-answer" data-question-id="${question.id}">
+                    ${["A", "B", "C", "D"].map((label, answerIndex) => `<option value="${answerIndex}" ${Number(question.answer) === answerIndex ? "selected" : ""}>${label}</option>`).join("")}
+                  </select>
+                </td>
+                <td style="min-width: 90px;">
+                  <input data-admin-field="question-score" data-question-id="${question.id}" type="number" min="1" value="${question.score || 1}" />
+                </td>
+                <td style="min-width: 90px;">
+                  <button class="secondary-btn" data-admin-action="delete-question" data-question-id="${question.id}" type="button">ลบ</button>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    ` : `
+      <p class="inline-message">ยังไม่มี Part ใน Model นี้ เริ่มต้นด้วยการเพิ่ม Part ก่อน</p>
+    `}
+  `;
+
+  bindAdminEditorEvents();
+}
+
+function updateAdminDraftExam(examId, updater) {
+  state.adminEditor.draft.examSets = state.adminEditor.draft.examSets.map((exam) => {
+    if (exam.id !== examId) return exam;
+    return updater(exam);
+  });
+}
+
+function bindAdminEditorEvents() {
+  const setInputValue = (id, handler) => {
+    const node = document.getElementById(id);
+    if (node) {
+      node.addEventListener("input", handler);
+      node.addEventListener("change", handler);
+    }
+  };
+
+  setInputValue("adminDraftTitleInput", (event) => {
+    state.adminEditor.draft.title = event.target.value;
+  });
+
+  const modelSelect = document.getElementById("adminModelSelect");
+  if (modelSelect) {
+    modelSelect.addEventListener("change", (event) => {
+      state.adminEditor.selectedModelCode = event.target.value;
+      const group = getAdminDraftGroups().get(state.adminEditor.selectedModelCode);
+      state.adminEditor.selectedExamId = group?.exams?.[0]?.id || "";
+      renderAdminEditor();
+    });
+  }
+
+  const partSelect = document.getElementById("adminPartSelect");
+  if (partSelect) {
+    partSelect.addEventListener("change", (event) => {
+      state.adminEditor.selectedExamId = event.target.value;
+      renderAdminEditor();
+    });
+  }
+
+  const selectedExam = getAdminSelectedExam();
+  if (selectedExam) {
+    setInputValue("adminExamModelNameInput", (event) => {
+      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelName: event.target.value }));
+    });
+    setInputValue("adminExamModelCodeInput", (event) => {
+      const nextValue = String(event.target.value || "").trim().toUpperCase();
+      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelCode: nextValue }));
+      state.adminEditor.selectedModelCode = nextValue;
+    });
+    setInputValue("adminExamTitleInput", (event) => {
+      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, title: event.target.value }));
+    });
+    setInputValue("adminExamPartCodeInput", (event) => {
+      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, partCode: String(event.target.value || "").trim().toUpperCase() }));
+    });
+    setInputValue("adminExamDurationInput", (event) => {
+      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, durationMinutes: Math.max(1, Number(event.target.value) || 10) }));
+    });
+    setInputValue("adminExamPassScoreInput", (event) => {
+      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, passScore: Math.max(0, Number(event.target.value) || 0) }));
+    });
+    setInputValue("adminExamDescriptionInput", (event) => {
+      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, description: event.target.value }));
+    });
+  }
+
+  const addModelBtn = document.getElementById("adminAddModelBtn");
+  if (addModelBtn) {
+    addModelBtn.addEventListener("click", () => {
+      const modelCode = window.prompt("รหัส Model ใหม่", "")?.trim().toUpperCase();
+      if (!modelCode) return;
+      const modelName = window.prompt("ชื่อ Model", modelCode)?.trim();
+      if (!modelName) return;
+      const exists = state.adminEditor.draft.examSets.some((exam) => exam.modelCode === modelCode);
+      if (exists) {
+        showMessage(els.adminMessage, "มี Model นี้อยู่แล้ว", true);
+        return;
+      }
+      const partCode = window.prompt("รหัส Part แรก", `${modelCode}-P1`)?.trim().toUpperCase();
+      const partTitle = window.prompt("ชื่อ Part แรก", "Part 1")?.trim();
+      if (!partCode || !partTitle) return;
+      const exam = createBlankExam(modelCode, modelName, partCode, partTitle);
+      state.adminEditor.draft.examSets.push(exam);
+      state.adminEditor.selectedModelCode = modelCode;
+      state.adminEditor.selectedExamId = exam.id;
+      renderAdminEditor();
+    });
+  }
+
+  const addPartBtn = document.getElementById("adminAddPartBtn");
+  if (addPartBtn) {
+    addPartBtn.addEventListener("click", () => {
+      const currentGroup = getAdminDraftGroups().get(state.adminEditor.selectedModelCode);
+      if (!currentGroup) {
+        showMessage(els.adminMessage, "กรุณาสร้าง Model ก่อน", true);
+        return;
+      }
+      const partCode = window.prompt("รหัส Part ใหม่", "")?.trim().toUpperCase();
+      const partTitle = window.prompt("ชื่อ Part ใหม่", "")?.trim();
+      if (!partCode || !partTitle) return;
+      const exam = createBlankExam(currentGroup.modelCode, currentGroup.modelName, partCode, partTitle);
+      state.adminEditor.draft.examSets.push(exam);
+      state.adminEditor.selectedExamId = exam.id;
+      renderAdminEditor();
+    });
+  }
+
+  const addQuestionBtn = document.getElementById("adminAddQuestionBtn");
+  if (addQuestionBtn && selectedExam) {
+    addQuestionBtn.addEventListener("click", () => {
+      updateAdminDraftExam(selectedExam.id, (exam) => ({
+        ...exam,
+        questions: [...(exam.questions || []), createBlankQuestion((exam.questions || []).length + 1)]
+      }));
+      renderAdminEditor();
+    });
+  }
+
+  const deletePartBtn = document.getElementById("adminDeletePartBtn");
+  if (deletePartBtn && selectedExam) {
+    deletePartBtn.addEventListener("click", () => {
+      state.adminEditor.draft.examSets = state.adminEditor.draft.examSets.filter((exam) => exam.id !== selectedExam.id);
+      const nextGroup = getAdminDraftGroups().get(state.adminEditor.selectedModelCode) || Array.from(getAdminDraftGroups().values())[0];
+      state.adminEditor.selectedModelCode = nextGroup?.modelCode || "";
+      state.adminEditor.selectedExamId = nextGroup?.exams?.[0]?.id || "";
+      renderAdminEditor();
+    });
+  }
+
+  const saveBuilderBtn = document.getElementById("adminSaveBuilderBtn");
+  if (saveBuilderBtn) {
+    saveBuilderBtn.addEventListener("click", saveAdminBuilder);
+  }
+
+  document.querySelectorAll("[data-admin-action='delete-question']").forEach((button) => {
+    button.addEventListener("click", () => {
+      const questionId = button.dataset.questionId;
+      updateAdminDraftExam(selectedExam.id, (exam) => ({
+        ...exam,
+        questions: (exam.questions || [])
+          .filter((question) => question.id !== questionId)
+          .map((question, index) => ({ ...question, number: index + 1 }))
+      }));
+      renderAdminEditor();
+    });
+  });
+
+  document.querySelectorAll("[data-admin-field]").forEach((node) => {
+    node.addEventListener("input", () => {
+      if (!selectedExam) return;
+      const questionId = node.dataset.questionId;
+      if (!questionId) return;
+      updateAdminDraftExam(selectedExam.id, (exam) => ({
+        ...exam,
+        questions: (exam.questions || []).map((question) => {
+          if (question.id !== questionId) return question;
+          if (node.dataset.adminField === "question-text") {
+            return { ...question, text: node.value };
+          }
+          if (node.dataset.adminField === "question-number") {
+            return { ...question, number: Math.max(1, Number(node.value) || 1) };
+          }
+          if (node.dataset.adminField === "question-answer") {
+            return { ...question, answer: Number(node.value) || 0 };
+          }
+          if (node.dataset.adminField === "question-score") {
+            return { ...question, score: Math.max(1, Number(node.value) || 1) };
+          }
+          if (node.dataset.adminField === "question-choice") {
+            const choices = [...(question.choices || ["", "", "", ""])];
+            choices[Number(node.dataset.choiceIndex) || 0] = node.value;
+            return { ...question, choices, choiceKeys: ["A", "B", "C", "D"] };
+          }
+          return question;
+        })
+      }));
+    });
+    if (node.tagName === "SELECT") {
+      node.addEventListener("change", () => node.dispatchEvent(new Event("input")));
+    }
+  });
+}
+
+async function saveAdminBuilder() {
+  ensureAdminDraft();
+
+  const draft = deepClone(state.adminEditor.draft);
+  draft.examSets = (draft.examSets || []).map((exam) => ({
+    ...exam,
+    modelCode: String(exam.modelCode || "").trim().toUpperCase(),
+    modelName: String(exam.modelName || "").trim(),
+    partCode: String(exam.partCode || "").trim().toUpperCase(),
+    title: String(exam.title || "").trim(),
+    description: String(exam.description || "").trim(),
+    durationMinutes: Math.max(1, Number(exam.durationMinutes) || 10),
+    passScore: Math.max(0, Number(exam.passScore) || 0),
+    questions: (exam.questions || []).map((question, index) => ({
+      ...question,
+      number: Number(question.number) || index + 1,
+      text: String(question.text || "").trim(),
+      choiceKeys: ["A", "B", "C", "D"],
+      choices: ["A", "B", "C", "D"].map((_, choiceIndex) => String(question.choices?.[choiceIndex] || "").trim()),
+      answer: Number(question.answer) || 0,
+      score: Math.max(1, Number(question.score) || 1)
+    }))
+  }));
+
+  const invalidExam = draft.examSets.find((exam) =>
+    !exam.modelCode || !exam.modelName || !exam.partCode || !exam.title || !exam.questions.length
+  );
+  if (invalidExam) {
+    showMessage(els.adminMessage, "กรุณากรอกข้อมูล Model, Part และคำถามให้ครบก่อนบันทึก", true);
+    return;
+  }
+
+  const invalidQuestion = draft.examSets.flatMap((exam) => exam.questions).find((question) =>
+    !question.text || (question.choices || []).some((choice) => !String(choice || "").trim())
+  );
+  if (invalidQuestion) {
+    showMessage(els.adminMessage, "ทุกข้อสอบต้องมีคำถามและตัวเลือกให้ครบ 4 ตัวเลือก", true);
+    return;
+  }
+
+  try {
+    const response = await api("/api/admin/exam-bank", {
+      method: "POST",
+      body: JSON.stringify({ payload: draft })
+    });
+    showMessage(els.adminMessage, `บันทึกคลังข้อสอบเรียบร้อยแล้ว ${response.examSetCount} ชุด`);
+    await loadExams();
+    renderAdminEditor();
+  } catch (error) {
+    showMessage(els.adminMessage, `บันทึกคลังข้อสอบไม่สำเร็จ: ${error.message}`, true);
+  }
+}
+
 function renderAdminInfo() {
   els.adminDataInfo.innerHTML = `
     <div class="mini-note">แหล่งข้อมูล: <strong>${state.bank.source === "custom" ? "ใช้คลังข้อสอบแบบอัปโหลด" : "ใช้คลังข้อสอบหลักของระบบ"}</strong></div>
     <div class="mini-note">ชื่อระบบ: <strong>${state.bank.title || "-"}</strong></div>
     <div class="mini-note">จำนวนชุดข้อสอบ: <strong>${state.bank.examSets.length}</strong></div>
   `;
+  renderAdminEditor();
 }
 
 async function importExamBank() {
@@ -984,7 +1431,7 @@ async function importExamBank() {
     const payload = JSON.parse(raw);
     const response = await api("/api/admin/exam-bank", {
       method: "POST",
-      body: JSON.stringify({ role: "admin", payload })
+      body: JSON.stringify({ payload })
     });
     showMessage(els.adminMessage, `นำเข้าข้อสอบสำเร็จ ${response.examSetCount} ชุด`);
     await loadExams();
@@ -997,7 +1444,7 @@ async function resetExamBank() {
   try {
     await api("/api/admin/reset-exam-bank", {
       method: "POST",
-      body: JSON.stringify({ role: "admin" })
+      body: JSON.stringify({})
     });
     showMessage(els.adminMessage, "กลับไปใช้คลังข้อสอบเดิมแล้ว");
     await loadExams();
@@ -1020,6 +1467,9 @@ async function handleLogin(event) {
       body: JSON.stringify({ employeeCode })
     });
     state.user = payload.user;
+    state.authToken = payload.token || "";
+    window.localStorage.setItem(STORAGE_KEYS.authToken, state.authToken);
+    window.localStorage.setItem(STORAGE_KEYS.authUser, JSON.stringify(state.user));
     showMessage(els.loginMessage, "");
     els.loginShell.classList.add("hidden");
     els.appShell.classList.remove("hidden");
@@ -1039,9 +1489,12 @@ async function handleLogin(event) {
 function logout() {
   clearTimer();
   state.user = null;
+  state.authToken = "";
   state.results = [];
   state.employees = [];
   state.evaluations = [];
+  window.localStorage.removeItem(STORAGE_KEYS.authToken);
+  window.localStorage.removeItem(STORAGE_KEYS.authUser);
   els.loginForm.reset();
   els.loginShell.classList.remove("hidden");
   els.appShell.classList.add("hidden");
@@ -1199,6 +1652,38 @@ function init() {
   renderBankSummary();
   resetExamSession();
   setView("exam");
+
+  const storedToken = window.localStorage.getItem(STORAGE_KEYS.authToken) || "";
+  const storedUser = window.localStorage.getItem(STORAGE_KEYS.authUser) || "";
+  if (!storedToken || !storedUser) {
+    return;
+  }
+
+  state.authToken = storedToken;
+  try {
+    state.user = JSON.parse(storedUser);
+  } catch {
+    logout();
+    return;
+  }
+
+  api("/api/me")
+    .then(async (payload) => {
+      state.user = payload.user;
+      els.loginShell.classList.add("hidden");
+      els.appShell.classList.remove("hidden");
+      updateUserPanel();
+      await loadExams();
+      await loadResults();
+      if (state.user.role === "admin") {
+        await loadEmployees();
+        await loadEvaluations();
+      }
+      setView("exam");
+    })
+    .catch(() => {
+      logout();
+    });
 }
 
 init();
