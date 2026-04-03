@@ -13,37 +13,37 @@
           <div class="brand-badge">E</div>
           <div>
             <h1>Factory Online Exam</h1>
-            <p>ระบบสอบออนไลน์พร้อมประวัติผลสอบและแผงจัดการข้อสอบ</p>
+            <p>เธฃเธฐเธเธเธชเธญเธเธญเธญเธเนเธฅเธเนเธเธฃเนเธญเธกเธเธฃเธฐเธงเธฑเธ•เธดเธเธฅเธชเธญเธเนเธฅเธฐเนเธเธเธเธฑเธ”เธเธฒเธฃเธเนเธญเธชเธญเธ</p>
           </div>
         </div>
 
         <div class="info-grid">
           <article class="info-card">
-            <strong>ผู้เข้าสอบ</strong>
-            <p>ล็อกอินเป็นพนักงานหรือผู้ดูแลระบบ</p>
+            <strong>เธเธนเนเน€เธเนเธฒเธชเธญเธ</strong>
+            <p>เธฅเนเธญเธเธญเธดเธเน€เธเนเธเธเธเธฑเธเธเธฒเธเธซเธฃเธทเธญเธเธนเนเธ”เธนเนเธฅเธฃเธฐเธเธ</p>
           </article>
           <article class="info-card">
-            <strong>ประวัติผลสอบ</strong>
-            <p>บันทึกคะแนนลง localStorage อัตโนมัติ</p>
+            <strong>เธเธฃเธฐเธงเธฑเธ•เธดเธเธฅเธชเธญเธ</strong>
+            <p>เธเธฑเธเธ—เธถเธเธเธฐเนเธเธเธฅเธ localStorage เธญเธฑเธ•เนเธเธกเธฑเธ•เธด</p>
           </article>
           <article class="info-card">
-            <strong>Admin Upload</strong>
-            <p>อัปโหลดไฟล์ JSON ใหม่ผ่านหน้าเว็บได้ทันที</p>
+            <strong>Admin Control</strong>
+            <p>เธญเธฑเธเนเธซเธฅเธ”เนเธเธฅเน JSON เนเธซเธกเนเธเนเธฒเธเธซเธเนเธฒเน€เธงเนเธเนเธ”เนเธ—เธฑเธเธ—เธต</p>
           </article>
         </div>
 
         <form id="loginForm" class="login-form">
           <label class="field">
-            <span>รหัสพนักงาน</span>
-            <input id="employeeCodeInput" type="text" placeholder="เช่น L00489 หรือ ADMIN1234" required />
+            <span>เธฃเธซเธฑเธชเธเธเธฑเธเธเธฒเธ</span>
+            <input id="employeeCodeInput" type="text" placeholder="เน€เธเนเธ L00489 เธซเธฃเธทเธญ ADMIN1234" required />
           </label>
 
           <div class="login-hint">
-            <span>ใช้รหัสพนักงานอย่างเดียวในการเข้าใช้งาน</span>
+            <span>เนเธเนเธฃเธซเธฑเธชเธเธเธฑเธเธเธฒเธเธญเธขเนเธฒเธเน€เธ”เธตเธขเธงเนเธเธเธฒเธฃเน€เธเนเธฒเนเธเนเธเธฒเธ</span>
             <span>Admin dataset: `ADMIN1234`</span>
           </div>
 
-          <button class="primary-btn wide" type="submit">เข้าสู่ระบบ</button>
+          <button class="primary-btn wide" type="submit">เน€เธเนเธฒเธชเธนเนเธฃเธฐเธเธ</button>
           <p id="loginMessage" class="inline-message hidden"></p>
         </form>
       </section>
@@ -55,49 +55,50 @@
           <div class="brand">
             <div class="brand-badge">E</div>
             <div>
-              <h1>Exam Portal</h1>
+              <h1>Capability Portal</h1>
               <p id="systemTitle">Factory Online Exam</p>
             </div>
           </div>
 
           <div class="side-block">
-            <p class="side-label">เมนูหลัก</p>
+            <p class="side-label">เน€เธกเธเธนเธซเธฅเธฑเธ</p>
             <nav class="side-nav">
-              <button class="nav-item active" data-view="exam" type="button">หน้าสอบ</button>
-              <button class="nav-item" data-view="history" type="button">ผลคะแนน</button>
-              <button class="nav-item" data-view="profile" type="button">บัญชีผู้ใช้</button>
+              <button class="nav-item active" data-view="exam" type="button">เธซเธเนเธฒเธชเธญเธ</button>
+              <button class="nav-item" data-view="history" type="button">เธเธฅเธเธฐเนเธเธ</button>
+              <button class="nav-item" data-view="profile" type="button">เธเธฑเธเธเธตเธเธนเนเนเธเน</button>
               <button class="nav-item admin-only hidden" data-view="evaluation" type="button">Evaluation</button>
               <button class="nav-item admin-only hidden" data-view="skillMatrix" type="button">Skill Matrix</button>
-              <button class="nav-item admin-only hidden" data-view="admin" type="button">Admin Upload</button>
+              <button class="nav-item admin-only hidden" data-view="admin" type="button">Exam Builder</button>
             </nav>
           </div>
 
           <div class="side-card">
-            <p class="side-label">ผู้ใช้งานปัจจุบัน</p>
+            <p class="side-label">เธเธนเนเนเธเนเธเธฒเธเธเธฑเธเธเธธเธเธฑเธ</p>
             <strong id="sidebarUserName">-</strong>
             <span id="sidebarUserRole">-</span>
             <span id="sidebarUserId">-</span>
           </div>
 
           <div class="side-card highlight">
-            <p class="side-label">แหล่งข้อสอบ</p>
+            <p class="side-label">เนเธซเธฅเนเธเธเนเธญเธชเธญเธ</p>
             <span id="dataSourceLabel">-</span>
             <span id="dataSummaryLabel">-</span>
           </div>
 
-          <button id="logoutBtn" class="secondary-btn wide logout-btn" type="button">ออกจากระบบ</button>
+          <button id="logoutBtn" class="secondary-btn wide logout-btn" type="button">เธญเธญเธเธเธฒเธเธฃเธฐเธเธ</button>
         </aside>
 
         <main class="content">
           <header class="topbar">
-            <div>
-              <p class="eyebrow">Online Examination Dashboard</p>
-              <h2 id="pageHeading">ทำข้อสอบออนไลน์</h2>
+            <div class="topbar-title">
+              <p class="eyebrow">Factory Capability Platform</p>
+              <h2 id="pageHeading">เธ—เธณเธเนเธญเธชเธญเธเธญเธญเธเนเธฅเธเน</h2>
+              <p class="topbar-subtitle">Exam operations, evaluation workflow, and readiness tracking in one view.</p>
             </div>
               <div class="topbar-actions">
                 <div class="status-chip">
                   <span class="status-dot"></span>
-                  <span id="examStatus">ยังไม่ได้เริ่มสอบ</span>
+                  <span id="examStatus">เธขเธฑเธเนเธกเนเนเธ”เนเน€เธฃเธดเนเธกเธชเธญเธ</span>
                 </div>
               </div>
             </header>
@@ -106,27 +107,27 @@
             <section class="exam-hero-shell">
               <article class="exam-spotlight">
                 <div class="exam-spotlight-copy">
-                  <p class="card-label">พร้อมสอบ</p>
+                  <p class="card-label">เธเธฃเนเธญเธกเธชเธญเธ</p>
                   <h3 id="examTitle">-</h3>
                   <p id="examDescription">-</p>
                 </div>
                 <div class="exam-spotlight-meta">
-                  <span id="examMetaQuestions">0 ข้อ</span>
-                  <span id="examMetaTime">0 นาที</span>
-                  <span id="examMetaPassScore">ผ่าน 0 คะแนน</span>
+                  <span id="examMetaQuestions">0 เธเนเธญ</span>
+                  <span id="examMetaTime">0 เธเธฒเธ—เธต</span>
+                  <span id="examMetaPassScore">เธเนเธฒเธ 0 เธเธฐเนเธเธ</span>
                 </div>
-                <div id="loadStatus" class="inline-message">กำลังโหลดชุดข้อสอบ...</div>
+                <div id="loadStatus" class="inline-message">เธเธณเธฅเธฑเธเนเธซเธฅเธ”เธเธธเธ”เธเนเธญเธชเธญเธ...</div>
               </article>
 
               <div class="exam-kpi-grid">
                 <article class="exam-kpi-card">
-                  <p class="card-label">ตอบแล้ว</p>
+                  <p class="card-label">เธ•เธญเธเนเธฅเนเธง</p>
                   <h3 id="answeredCount">0 / 0</h3>
-                  <p>ระบบบันทึกคำตอบทันที</p>
+                  <p>เธฃเธฐเธเธเธเธฑเธเธ—เธถเธเธเธณเธ•เธญเธเธ—เธฑเธเธ—เธต</p>
                 </article>
                 <article class="exam-kpi-card exam-progress-card">
                   <div>
-                    <p class="card-label">ความคืบหน้า</p>
+                    <p class="card-label">เธเธงเธฒเธกเธเธทเธเธซเธเนเธฒ</p>
                     <h3 id="progressPercent">0%</h3>
                   </div>
                   <div class="progress-track">
@@ -135,8 +136,8 @@
                 </article>
                 <article class="exam-kpi-card exam-start-card">
                   <div>
-                    <p class="card-label">สถานะการทำข้อสอบ</p>
-                    <h3 id="summaryStatus">กำลังทำข้อสอบ</h3>
+                    <p class="card-label">เธชเธ–เธฒเธเธฐเธเธฒเธฃเธ—เธณเธเนเธญเธชเธญเธ</p>
+                    <h3 id="summaryStatus">เธเธณเธฅเธฑเธเธ—เธณเธเนเธญเธชเธญเธ</h3>
                   </div>
                 </article>
               </div>
@@ -146,8 +147,8 @@
               <article class="panel exam-selector-panel">
                 <div class="panel-head">
                   <div>
-                    <p class="card-label">เลือกโมเดลและพาร์ต</p>
-                    <h3>ชุดข้อสอบที่พร้อมใช้งาน</h3>
+                    <p class="card-label">เน€เธฅเธทเธญเธเนเธกเน€เธ”เธฅเนเธฅเธฐเธเธฒเธฃเนเธ•</p>
+                    <h3>เธเธธเธ”เธเนเธญเธชเธญเธเธ—เธตเนเธเธฃเนเธญเธกเนเธเนเธเธฒเธ</h3>
                   </div>
                 </div>
                 <div id="modelSelector" class="model-selector"></div>
@@ -159,10 +160,10 @@
               <article class="panel question-panel exam-question-shell">
                 <div class="panel-head">
                   <div>
-                    <p class="card-label">คำถาม</p>
-                    <h3 id="questionTitle">ข้อ 1</h3>
+                    <p class="card-label">เธเธณเธ–เธฒเธก</p>
+                    <h3 id="questionTitle">เธเนเธญ 1</h3>
                   </div>
-                  <div class="question-badge" id="questionBadge">ยังไม่ได้เลือกคำตอบ</div>
+                  <div class="question-badge" id="questionBadge">เธขเธฑเธเนเธกเนเนเธ”เนเน€เธฅเธทเธญเธเธเธณเธ•เธญเธ</div>
                 </div>
 
                 <div class="question-card">
@@ -172,20 +173,20 @@
                 </div>
 
                 <div class="question-actions">
-                  <button id="prevBtn" class="secondary-btn" type="button">ย้อนกลับ</button>
-                  <button id="nextBtn" class="primary-btn" type="button">ถัดไป</button>
+                  <button id="prevBtn" class="secondary-btn" type="button">เธขเนเธญเธเธเธฅเธฑเธ</button>
+                  <button id="nextBtn" class="primary-btn" type="button">เธ–เธฑเธ”เนเธ</button>
                 </div>
               </article>
 
               <aside class="panel exam-action-panel exam-side-rail">
                 <div class="panel-head">
                   <div>
-                    <p class="card-label">คำสั่ง</p>
-                    <h3>ส่งข้อสอบ</h3>
+                    <p class="card-label">เธเธณเธชเธฑเนเธ</p>
+                    <h3>เธชเนเธเธเนเธญเธชเธญเธ</h3>
                   </div>
                 </div>
                 <div class="exam-side-actions">
-                  <button id="submitExamBtn" class="primary-btn danger wide submit-exam-btn" type="button">ส่งข้อสอบ</button>
+                  <button id="submitExamBtn" class="primary-btn danger wide submit-exam-btn" type="button">เธชเนเธเธเนเธญเธชเธญเธ</button>
                   <button id="nextPartBtn" class="secondary-btn wide" type="button" disabled>Next Part</button>
                 </div>
               </aside>
@@ -194,34 +195,34 @@
             <section class="panel result-panel hidden" id="resultPanel">
               <div class="panel-head">
                 <div>
-                  <p class="card-label">ผลสอบ</p>
-                  <h3>สรุปคะแนน</h3>
+                  <p class="card-label">เธเธฅเธชเธญเธ</p>
+                  <h3>เธชเธฃเธธเธเธเธฐเนเธเธ</h3>
                 </div>
               </div>
 
               <div class="result-grid">
                 <div class="result-box">
-                  <span>คะแนนรวม</span>
+                  <span>เธเธฐเนเธเธเธฃเธงเธก</span>
                   <strong id="scoreValue">0 / 0</strong>
                 </div>
                 <div class="result-box">
-                  <span>คิดเป็นร้อยละ</span>
+                  <span>เธเธดเธ”เน€เธเนเธเธฃเนเธญเธขเธฅเธฐ</span>
                   <strong id="scorePercent">0%</strong>
                 </div>
                 <div class="result-box">
-                  <span>ตอบถูก</span>
-                  <strong id="correctCount">0 ข้อ</strong>
+                  <span>เธ•เธญเธเธ–เธนเธ</span>
+                  <strong id="correctCount">0 เธเนเธญ</strong>
                 </div>
                 <div class="result-box">
-                  <span>ตอบผิด</span>
-                  <strong id="wrongCount">0 ข้อ</strong>
+                  <span>เธ•เธญเธเธเธดเธ”</span>
+                  <strong id="wrongCount">0 เธเนเธญ</strong>
                 </div>
               </div>
 
               <div id="resultMessage" class="result-message"></div>
 
               <div class="result-actions">
-                <button id="restartExamBtn" class="secondary-btn" type="button">เริ่มทำใหม่</button>
+                <button id="restartExamBtn" class="secondary-btn" type="button">เน€เธฃเธดเนเธกเธ—เธณเนเธซเธกเน</button>
               </div>
             </section>
           </section>
@@ -231,7 +232,7 @@
               <div class="panel-head">
                 <div>
                   <p class="card-label">History</p>
-                  <h3>ประวัติผลสอบ</h3>
+                  <h3>เธเธฃเธฐเธงเธฑเธ•เธดเธเธฅเธชเธญเธ</h3>
                 </div>
               </div>
               <div class="history-stats" id="historyStats"></div>
@@ -244,36 +245,36 @@
               <div class="panel-head">
                 <div>
                   <p class="card-label">Profile</p>
-                  <h3>ข้อมูลบัญชีผู้ใช้</h3>
+                  <h3>เธเนเธญเธกเธนเธฅเธเธฑเธเธเธตเธเธนเนเนเธเน</h3>
                 </div>
               </div>
               <div class="profile-grid">
                 <div class="stat-box">
-                  <span>ชื่อพนักงาน</span>
+                  <span>เธเธทเนเธญเธเธเธฑเธเธเธฒเธ</span>
                   <strong id="profileUserName">-</strong>
                 </div>
                 <div class="stat-box">
-                  <span>รหัสพนักงาน</span>
+                  <span>เธฃเธซเธฑเธชเธเธเธฑเธเธเธฒเธ</span>
                   <strong id="profileEmployeeCode">-</strong>
                 </div>
                 <div class="stat-box">
-                  <span>สิทธิ์การใช้งาน</span>
+                  <span>เธชเธดเธ—เธเธดเนเธเธฒเธฃเนเธเนเธเธฒเธ</span>
                   <strong id="profileUserRole">-</strong>
                 </div>
                 <div class="stat-box">
-                  <span>แผนก</span>
+                  <span>เนเธเธเธ</span>
                   <strong id="profileDepartment">-</strong>
                 </div>
                 <div class="stat-box">
-                  <span>ตำแหน่ง</span>
+                  <span>เธ•เธณเนเธซเธเนเธ</span>
                   <strong id="profilePosition">-</strong>
                 </div>
                 <div class="stat-box">
-                  <span>จำนวนครั้งที่สอบ</span>
+                  <span>เธเธณเธเธงเธเธเธฃเธฑเนเธเธ—เธตเนเธชเธญเธ</span>
                   <strong id="profileExamCount">0</strong>
                 </div>
                 <div class="stat-box">
-                  <span>คะแนนล่าสุด</span>
+                  <span>เธเธฐเนเธเธเธฅเนเธฒเธชเธธเธ”</span>
                   <strong id="profileLastScore">-</strong>
                 </div>
               </div>
@@ -285,7 +286,7 @@
               <div class="panel-head skill-matrix-head">
                 <div>
                   <p class="card-label">Skill Matrix</p>
-                  <h3>ตารางสรุประดับทักษะ</h3>
+                  <h3>เธ•เธฒเธฃเธฒเธเธชเธฃเธธเธเธฃเธฐเธ”เธฑเธเธ—เธฑเธเธฉเธฐ</h3>
                 </div>
               </div>
 
@@ -297,8 +298,8 @@
               <div class="skill-matrix-toolbar">
                 <div class="skill-matrix-filters">
                   <label class="field">
-                    <span>ค้นหาพนักงาน</span>
-                    <input id="skillMatrixSearchInput" type="search" placeholder="รหัสพนักงาน หรือ ชื่อพนักงาน" />
+                    <span>เธเนเธเธซเธฒเธเธเธฑเธเธเธฒเธ</span>
+                    <input id="skillMatrixSearchInput" type="search" placeholder="เธฃเธซเธฑเธชเธเธเธฑเธเธเธฒเธ เธซเธฃเธทเธญ เธเธทเนเธญเธเธเธฑเธเธเธฒเธ" />
                   </label>
                   <label class="field">
                     <span>Model</span>
@@ -309,11 +310,11 @@
                     <select id="skillMatrixPartFilter"></select>
                   </label>
                   <label class="field">
-                    <span>ระดับ Skill</span>
+                    <span>เธฃเธฐเธ”เธฑเธ Skill</span>
                     <select id="skillMatrixBandFilter"></select>
                   </label>
                 </div>
-                <p class="skill-matrix-scroll-hint">เลื่อนซ้ายหรือขวาเพื่อดู Part อื่น ๆ ได้</p>
+                <p class="skill-matrix-scroll-hint">เน€เธฅเธทเนเธญเธเธเนเธฒเธขเธซเธฃเธทเธญเธเธงเธฒเน€เธเธทเนเธญเธ”เธน Part เธญเธทเนเธ เน เนเธ”เน</p>
               </div>
 
               <div class="table-wrap skill-matrix-table-wrap">
@@ -321,7 +322,7 @@
                   <thead id="skillMatrixTableHead"></thead>
                   <tbody id="skillMatrixTableBody"></tbody>
                 </table>
-                <div id="skillMatrixEmpty" class="empty-state hidden">ยังไม่มีข้อมูล Skill Matrix</div>
+                <div id="skillMatrixEmpty" class="empty-state hidden">เธขเธฑเธเนเธกเนเธกเธตเธเนเธญเธกเธนเธฅ Skill Matrix</div>
               </div>
             </section>
           </section>
@@ -332,13 +333,14 @@
                 <div class="panel-head">
                   <div>
                     <p class="card-label">Evaluation</p>
-                    <h3>แบบฟอร์มประเมินหน้างาน</h3>
+                    <h3>Operational Evaluation Workspace</h3>
+                    <p class="section-intro">Select employee, part, and evaluator before scoring each capability item below.</p>
                   </div>
                 </div>
 
                 <div class="evaluation-form">
                   <label class="field">
-                    <span>หัวข้อการประเมิน</span>
+                    <span>เธซเธฑเธงเธเนเธญเธเธฒเธฃเธเธฃเธฐเน€เธกเธดเธ</span>
                     <input id="evaluationSectionTitle" type="text" />
                   </label>
 
@@ -352,29 +354,29 @@
                       <select id="evaluationPartSelect"></select>
                     </label>
                     <label class="field">
-                      <span>รหัสพนักงาน</span>
+                      <span>เธฃเธซเธฑเธชเธเธเธฑเธเธเธฒเธ</span>
                       <select id="evaluationEmployeeCodeSelect"></select>
                     </label>
                     <label class="field">
-                      <span>ชื่อพนักงาน</span>
+                      <span>เธเธทเนเธญเธเธเธฑเธเธเธฒเธ</span>
                       <select id="evaluationEmployeeNameSelect"></select>
                     </label>
                     <label class="field">
-                      <span>ผู้ประเมิน</span>
+                      <span>เธเธนเนเธเธฃเธฐเน€เธกเธดเธ</span>
                       <select id="evaluationEvaluatorSelect"></select>
                     </label>
                   </div>
 
                   <div class="evaluation-summary-strip">
-                    <div class="mini-note">Part ปัจจุบัน: <strong id="evaluationSelectedPart">-</strong></div>
-                    <div class="mini-note">ผลสอบล่าสุด: <strong id="evaluationLatestExam">-</strong></div>
+                    <div class="mini-note">Part เธเธฑเธเธเธธเธเธฑเธ: <strong id="evaluationSelectedPart">-</strong></div>
+                    <div class="mini-note">เธเธฅเธชเธญเธเธฅเนเธฒเธชเธธเธ”: <strong id="evaluationLatestExam">-</strong></div>
                   </div>
 
                   <p id="evaluationMessage" class="inline-message hidden"></p>
 
                   <div class="result-actions">
-                    <button id="saveEvaluationBtn" class="primary-btn" type="button">บันทึกการประเมิน</button>
-                    <button id="resetEvaluationBtn" class="secondary-btn" type="button">ล้างแบบฟอร์ม</button>
+                    <button id="saveEvaluationBtn" class="primary-btn" type="button">เธเธฑเธเธ—เธถเธเธเธฒเธฃเธเธฃเธฐเน€เธกเธดเธ</button>
+                    <button id="resetEvaluationBtn" class="secondary-btn" type="button">เธฅเนเธฒเธเนเธเธเธเธญเธฃเนเธก</button>
                   </div>
                 </div>
               </section>
@@ -382,27 +384,28 @@
               <section class="panel">
                 <div class="evaluation-sheet-head">
                   <p class="card-label">Evaluation Sheet</p>
-                  <h3 id="evaluationSheetTitle">หัวข้อที่ 1 : การประเมินหน้างาน และทักษะงาน</h3>
+                  <h3 id="evaluationSheetTitle">เธซเธฑเธงเธเนเธญเธ—เธตเน 1 : เธเธฒเธฃเธเธฃเธฐเน€เธกเธดเธเธซเธเนเธฒเธเธฒเธ เนเธฅเธฐเธ—เธฑเธเธฉเธฐเธเธฒเธ</h3>
+                  <p class="section-intro centered">Use the 1-4 scale to reflect operational readiness and consistency on the selected part.</p>
                 </div>
 
                 <div class="evaluation-sheet-meta">
-                  <span class="hidden">รหัสพนักงาน: <strong id="evaluationMetaCode">-</strong></span>
-                  <span class="hidden">ชื่อพนักงาน: <strong id="evaluationMetaName">-</strong></span>
+                  <span class="hidden">เธฃเธซเธฑเธชเธเธเธฑเธเธเธฒเธ: <strong id="evaluationMetaCode">-</strong></span>
+                  <span class="hidden">เธเธทเนเธญเธเธเธฑเธเธเธฒเธ: <strong id="evaluationMetaName">-</strong></span>
                   <span id="evaluationMetaPart">Model / Part: <strong>-</strong></span>
-                  <span class="hidden">ผู้ประเมิน: <strong id="evaluationMetaEvaluator">-</strong></span>
+                  <span class="hidden">เธเธนเนเธเธฃเธฐเน€เธกเธดเธ: <strong id="evaluationMetaEvaluator">-</strong></span>
                 </div>
 
                 <div class="dashboard-table-wrap evaluation-sheet-wrap">
                   <table class="evaluation-table">
                     <thead>
                       <tr>
-                        <th rowspan="2">ลำดับ<br />No</th>
-                        <th rowspan="2">หัวข้อประเมิน<br />Item</th>
-                        <th colspan="4">ระดับคะแนน<br />Score Level</th>
-                        <th rowspan="2">วิธีประเมิน</th>
-                        <th rowspan="2">คะแนน<br />Score (A)</th>
-                        <th rowspan="2">น้ำหนัก<br />Weight (B)</th>
-                        <th rowspan="2">คะแนนรวม<br />(A) x (B)</th>
+                        <th rowspan="2">เธฅเธณเธ”เธฑเธ<br />No</th>
+                        <th rowspan="2">เธซเธฑเธงเธเนเธญเธเธฃเธฐเน€เธกเธดเธ<br />Item</th>
+                        <th colspan="4">เธฃเธฐเธ”เธฑเธเธเธฐเนเธเธ<br />Score Level</th>
+                        <th rowspan="2">เธงเธดเธเธตเธเธฃเธฐเน€เธกเธดเธ</th>
+                        <th rowspan="2">เธเธฐเนเธเธ<br />Score (A)</th>
+                        <th rowspan="2">เธเนเธณเธซเธเธฑเธ<br />Weight (B)</th>
+                        <th rowspan="2">เธเธฐเนเธเธเธฃเธงเธก<br />(A) x (B)</th>
                       </tr>
                       <tr>
                         <th>1</th>
@@ -414,11 +417,11 @@
                     <tbody id="evaluationRows"></tbody>
                     <tfoot>
                       <tr>
-                        <td colspan="9">รวมคะแนน</td>
+                        <td colspan="9">เธฃเธงเธกเธเธฐเนเธเธ</td>
                         <td id="evaluationTotal">0</td>
                       </tr>
                       <tr>
-                        <td colspan="9">คะแนนเต็ม</td>
+                        <td colspan="9">เธเธฐเนเธเธเน€เธ•เนเธก</td>
                         <td id="evaluationMax">0</td>
                       </tr>
                     </tfoot>
@@ -430,36 +433,37 @@
                 <div class="panel-head">
                   <div>
                     <p class="card-label">History</p>
-                    <h3>ประวัติการประเมิน</h3>
+                    <h3>Evaluation Records</h3>
+                    <p class="section-intro">Filter by employee, evaluator, or part to review completed assessments.</p>
                   </div>
                 </div>
 
                 <div class="evaluation-grid evaluation-filter-grid">
                   <label class="field">
-                    <span>ค้นหา</span>
-                    <input id="evaluationSearchInput" type="text" placeholder="ชื่อ / รหัส / Part / ผู้ประเมิน" />
+                    <span>เธเนเธเธซเธฒ</span>
+                    <input id="evaluationSearchInput" type="text" placeholder="เธเธทเนเธญ / เธฃเธซเธฑเธช / Part / เธเธนเนเธเธฃเธฐเน€เธกเธดเธ" />
                   </label>
                   <label class="field">
                     <span>Part</span>
                     <select id="evaluationHistoryPartFilter"></select>
                   </label>
                   <label class="field">
-                    <span>ผู้ประเมิน</span>
+                    <span>เธเธนเนเธเธฃเธฐเน€เธกเธดเธ</span>
                     <select id="evaluationHistoryEvaluatorFilter"></select>
                   </label>
                 </div>
 
-                <div id="evaluationHistoryEmpty" class="inline-message">ยังไม่มีข้อมูลการประเมิน</div>
+                <div id="evaluationHistoryEmpty" class="inline-message">เธขเธฑเธเนเธกเนเธกเธตเธเนเธญเธกเธนเธฅเธเธฒเธฃเธเธฃเธฐเน€เธกเธดเธ</div>
                 <div id="evaluationHistoryTableWrap" class="dashboard-table-wrap hidden">
                   <table class="dashboard-table">
                     <thead>
                       <tr>
-                        <th>วันที่ประเมิน</th>
-                        <th>พนักงาน</th>
+                        <th>เธงเธฑเธเธ—เธตเนเธเธฃเธฐเน€เธกเธดเธ</th>
+                        <th>เธเธเธฑเธเธเธฒเธ</th>
                         <th>Model / Part</th>
-                        <th>คะแนนที่ได้</th>
-                        <th>ผลการประเมิน</th>
-                        <th>ผู้ประเมิน</th>
+                        <th>เธเธฐเนเธเธเธ—เธตเนเนเธ”เน</th>
+                        <th>เธเธฅเธเธฒเธฃเธเธฃเธฐเน€เธกเธดเธ</th>
+                        <th>เธเธนเนเธเธฃเธฐเน€เธกเธดเธ</th>
                       </tr>
                     </thead>
                     <tbody id="evaluationHistoryBody"></tbody>
@@ -474,24 +478,24 @@
               <div class="panel-head hidden">
                 <div>
                   <p class="card-label">Admin</p>
-                  <h3>อัปโหลดคลังข้อสอบ JSON</h3>
+                  <h3>เธญเธฑเธเนเธซเธฅเธ”เธเธฅเธฑเธเธเนเธญเธชเธญเธ JSON</h3>
                 </div>
               </div>
 
               <div class="admin-grid hidden">
                 <div class="admin-card">
                   <label class="field">
-                    <span>ไฟล์ข้อสอบ JSON</span>
+                    <span>เนเธเธฅเนเธเนเธญเธชเธญเธ JSON</span>
                     <input id="adminFileInput" type="file" accept=".json,application/json" />
                   </label>
                   <div class="admin-actions">
-                    <button id="importJsonBtn" class="primary-btn" type="button">นำเข้าข้อสอบ</button>
-                    <button id="resetJsonBtn" class="secondary-btn" type="button">กลับไปใช้ไฟล์เดิม</button>
+                    <button id="importJsonBtn" class="primary-btn" type="button">เธเธณเน€เธเนเธฒเธเนเธญเธชเธญเธ</button>
+                    <button id="resetJsonBtn" class="secondary-btn" type="button">เธเธฅเธฑเธเนเธเนเธเนเนเธเธฅเนเน€เธ”เธดเธก</button>
                   </div>
                 </div>
 
                 <div class="admin-card">
-                  <strong>สถานะข้อมูลปัจจุบัน</strong>
+                  <strong>เธชเธ–เธฒเธเธฐเธเนเธญเธกเธนเธฅเธเธฑเธเธเธธเธเธฑเธ</strong>
                   <div id="adminDataInfo" class="admin-info-list"></div>
                 </div>
               </div>
@@ -503,7 +507,7 @@
     </div>
 
     <div class="preview-toolbar" id="previewToolbar">
-      <span class="preview-toolbar-label">Preview</span>
+      <span class="preview-toolbar-label">Viewport</span>
         <div class="preview-toolbar-actions">
           <button class="preview-btn active" data-preview-mode="auto" type="button">Auto</button>
           <button class="preview-btn" data-preview-mode="mobile" type="button">Mobile</button>
