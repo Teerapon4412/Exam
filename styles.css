@@ -44,7 +44,8 @@ textarea {
 
 .preview-toolbar {
   position: fixed;
-  right: 18px;
+  left: 24px;
+  right: auto;
   bottom: 18px;
   z-index: 50;
   display: flex;
@@ -1132,6 +1133,7 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   border-bottom: 1px solid var(--line);
   text-align: left;
   vertical-align: middle;
+  overflow: hidden;
 }
 
 .skill-matrix-table th {
@@ -1173,6 +1175,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   background: #fff;
   z-index: 4;
   box-shadow: 1px 0 0 var(--line);
+  background-clip: padding-box;
+  isolation: isolate;
 }
 
 .employee-col {
@@ -1255,10 +1259,12 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .skill-matrix-table thead .sticky-col {
   z-index: 6;
+  background: #f8fbff;
 }
 
 .skill-matrix-table tbody .sticky-col {
   z-index: 3;
+  background: #fff;
 }
 
 .skill-matrix-table tbody tr:nth-child(even) td {
