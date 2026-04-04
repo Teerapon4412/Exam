@@ -1083,6 +1083,34 @@ function bindSkillMatrixScrollSync() {
   leftPane.dataset.syncBound = "true";
 }
 
+function syncSkillMatrixRowHeights() {
+  const leftHeadRows = els.skillMatrixLeftHead ? Array.from(els.skillMatrixLeftHead.querySelectorAll("tr")) : [];
+  const rightHeadRows = els.skillMatrixRightHead ? Array.from(els.skillMatrixRightHead.querySelectorAll("tr")) : [];
+  const leftBodyRows = els.skillMatrixLeftBody ? Array.from(els.skillMatrixLeftBody.querySelectorAll("tr")) : [];
+  const rightBodyRows = els.skillMatrixRightBody ? Array.from(els.skillMatrixRightBody.querySelectorAll("tr")) : [];
+
+  [...leftHeadRows, ...rightHeadRows, ...leftBodyRows, ...rightBodyRows].forEach((row) => {
+    row.style.height = "";
+    row.style.minHeight = "";
+  });
+
+  const syncPairs = (leftRows, rightRows) => {
+    const count = Math.min(leftRows.length, rightRows.length);
+    for (let index = 0; index < count; index += 1) {
+      const leftRow = leftRows[index];
+      const rightRow = rightRows[index];
+      const height = Math.max(leftRow.offsetHeight, rightRow.offsetHeight);
+      leftRow.style.height = `${height}px`;
+      rightRow.style.height = `${height}px`;
+      leftRow.style.minHeight = `${height}px`;
+      rightRow.style.minHeight = `${height}px`;
+    }
+  };
+
+  syncPairs(leftHeadRows, rightHeadRows);
+  syncPairs(leftBodyRows, rightBodyRows);
+}
+
 function formatEmployeeMeta(employee) {
   const department = String(employee.department || "").trim() || "-";
   const position = String(employee.position || "").trim() || "-";
@@ -1234,6 +1262,9 @@ function renderSkillMatrix() {
   }
 
   bindSkillMatrixScrollSync();
+  window.requestAnimationFrame(() => {
+    syncSkillMatrixRowHeights();
+  });
 }
 function populateSelect(element, options, valueKey, labelKey, selectedValue = "") {
   if (!element) return;
@@ -2304,6 +2335,13 @@ function bindEvents() {
   if (els.skillMatrixBandFilter) {
     els.skillMatrixBandFilter.addEventListener("change", renderSkillMatrix);
   }
+  window.addEventListener("resize", () => {
+    if (state.activeView === "skillMatrix") {
+      window.requestAnimationFrame(() => {
+        syncSkillMatrixRowHeights();
+      });
+    }
+  });
 }
 
 function applyStaticThaiText() {
