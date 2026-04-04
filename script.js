@@ -1197,6 +1197,11 @@ function renderSkillMatrix() {
 }
 function populateSelect(element, options, valueKey, labelKey, selectedValue = "") {
   if (!element) return;
+  if (!Array.isArray(options) || !options.length) {
+    element.innerHTML = `<option value="">ไม่มีข้อมูล</option>`;
+    element.value = "";
+    return;
+  }
   element.innerHTML = options
     .map((item) => {
       const value = item[valueKey];
@@ -1205,6 +1210,12 @@ function populateSelect(element, options, valueKey, labelKey, selectedValue = ""
       return `<option value="${value}" ${selected}>${label}</option>`;
     })
     .join("");
+}
+
+function getEvaluationEmployees() {
+  return (Array.isArray(state.employees) ? state.employees : [])
+    .filter((employee) => String(employee?.employeeCode || "").trim())
+    .sort((a, b) => String(a.employeeCode).localeCompare(String(b.employeeCode)));
 }
 
 function getEvaluationContext() {
@@ -1291,6 +1302,14 @@ function renderEvaluationRows(rows = TEXT.evaluationRows) {
 function renderEvaluationForm() {
   if (state.user?.role !== "admin") return;
 
+  const employees = getEvaluationEmployees();
+  if (!employees.length && state.authToken) {
+    showMessage(els.evaluationMessage, "กำลังโหลดรายชื่อพนักงาน...", false);
+    loadEmployees().catch((error) => {
+      showMessage(els.evaluationMessage, `โหลดรายชื่อพนักงานไม่สำเร็จ: ${error.message}`, true);
+    });
+  }
+
   setText(els.evaluationSheetTitle, TEXT.evaluationSectionTitle);
   els.evaluationSectionTitle.value = TEXT.evaluationSectionTitle;
   els.evaluationSectionTitle.classList.add("evaluation-title-input");
@@ -1322,24 +1341,24 @@ function renderEvaluationForm() {
 
   populateSelect(
     els.evaluationEmployeeCodeSelect,
-    state.employees.map((employee) => ({
+    employees.map((employee) => ({
       employeeCode: employee.employeeCode,
       label: employee.employeeCode
     })),
     "employeeCode",
     "label",
-    els.evaluationEmployeeCodeSelect.value || state.employees[0]?.employeeCode || ""
+    els.evaluationEmployeeCodeSelect.value || employees[0]?.employeeCode || ""
   );
 
   populateSelect(
     els.evaluationEmployeeNameSelect,
-    state.employees.map((employee) => ({
+    employees.map((employee) => ({
       employeeCode: employee.employeeCode,
       label: employee.fullName
     })),
     "employeeCode",
     "label",
-    els.evaluationEmployeeNameSelect.value || state.employees[0]?.employeeCode || ""
+    els.evaluationEmployeeNameSelect.value || employees[0]?.employeeCode || ""
   );
 
   populateSelect(
@@ -1349,6 +1368,12 @@ function renderEvaluationForm() {
     "label",
     els.evaluationEvaluatorSelect.value || TEXT.evaluators[0]
   );
+
+  if (!employees.length) {
+    showMessage(els.evaluationMessage, "ยังไม่พบรายชื่อพนักงานสำหรับการประเมิน", true);
+  } else {
+    showMessage(els.evaluationMessage, "");
+  }
 
   syncEvaluationSelectors();
   renderEvaluationRows(TEXT.evaluationRows);
@@ -2388,4 +2413,3 @@ function init() {
 }
 
 init();
-
