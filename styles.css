@@ -1170,8 +1170,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .matrix-layout th,
 .matrix-layout td {
-  width: 170px;
-  min-width: 170px;
+  width: 148px;
+  min-width: 148px;
 }
 
 .sticky-col {
@@ -1186,43 +1186,43 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .employee-col {
   left: 0;
-  min-width: 220px;
-  max-width: 220px;
+  min-width: 180px;
+  max-width: 180px;
   z-index: 10;
 }
 
 .code-col {
-  left: 220px;
-  min-width: 108px;
-  max-width: 108px;
+  left: 180px;
+  min-width: 92px;
+  max-width: 92px;
   text-align: center;
   z-index: 11;
 }
 
 .photo-col {
-  left: 328px;
-  min-width: 92px;
-  max-width: 92px;
+  left: 272px;
+  min-width: 74px;
+  max-width: 74px;
   text-align: center;
   z-index: 12;
 }
 
 .matrix-part-head {
-  width: 170px;
-  min-width: 170px;
+  width: 148px;
+  min-width: 148px;
   text-align: center;
 }
 
 .skill-cell {
   text-align: center;
-  width: 170px;
+  width: 148px;
 }
 
 .matrix-part-head-inner {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   align-content: start;
-  min-height: 88px;
+  min-height: 74px;
 }
 
 .matrix-part-head strong {
@@ -1232,18 +1232,19 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .matrix-part-name {
-  max-height: 60px;
+  max-height: 48px;
   overflow: auto;
-  line-height: 1.4;
+  line-height: 1.3;
   padding-right: 4px;
   word-break: break-word;
+  font-size: 0.88rem;
 }
 
 .employee-cell-copy {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   align-content: center;
-  min-height: 88px;
+  min-height: 78px;
 }
 
 .employee-cell-copy strong {
@@ -1252,16 +1253,17 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.4;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: #10253d;
 }
 
 .employee-subline {
-  max-height: 40px;
+  max-height: 32px;
   overflow: hidden;
   padding-right: 4px;
-  line-height: 1.45;
+  line-height: 1.3;
+  font-size: 0.82rem;
 }
 
 .skill-matrix-table thead th {
@@ -1288,8 +1290,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .skill-matrix-row td {
-  min-height: 110px;
-  height: 110px;
+  min-height: 92px;
+  height: 92px;
 }
 
 .skill-matrix-table tbody tr:hover td {
@@ -1301,8 +1303,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .employee-avatar {
-  width: 58px;
-  height: 58px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   object-fit: cover;
   display: inline-block;
@@ -1323,7 +1325,7 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 .skill-circle-card {
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .skill-circle-card small {
@@ -1333,8 +1335,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 .skill-circle {
   --skill-color: #dbe5f0;
   --skill-value: 0;
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -1348,12 +1350,12 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 .skill-circle span {
   font-weight: 800;
   color: #18324a;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
 }
 
 .skill-circle-meta {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 600;
 }
 
