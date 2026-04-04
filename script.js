@@ -103,8 +103,12 @@ const els = {
   skillMatrixModelFilter: $("skillMatrixModelFilter"),
   skillMatrixPartFilter: $("skillMatrixPartFilter"),
   skillMatrixBandFilter: $("skillMatrixBandFilter"),
-  skillMatrixTableHead: $("skillMatrixTableHead"),
-  skillMatrixTableBody: $("skillMatrixTableBody"),
+  skillMatrixLeftPane: $("skillMatrixLeftPane"),
+  skillMatrixRightPane: $("skillMatrixRightPane"),
+  skillMatrixLeftHead: $("skillMatrixLeftHead"),
+  skillMatrixLeftBody: $("skillMatrixLeftBody"),
+  skillMatrixRightHead: $("skillMatrixRightHead"),
+  skillMatrixRightBody: $("skillMatrixRightBody"),
   skillMatrixEmpty: $("skillMatrixEmpty"),
   previewToolbar: $("previewToolbar")
 };
@@ -1059,6 +1063,26 @@ function renderSkillCircle(cell) {
   `;
 }
 
+function bindSkillMatrixScrollSync() {
+  const leftPane = els.skillMatrixLeftPane;
+  const rightPane = els.skillMatrixRightPane;
+  if (!leftPane || !rightPane || leftPane.dataset.syncBound === "true") return;
+
+  let syncingFrom = "";
+  const syncScroll = (source, target, key) => {
+    if (syncingFrom && syncingFrom !== key) return;
+    syncingFrom = key;
+    target.scrollTop = source.scrollTop;
+    window.requestAnimationFrame(() => {
+      if (syncingFrom === key) syncingFrom = "";
+    });
+  };
+
+  leftPane.addEventListener("scroll", () => syncScroll(leftPane, rightPane, "left"));
+  rightPane.addEventListener("scroll", () => syncScroll(rightPane, leftPane, "right"));
+  leftPane.dataset.syncBound = "true";
+}
+
 function formatEmployeeMeta(employee) {
   const department = String(employee.department || "").trim() || "-";
   const position = String(employee.position || "").trim() || "-";
@@ -1149,12 +1173,19 @@ function renderSkillMatrix() {
     `;
   }
 
-  if (els.skillMatrixTableHead) {
-    els.skillMatrixTableHead.innerHTML = `
+  if (els.skillMatrixLeftHead) {
+    els.skillMatrixLeftHead.innerHTML = `
       <tr>
-        <th class="sticky-col employee-col">ชื่อพนักงาน</th>
-        <th class="sticky-col code-col">รหัส</th>
-        <th class="sticky-col photo-col">รูป</th>
+        <th class="employee-col">ชื่อพนักงาน</th>
+        <th class="code-col">รหัส</th>
+        <th class="photo-col">รูป</th>
+      </tr>
+    `;
+  }
+
+  if (els.skillMatrixRightHead) {
+    els.skillMatrixRightHead.innerHTML = `
+      <tr>
         ${visibleColumns.map((column) => `
           <th class="matrix-part-head">
             <div class="matrix-part-head-inner">
@@ -1167,21 +1198,28 @@ function renderSkillMatrix() {
     `;
   }
 
-  if (els.skillMatrixTableBody) {
-    els.skillMatrixTableBody.innerHTML = filteredEmployees.map((employee) => `
+  if (els.skillMatrixLeftBody) {
+    els.skillMatrixLeftBody.innerHTML = filteredEmployees.map((employee) => `
       <tr class="skill-matrix-row">
-        <td class="sticky-col employee-col">
+        <td class="employee-col">
           <div class="employee-cell-copy">
             <strong>${employee.employeeName}</strong>
             <div class="table-subline employee-subline">${formatEmployeeMeta(employee)}</div>
           </div>
         </td>
-        <td class="sticky-col code-col">${employee.employeeCode}</td>
-        <td class="sticky-col photo-col">
+        <td class="code-col">${employee.employeeCode}</td>
+        <td class="photo-col">
           ${employee.photoUrl
             ? `<img class="employee-avatar" src="${employee.photoUrl}" alt="${employee.employeeName}" />`
             : `<div class="employee-avatar placeholder">${getEmployeeAvatarFallback(employee.employeeName)}</div>`}
         </td>
+      </tr>
+    `).join("");
+  }
+
+  if (els.skillMatrixRightBody) {
+    els.skillMatrixRightBody.innerHTML = filteredEmployees.map((employee) => `
+      <tr class="skill-matrix-row">
         ${visibleColumns.map((column) => `<td class="skill-cell">${renderSkillCircle(employee.cells[column.index])}</td>`).join("")}
       </tr>
     `).join("");
@@ -1194,6 +1232,8 @@ function renderSkillMatrix() {
       els.skillMatrixEmpty.textContent = "ไม่พบข้อมูลสำหรับเงื่อนไขที่เลือก";
     }
   }
+
+  bindSkillMatrixScrollSync();
 }
 function populateSelect(element, options, valueKey, labelKey, selectedValue = "") {
   if (!element) return;

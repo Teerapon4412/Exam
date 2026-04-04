@@ -1110,12 +1110,40 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   --skill-part-col-width: 148px;
   position: relative;
   max-width: 100%;
-  padding-bottom: 10px;
+  overflow: hidden;
+  padding-bottom: 0;
   scrollbar-gutter: stable both-edges;
   box-shadow: inset 0 1px 0 rgba(219, 229, 240, 0.9);
 }
 
-.skill-matrix-table-wrap::after {
+.skill-matrix-split {
+  display: grid;
+  grid-template-columns: calc(var(--skill-employee-col-width) + var(--skill-code-col-width) + var(--skill-photo-col-width)) minmax(0, 1fr);
+  align-items: start;
+}
+
+.skill-matrix-left-pane,
+.skill-matrix-right-pane {
+  max-height: calc(100vh - 345px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  background: #fff;
+}
+
+.skill-matrix-left-pane {
+  overflow-x: hidden;
+  border-right: 1px solid var(--line);
+  box-shadow: 10px 0 22px rgba(15, 23, 42, 0.06);
+  position: relative;
+  z-index: 2;
+}
+
+.skill-matrix-right-pane {
+  overflow-x: auto;
+  position: relative;
+}
+
+.skill-matrix-right-pane::after {
   content: "";
   position: sticky;
   right: 0;
@@ -1129,9 +1157,9 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .skill-matrix-table {
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .skill-matrix-table th,
@@ -1169,7 +1197,9 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .matrix-layout {
   min-width: 2360px;
-  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
 }
 
 .matrix-layout th,
@@ -1178,52 +1208,28 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   min-width: var(--skill-part-col-width);
 }
 
-.sticky-col {
-  position: sticky;
-  background: #fff;
-  z-index: 4;
-  box-shadow: 1px 0 0 var(--line);
-  background-clip: padding-box;
-  isolation: isolate;
-  background-image: linear-gradient(#fff, #fff);
-}
-
 .employee-col {
-  left: 0;
   width: var(--skill-employee-col-width);
   min-width: var(--skill-employee-col-width);
   max-width: var(--skill-employee-col-width);
-  z-index: 10;
 }
 
 .code-col {
-  left: var(--skill-employee-col-width);
   width: var(--skill-code-col-width);
   min-width: var(--skill-code-col-width);
   max-width: var(--skill-code-col-width);
   text-align: center;
-  z-index: 11;
 }
 
 .photo-col {
-  left: calc(var(--skill-employee-col-width) + var(--skill-code-col-width));
   width: var(--skill-photo-col-width);
   min-width: var(--skill-photo-col-width);
   max-width: var(--skill-photo-col-width);
   text-align: center;
-  z-index: 12;
 }
 
 .photo-col::after {
-  content: "";
-  position: absolute;
-  top: -1px;
-  right: -12px;
-  width: 14px;
-  height: calc(100% + 2px);
-  pointer-events: none;
-  background: inherit;
-  box-shadow: 1px 0 0 var(--line);
+  display: none;
 }
 
 .matrix-part-head {
@@ -1285,26 +1291,16 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   font-size: 0.82rem;
 }
 
-.skill-matrix-table thead th {
+.skill-matrix-left-pane thead th,
+.skill-matrix-right-pane thead th {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 4;
   background: #f8fbff;
 }
 
-.skill-matrix-table thead .sticky-col {
-  z-index: 14;
-  background: #f8fbff;
-  background-image: linear-gradient(#f8fbff, #f8fbff);
-}
-
-.skill-matrix-table tbody .sticky-col {
-  z-index: 9;
-  background: #fff;
-  background-image: linear-gradient(#fff, #fff);
-}
-
-.skill-matrix-table tbody tr:nth-child(even) td {
+.skill-matrix-left-pane tbody tr:nth-child(even) td,
+.skill-matrix-right-pane tbody tr:nth-child(even) td {
   background: #fbfdff;
 }
 
@@ -1313,11 +1309,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   height: 92px;
 }
 
-.skill-matrix-table tbody tr:hover td {
-  background: #f7fbff;
-}
-
-.skill-matrix-table tbody tr:hover .sticky-col {
+.skill-matrix-left-pane tbody tr:hover td,
+.skill-matrix-right-pane tbody tr:hover td {
   background: #f7fbff;
 }
 
@@ -1966,6 +1959,21 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
   .skill-matrix-table-wrap {
     max-height: none;
+  }
+
+  .skill-matrix-split {
+    grid-template-columns: 1fr;
+  }
+
+  .skill-matrix-left-pane,
+  .skill-matrix-right-pane {
+    max-height: none;
+  }
+
+  .skill-matrix-left-pane {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    box-shadow: none;
   }
 
   .exam-spotlight,
