@@ -103,12 +103,8 @@ const els = {
   skillMatrixModelFilter: $("skillMatrixModelFilter"),
   skillMatrixPartFilter: $("skillMatrixPartFilter"),
   skillMatrixBandFilter: $("skillMatrixBandFilter"),
-  skillMatrixLeftPane: $("skillMatrixLeftPane"),
-  skillMatrixRightPane: $("skillMatrixRightPane"),
-  skillMatrixLeftHead: $("skillMatrixLeftHead"),
-  skillMatrixLeftBody: $("skillMatrixLeftBody"),
-  skillMatrixRightHead: $("skillMatrixRightHead"),
-  skillMatrixRightBody: $("skillMatrixRightBody"),
+  skillMatrixTableHead: $("skillMatrixTableHead"),
+  skillMatrixTableBody: $("skillMatrixTableBody"),
   skillMatrixEmpty: $("skillMatrixEmpty"),
   previewToolbar: $("previewToolbar")
 };
@@ -1063,54 +1059,6 @@ function renderSkillCircle(cell) {
   `;
 }
 
-function bindSkillMatrixScrollSync() {
-  const leftPane = els.skillMatrixLeftPane;
-  const rightPane = els.skillMatrixRightPane;
-  if (!leftPane || !rightPane || leftPane.dataset.syncBound === "true") return;
-
-  let syncingFrom = "";
-  const syncScroll = (source, target, key) => {
-    if (syncingFrom && syncingFrom !== key) return;
-    syncingFrom = key;
-    target.scrollTop = source.scrollTop;
-    window.requestAnimationFrame(() => {
-      if (syncingFrom === key) syncingFrom = "";
-    });
-  };
-
-  leftPane.addEventListener("scroll", () => syncScroll(leftPane, rightPane, "left"));
-  rightPane.addEventListener("scroll", () => syncScroll(rightPane, leftPane, "right"));
-  leftPane.dataset.syncBound = "true";
-}
-
-function syncSkillMatrixRowHeights() {
-  const leftHeadRows = els.skillMatrixLeftHead ? Array.from(els.skillMatrixLeftHead.querySelectorAll("tr")) : [];
-  const rightHeadRows = els.skillMatrixRightHead ? Array.from(els.skillMatrixRightHead.querySelectorAll("tr")) : [];
-  const leftBodyRows = els.skillMatrixLeftBody ? Array.from(els.skillMatrixLeftBody.querySelectorAll("tr")) : [];
-  const rightBodyRows = els.skillMatrixRightBody ? Array.from(els.skillMatrixRightBody.querySelectorAll("tr")) : [];
-
-  [...leftHeadRows, ...rightHeadRows, ...leftBodyRows, ...rightBodyRows].forEach((row) => {
-    row.style.height = "";
-    row.style.minHeight = "";
-  });
-
-  const syncPairs = (leftRows, rightRows) => {
-    const count = Math.min(leftRows.length, rightRows.length);
-    for (let index = 0; index < count; index += 1) {
-      const leftRow = leftRows[index];
-      const rightRow = rightRows[index];
-      const height = Math.max(leftRow.offsetHeight, rightRow.offsetHeight);
-      leftRow.style.height = `${height}px`;
-      rightRow.style.height = `${height}px`;
-      leftRow.style.minHeight = `${height}px`;
-      rightRow.style.minHeight = `${height}px`;
-    }
-  };
-
-  syncPairs(leftHeadRows, rightHeadRows);
-  syncPairs(leftBodyRows, rightBodyRows);
-}
-
 function formatEmployeeMeta(employee) {
   const department = String(employee.department || "").trim() || "-";
   const position = String(employee.position || "").trim() || "-";
@@ -1201,19 +1149,12 @@ function renderSkillMatrix() {
     `;
   }
 
-  if (els.skillMatrixLeftHead) {
-    els.skillMatrixLeftHead.innerHTML = `
+  if (els.skillMatrixTableHead) {
+    els.skillMatrixTableHead.innerHTML = `
       <tr>
-        <th class="employee-col">ชื่อพนักงาน</th>
-        <th class="code-col">รหัส</th>
-        <th class="photo-col">รูป</th>
-      </tr>
-    `;
-  }
-
-  if (els.skillMatrixRightHead) {
-    els.skillMatrixRightHead.innerHTML = `
-      <tr>
+        <th class="sticky-col employee-col">ชื่อพนักงาน</th>
+        <th class="sticky-col code-col">รหัส</th>
+        <th class="sticky-col photo-col">รูป</th>
         ${visibleColumns.map((column) => `
           <th class="matrix-part-head">
             <div class="matrix-part-head-inner">
@@ -1226,28 +1167,21 @@ function renderSkillMatrix() {
     `;
   }
 
-  if (els.skillMatrixLeftBody) {
-    els.skillMatrixLeftBody.innerHTML = filteredEmployees.map((employee) => `
+  if (els.skillMatrixTableBody) {
+    els.skillMatrixTableBody.innerHTML = filteredEmployees.map((employee) => `
       <tr class="skill-matrix-row">
-        <td class="employee-col">
+        <td class="sticky-col employee-col">
           <div class="employee-cell-copy">
             <strong>${employee.employeeName}</strong>
             <div class="table-subline employee-subline">${formatEmployeeMeta(employee)}</div>
           </div>
         </td>
-        <td class="code-col">${employee.employeeCode}</td>
-        <td class="photo-col">
+        <td class="sticky-col code-col">${employee.employeeCode}</td>
+        <td class="sticky-col photo-col">
           ${employee.photoUrl
             ? `<img class="employee-avatar" src="${employee.photoUrl}" alt="${employee.employeeName}" />`
             : `<div class="employee-avatar placeholder">${getEmployeeAvatarFallback(employee.employeeName)}</div>`}
         </td>
-      </tr>
-    `).join("");
-  }
-
-  if (els.skillMatrixRightBody) {
-    els.skillMatrixRightBody.innerHTML = filteredEmployees.map((employee) => `
-      <tr class="skill-matrix-row">
         ${visibleColumns.map((column) => `<td class="skill-cell">${renderSkillCircle(employee.cells[column.index])}</td>`).join("")}
       </tr>
     `).join("");
@@ -1261,10 +1195,6 @@ function renderSkillMatrix() {
     }
   }
 
-  bindSkillMatrixScrollSync();
-  window.requestAnimationFrame(() => {
-    syncSkillMatrixRowHeights();
-  });
 }
 function populateSelect(element, options, valueKey, labelKey, selectedValue = "") {
   if (!element) return;
@@ -2335,13 +2265,6 @@ function bindEvents() {
   if (els.skillMatrixBandFilter) {
     els.skillMatrixBandFilter.addEventListener("change", renderSkillMatrix);
   }
-  window.addEventListener("resize", () => {
-    if (state.activeView === "skillMatrix") {
-      window.requestAnimationFrame(() => {
-        syncSkillMatrixRowHeights();
-      });
-    }
-  });
 }
 
 function applyStaticThaiText() {
