@@ -1104,6 +1104,10 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 }
 
 .skill-matrix-table-wrap {
+  --skill-employee-col-width: 180px;
+  --skill-code-col-width: 92px;
+  --skill-photo-col-width: 74px;
+  --skill-part-col-width: 148px;
   position: relative;
   max-width: 100%;
   padding-bottom: 10px;
@@ -1170,8 +1174,8 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .matrix-layout th,
 .matrix-layout td {
-  width: 148px;
-  min-width: 148px;
+  width: var(--skill-part-col-width);
+  min-width: var(--skill-part-col-width);
 }
 
 .sticky-col {
@@ -1186,36 +1190,51 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .employee-col {
   left: 0;
-  min-width: 180px;
-  max-width: 180px;
+  width: var(--skill-employee-col-width);
+  min-width: var(--skill-employee-col-width);
+  max-width: var(--skill-employee-col-width);
   z-index: 10;
 }
 
 .code-col {
-  left: 180px;
-  min-width: 92px;
-  max-width: 92px;
+  left: var(--skill-employee-col-width);
+  width: var(--skill-code-col-width);
+  min-width: var(--skill-code-col-width);
+  max-width: var(--skill-code-col-width);
   text-align: center;
   z-index: 11;
 }
 
 .photo-col {
-  left: 272px;
-  min-width: 74px;
-  max-width: 74px;
+  left: calc(var(--skill-employee-col-width) + var(--skill-code-col-width));
+  width: var(--skill-photo-col-width);
+  min-width: var(--skill-photo-col-width);
+  max-width: var(--skill-photo-col-width);
   text-align: center;
   z-index: 12;
 }
 
+.photo-col::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: -12px;
+  width: 14px;
+  height: calc(100% + 2px);
+  pointer-events: none;
+  background: inherit;
+  box-shadow: 1px 0 0 var(--line);
+}
+
 .matrix-part-head {
-  width: 148px;
-  min-width: 148px;
+  width: var(--skill-part-col-width);
+  min-width: var(--skill-part-col-width);
   text-align: center;
 }
 
 .skill-cell {
   text-align: center;
-  width: 148px;
+  width: var(--skill-part-col-width);
 }
 
 .matrix-part-head-inner {
