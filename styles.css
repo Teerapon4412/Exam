@@ -1188,6 +1188,27 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   min-width: var(--skill-part-col-width);
 }
 
+.skill-matrix-table th:nth-child(1),
+.skill-matrix-table td:nth-child(1) {
+  width: var(--skill-employee-col-width);
+  min-width: var(--skill-employee-col-width);
+  max-width: var(--skill-employee-col-width);
+}
+
+.skill-matrix-table th:nth-child(2),
+.skill-matrix-table td:nth-child(2) {
+  width: var(--skill-code-col-width);
+  min-width: var(--skill-code-col-width);
+  max-width: var(--skill-code-col-width);
+}
+
+.skill-matrix-table th:nth-child(3),
+.skill-matrix-table td:nth-child(3) {
+  width: var(--skill-photo-col-width);
+  min-width: var(--skill-photo-col-width);
+  max-width: var(--skill-photo-col-width);
+}
+
 .employee-col {
   left: 0;
   width: var(--skill-employee-col-width);
@@ -1293,6 +1314,27 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   background-clip: padding-box;
   isolation: isolate;
   background-image: linear-gradient(#fff, #fff);
+}
+
+.sticky-col::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: inherit;
+}
+
+.employee-col::after,
+.code-col::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: -10px;
+  width: 12px;
+  height: calc(100% + 2px);
+  pointer-events: none;
+  background: inherit;
+  box-shadow: 1px 0 0 var(--line);
 }
 
 .skill-matrix-table thead th {
