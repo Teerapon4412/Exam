@@ -106,6 +106,9 @@ const els = {
   skillMatrixTableHead: $("skillMatrixTableHead"),
   skillMatrixTableBody: $("skillMatrixTableBody"),
   skillMatrixEmpty: $("skillMatrixEmpty"),
+  skillMatrixPrevPageBtn: $("skillMatrixPrevPageBtn"),
+  skillMatrixNextPageBtn: $("skillMatrixNextPageBtn"),
+  skillMatrixPageIndicator: $("skillMatrixPageIndicator"),
   skillMatrixExportPdfBtn: $("skillMatrixExportPdfBtn"),
   previewToolbar: $("previewToolbar")
 };
@@ -163,6 +166,7 @@ const SKILL_MATRIX_CONFIG = {
   examWeight: 40,
   evaluationWeight: 60,
   totalWeight: 100,
+  pageSize: 7,
   skillBands: [
     { min: 0, max: 25, skillPct: 0, color: "transparent", label: "0%" },
     { min: 26, max: 50, skillPct: 50, color: "#dc2626", label: "50%" },
@@ -186,6 +190,7 @@ const state = {
   employees: [],
   evaluations: [],
   activeView: "exam",
+  skillMatrixPage: 0,
   adminEditor: {
     draft: null,
     selectedModelCode: "",
@@ -1356,6 +1361,11 @@ function renderSkillMatrix() {
   const visibleColumns = matrix.columns
     .map((column, index) => ({ ...column, index }))
     .filter((column) => (!selectedModel || column.modelName === selectedModel) && (!selectedPart || column.partName === selectedPart));
+  const totalPages = Math.max(1, Math.ceil(visibleColumns.length / SKILL_MATRIX_CONFIG.pageSize));
+  const safePage = Math.min(state.skillMatrixPage, totalPages - 1);
+  state.skillMatrixPage = Math.max(0, safePage);
+  const pageStart = state.skillMatrixPage * SKILL_MATRIX_CONFIG.pageSize;
+  const pagedColumns = visibleColumns.slice(pageStart, pageStart + SKILL_MATRIX_CONFIG.pageSize);
 
   const filteredEmployees = matrix.employees.filter((employee) => {
     const matchesSearch = !searchValue
@@ -1396,7 +1406,7 @@ function renderSkillMatrix() {
         <th class="sticky-col employee-col">ชื่อพนักงาน</th>
         <th class="sticky-col code-col">รหัส</th>
         <th class="sticky-col photo-col">รูป</th>
-        ${visibleColumns.map((column) => `
+        ${pagedColumns.map((column) => `
           <th class="matrix-part-head">
             <div class="matrix-part-head-inner">
               <strong>${column.modelCode}/${column.partCode}</strong>
@@ -1423,7 +1433,7 @@ function renderSkillMatrix() {
             ? `<img class="employee-avatar" src="${employee.photoUrl}" alt="${employee.employeeName}" />`
             : `<div class="employee-avatar placeholder">${getEmployeeAvatarFallback(employee.employeeName)}</div>`}
         </td>
-        ${visibleColumns.map((column) => `<td class="skill-cell">${renderSkillCircle(employee.cells[column.index])}</td>`).join("")}
+        ${pagedColumns.map((column) => `<td class="skill-cell">${renderSkillCircle(employee.cells[column.index])}</td>`).join("")}
       </tr>
     `).join("");
   }
@@ -1434,6 +1444,15 @@ function renderSkillMatrix() {
     if (isEmpty) {
       els.skillMatrixEmpty.textContent = "ไม่พบข้อมูลสำหรับเงื่อนไขที่เลือก";
     }
+  }
+  if (els.skillMatrixPageIndicator) {
+    els.skillMatrixPageIndicator.textContent = `หน้า ${totalPages ? state.skillMatrixPage + 1 : 1} / ${totalPages}`;
+  }
+  if (els.skillMatrixPrevPageBtn) {
+    els.skillMatrixPrevPageBtn.disabled = state.skillMatrixPage <= 0 || visibleColumns.length === 0;
+  }
+  if (els.skillMatrixNextPageBtn) {
+    els.skillMatrixNextPageBtn.disabled = state.skillMatrixPage >= totalPages - 1 || visibleColumns.length === 0;
   }
   if (els.skillMatrixExportPdfBtn) {
     els.skillMatrixExportPdfBtn.disabled = filteredEmployees.length === 0 || visibleColumns.length === 0;
@@ -2498,16 +2517,40 @@ function bindEvents() {
   els.evaluationHistoryPartFilter.addEventListener("change", renderEvaluationHistory);
   els.evaluationHistoryEvaluatorFilter.addEventListener("change", renderEvaluationHistory);
   if (els.skillMatrixSearchInput) {
-    els.skillMatrixSearchInput.addEventListener("input", renderSkillMatrix);
+    els.skillMatrixSearchInput.addEventListener("input", () => {
+      state.skillMatrixPage = 0;
+      renderSkillMatrix();
+    });
   }
   if (els.skillMatrixModelFilter) {
-    els.skillMatrixModelFilter.addEventListener("change", renderSkillMatrix);
+    els.skillMatrixModelFilter.addEventListener("change", () => {
+      state.skillMatrixPage = 0;
+      renderSkillMatrix();
+    });
   }
   if (els.skillMatrixPartFilter) {
-    els.skillMatrixPartFilter.addEventListener("change", renderSkillMatrix);
+    els.skillMatrixPartFilter.addEventListener("change", () => {
+      state.skillMatrixPage = 0;
+      renderSkillMatrix();
+    });
   }
   if (els.skillMatrixBandFilter) {
-    els.skillMatrixBandFilter.addEventListener("change", renderSkillMatrix);
+    els.skillMatrixBandFilter.addEventListener("change", () => {
+      state.skillMatrixPage = 0;
+      renderSkillMatrix();
+    });
+  }
+  if (els.skillMatrixPrevPageBtn) {
+    els.skillMatrixPrevPageBtn.addEventListener("click", () => {
+      state.skillMatrixPage = Math.max(0, state.skillMatrixPage - 1);
+      renderSkillMatrix();
+    });
+  }
+  if (els.skillMatrixNextPageBtn) {
+    els.skillMatrixNextPageBtn.addEventListener("click", () => {
+      state.skillMatrixPage += 1;
+      renderSkillMatrix();
+    });
   }
   if (els.skillMatrixExportPdfBtn) {
     els.skillMatrixExportPdfBtn.addEventListener("click", exportSkillMatrixPdf);

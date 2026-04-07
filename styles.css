@@ -1073,6 +1073,28 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   gap: 12px;
 }
 
+.skill-matrix-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.skill-matrix-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skill-matrix-page-indicator {
+  min-width: 82px;
+  text-align: center;
+  color: #46617f;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .skill-matrix-filters {
   display: grid;
   grid-template-columns: minmax(280px, 1.45fr) repeat(3, minmax(180px, 1fr));
@@ -2079,6 +2101,17 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   .skill-matrix-toolbar-meta {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .skill-matrix-actions,
+  .skill-matrix-pager {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .skill-matrix-pager {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .primary-btn,
