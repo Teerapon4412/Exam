@@ -1004,6 +1004,7 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 .skill-matrix-panel {
   display: grid;
   gap: 16px;
+  overflow: visible;
 }
 
 .skill-matrix-head {
@@ -1114,6 +1115,7 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   padding-bottom: 10px;
   scrollbar-gutter: stable both-edges;
   box-shadow: inset 0 1px 0 rgba(219, 229, 240, 0.9);
+  isolation: isolate;
 }
 
 .skill-matrix-table-wrap::after {
@@ -1279,7 +1281,7 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 .sticky-col {
   position: sticky;
   background: #fff;
-  z-index: 4;
+  z-index: 12;
   box-shadow: 1px 0 0 var(--line);
   background-clip: padding-box;
   isolation: isolate;
@@ -1289,24 +1291,30 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 .skill-matrix-table thead th {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: 20;
   background: #f8fbff;
+  background-image: linear-gradient(#f8fbff, #f8fbff);
 }
 
 .skill-matrix-table thead .sticky-col {
-  z-index: 14;
+  z-index: 26;
   background: #f8fbff;
   background-image: linear-gradient(#f8fbff, #f8fbff);
 }
 
 .skill-matrix-table tbody .sticky-col {
-  z-index: 9;
+  z-index: 16;
   background: #fff;
   background-image: linear-gradient(#fff, #fff);
 }
 
 .skill-matrix-table tbody tr:nth-child(even) td {
   background: #fbfdff;
+}
+
+.skill-matrix-table tbody tr:nth-child(even) .sticky-col {
+  background: #fbfdff;
+  background-image: linear-gradient(#fbfdff, #fbfdff);
 }
 
 .skill-matrix-row td {
@@ -1320,6 +1328,7 @@ body[data-preview-mode="tablet"] .exam-side-rail {
 
 .skill-matrix-table tbody tr:hover .sticky-col {
   background: #f7fbff;
+  background-image: linear-gradient(#f7fbff, #f7fbff);
 }
 
 .employee-avatar {
