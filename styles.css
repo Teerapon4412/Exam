@@ -1066,6 +1066,13 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   gap: 10px;
 }
 
+.skill-matrix-toolbar-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .skill-matrix-filters {
   display: grid;
   grid-template-columns: minmax(280px, 1.45fr) repeat(3, minmax(180px, 1fr));
@@ -1093,6 +1100,10 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   padding: 0 2px;
   color: #6b7b94;
   font-size: 0.92rem;
+}
+
+#skillMatrixExportPdfBtn {
+  white-space: nowrap;
 }
 
 .table-wrap {
@@ -2061,6 +2072,11 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   .admin-toolbar,
   .admin-question-head,
   .admin-question-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .skill-matrix-toolbar-meta {
     flex-direction: column;
     align-items: stretch;
   }

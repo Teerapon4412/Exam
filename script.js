@@ -106,6 +106,7 @@ const els = {
   skillMatrixTableHead: $("skillMatrixTableHead"),
   skillMatrixTableBody: $("skillMatrixTableBody"),
   skillMatrixEmpty: $("skillMatrixEmpty"),
+  skillMatrixExportPdfBtn: $("skillMatrixExportPdfBtn"),
   previewToolbar: $("previewToolbar")
 };
 
@@ -208,6 +209,15 @@ function setText(element, value) {
   }
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function updatePreviewAccess() {
   if (!els.previewToolbar) return;
   const isAdmin = state.user?.role === "admin";
@@ -246,6 +256,204 @@ function formatDateTime(value) {
 
 function formatMinutes(minutes) {
   return `${Number(minutes) || 0} นาที`;
+}
+
+function openPrintWindow(title, content) {
+  const printWindow = window.open("", "_blank", "width=1440,height=960");
+  if (!printWindow) {
+    window.alert("ไม่สามารถเปิดหน้าต่างพิมพ์ได้ กรุณาอนุญาต pop-up แล้วลองใหม่อีกครั้ง");
+    return null;
+  }
+  printWindow.document.open();
+  printWindow.document.write(content);
+  printWindow.document.close();
+  printWindow.document.title = title;
+  return printWindow;
+}
+
+function exportSkillMatrixPdf() {
+  if (state.user?.role !== "admin") return;
+  const tableHead = els.skillMatrixTableHead?.innerHTML || "";
+  const tableBody = els.skillMatrixTableBody?.innerHTML || "";
+  if (!tableHead.trim() || !tableBody.trim()) {
+    window.alert("ไม่มีข้อมูลสำหรับ Export PDF");
+    return;
+  }
+
+  const selectedModel = els.skillMatrixModelFilter?.selectedOptions?.[0]?.textContent?.trim() || "ทุก Model";
+  const selectedPart = els.skillMatrixPartFilter?.selectedOptions?.[0]?.textContent?.trim() || "ทุก Part";
+  const selectedBand = els.skillMatrixBandFilter?.selectedOptions?.[0]?.textContent?.trim() || "ทุกระดับทักษะ";
+  const searchValue = String(els.skillMatrixSearchInput?.value || "").trim() || "-";
+  const summaryCards = Array.from(els.skillMatrixSummary?.querySelectorAll(".stat-box") || []).map((card) => ({
+    label: card.querySelector("span")?.textContent?.trim() || "",
+    value: card.querySelector("strong")?.textContent?.trim() || ""
+  }));
+  const exportedAt = new Date().toLocaleString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  const summaryHtml = summaryCards.map((item) => `
+    <div class="summary-card">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${escapeHtml(item.value)}</strong>
+    </div>
+  `).join("");
+
+  const html = `<!doctype html>
+  <html lang="th">
+    <head>
+      <meta charset="utf-8" />
+      <title>Skill Matrix Export</title>
+      <style>
+        :root {
+          color-scheme: light;
+        }
+        * {
+          box-sizing: border-box;
+        }
+        body {
+          margin: 0;
+          padding: 24px;
+          font-family: "Segoe UI", Tahoma, sans-serif;
+          color: #102033;
+          background: #ffffff;
+        }
+        .sheet {
+          display: grid;
+          gap: 18px;
+        }
+        .sheet-head {
+          display: grid;
+          gap: 8px;
+        }
+        .sheet-head h1 {
+          margin: 0;
+          font-size: 28px;
+        }
+        .meta,
+        .summary {
+          display: grid;
+          gap: 12px;
+        }
+        .meta {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .meta-card,
+        .summary-card {
+          border: 1px solid #d8e2ec;
+          border-radius: 14px;
+          padding: 12px 14px;
+          background: #f8fbff;
+        }
+        .meta-card span,
+        .summary-card span {
+          display: block;
+          color: #64748b;
+          font-size: 12px;
+          margin-bottom: 6px;
+        }
+        .meta-card strong,
+        .summary-card strong {
+          font-size: 18px;
+        }
+        .summary {
+          grid-template-columns: repeat(${Math.max(summaryCards.length, 1)}, minmax(0, 1fr));
+        }
+        .table-wrap {
+          overflow: visible;
+          border: 1px solid #d8e2ec;
+          border-radius: 18px;
+        }
+        table {
+          width: 100%;
+          min-width: 1200px;
+          border-collapse: collapse;
+        }
+        th,
+        td {
+          border-bottom: 1px solid #e3ebf3;
+          padding: 10px 12px;
+          vertical-align: middle;
+          text-align: left;
+        }
+        thead th {
+          background: #eef5fb;
+          color: #314766;
+          font-size: 13px;
+        }
+        tbody tr:nth-child(even) td {
+          background: #fbfdff;
+        }
+        .employee-avatar {
+          width: 42px;
+          height: 42px;
+          border-radius: 999px;
+          object-fit: cover;
+          display: block;
+        }
+        .employee-avatar.placeholder {
+          display: grid;
+          place-items: center;
+          background: #e8eff6;
+          color: #44556f;
+          font-weight: 700;
+        }
+        .skill-circle {
+          margin-inline: auto;
+        }
+        .print-note {
+          color: #64748b;
+          font-size: 12px;
+        }
+        @media print {
+          body {
+            padding: 12px;
+          }
+          .table-wrap {
+            overflow: visible;
+            border-radius: 0;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <main class="sheet">
+        <section class="sheet-head">
+          <h1>Skill Matrix</h1>
+          <div class="print-note">วันที่ส่งออก ${escapeHtml(exportedAt)}</div>
+        </section>
+        <section class="meta">
+          <div class="meta-card"><span>ค้นหา</span><strong>${escapeHtml(searchValue)}</strong></div>
+          <div class="meta-card"><span>Model</span><strong>${escapeHtml(selectedModel)}</strong></div>
+          <div class="meta-card"><span>Part</span><strong>${escapeHtml(selectedPart)}</strong></div>
+          <div class="meta-card"><span>ระดับ Skill</span><strong>${escapeHtml(selectedBand)}</strong></div>
+        </section>
+        <section class="summary">${summaryHtml}</section>
+        <section class="table-wrap">
+          <table>
+            <thead>${tableHead}</thead>
+            <tbody>${tableBody}</tbody>
+          </table>
+        </section>
+      </main>
+      <script>
+        window.addEventListener("load", () => {
+          setTimeout(() => {
+            window.print();
+          }, 300);
+        });
+        window.addEventListener("afterprint", () => {
+          window.close();
+        });
+      </script>
+    </body>
+  </html>`;
+
+  openPrintWindow("Skill Matrix Export", html);
 }
 
 async function api(url, options = {}) {
@@ -1193,6 +1401,9 @@ function renderSkillMatrix() {
     if (isEmpty) {
       els.skillMatrixEmpty.textContent = "ไม่พบข้อมูลสำหรับเงื่อนไขที่เลือก";
     }
+  }
+  if (els.skillMatrixExportPdfBtn) {
+    els.skillMatrixExportPdfBtn.disabled = filteredEmployees.length === 0 || visibleColumns.length === 0;
   }
 
 }
@@ -2264,6 +2475,9 @@ function bindEvents() {
   }
   if (els.skillMatrixBandFilter) {
     els.skillMatrixBandFilter.addEventListener("change", renderSkillMatrix);
+  }
+  if (els.skillMatrixExportPdfBtn) {
+    els.skillMatrixExportPdfBtn.addEventListener("click", exportSkillMatrixPdf);
   }
 }
 
