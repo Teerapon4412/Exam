@@ -402,14 +402,47 @@ function exportSkillMatrixPdf() {
           color: #44556f;
           font-weight: 700;
         }
+        .skill-circle-card {
+          display: grid;
+          justify-items: center;
+          gap: 4px;
+        }
         .skill-circle {
+          --skill-color: #dbe5f0;
+          --skill-value: 0;
+          width: 50px;
+          height: 50px;
           margin-inline: auto;
+          border-radius: 50%;
+          display: grid;
+          place-items: center;
+          background:
+            radial-gradient(closest-side, #ffffff 67%, transparent 68% 100%),
+            conic-gradient(var(--skill-color) calc(var(--skill-value) * 1%), #e8eef5 0);
+          border: 1px solid #dbe5f0;
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .skill-circle span {
+          font-weight: 800;
+          color: #18324a;
+          font-size: 12px;
+        }
+        .skill-circle-meta {
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 600;
         }
         .print-note {
           color: #64748b;
           font-size: 12px;
         }
         @media print {
+          * {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
           body {
             padding: 12px;
           }
