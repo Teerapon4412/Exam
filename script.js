@@ -245,6 +245,15 @@ function setAdminSaveStatus(kind = "", message = "") {
   state.adminSaveStatus = { kind, message };
 }
 
+function selectAdminExamById(examId) {
+  if (!examId) return;
+  const exam = state.adminEditor.draft?.examSets?.find((item) => item.id === examId);
+  if (!exam) return;
+  state.adminEditor.selectedModelCode = String(exam.modelCode || "");
+  state.adminEditor.selectedExamId = exam.id;
+  state.adminEditor.newModelName = String(exam.modelName || "");
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -2388,15 +2397,43 @@ async function saveAdminBuilder() {
     !exam.modelCode || !exam.modelName || !exam.partCode || !exam.title || !exam.questions.length
   );
   if (invalidExam) {
-    showMessage(els.adminMessage, "กรุณากรอกข้อมูล Model, Part และเพิ่มคำถามอย่างน้อย 1 ข้อให้ครบก่อนบันทึก", true);
+    selectAdminExamById(invalidExam.id);
+    setAdminSaveStatus("error", "ข้อมูล Part ไม่ครบ");
+    showMessage(
+      els.adminMessage,
+      `บันทึกไม่ได้: Part ${invalidExam.partCode || "-"} (${invalidExam.title || "-"}) ของ Model ${invalidExam.modelName || "-"} ยังกรอกข้อมูลไม่ครบ หรือยังไม่มีคำถาม`,
+      true
+    );
+    showToast(
+      `Part ${invalidExam.partCode || "-"} ของ Model ${invalidExam.modelName || "-"} ยังไม่พร้อมบันทึก`,
+      "error",
+      4200
+    );
+    renderAdminEditor();
     return;
   }
 
-  const invalidQuestion = draft.examSets.flatMap((exam) => exam.questions).find((question) =>
+  const invalidQuestionEntry = draft.examSets.flatMap((exam) =>
+    (exam.questions || []).map((question, index) => ({ exam, question, index }))
+  ).find(({ question }) =>
     !question.text || (question.choices || []).some((choice) => !String(choice || "").trim())
   );
+  const invalidQuestion = invalidQuestionEntry?.question;
   if (invalidQuestion) {
-    showMessage(els.adminMessage, "กรุณากรอกคำถาม ตัวเลือก และคำตอบให้ครบทุกข้ออย่างน้อย 4 ตัวเลือก", true);
+    const invalidExamForQuestion = invalidQuestionEntry.exam;
+    selectAdminExamById(invalidExamForQuestion.id);
+    setAdminSaveStatus("error", "ข้อมูลคำถามไม่ครบ");
+    showMessage(
+      els.adminMessage,
+      `บันทึกไม่ได้: ข้อ ${invalidQuestionEntry.index + 1} ของ Part ${invalidExamForQuestion.partCode || "-"} (${invalidExamForQuestion.title || "-"}) ยังกรอกคำถามหรือตัวเลือกไม่ครบ`,
+      true
+    );
+    showToast(
+      `ข้อ ${invalidQuestionEntry.index + 1} ของ Part ${invalidExamForQuestion.partCode || "-"} ยังไม่ครบ`,
+      "error",
+      4200
+    );
+    renderAdminEditor();
     return;
   }
 
