@@ -1090,15 +1090,23 @@ function renderHistory() {
 
   els.historyList.innerHTML = results
     .map((item) => {
+      const avatar = getHistoryAvatar(item);
       const title = state.user?.role === "admin"
         ? `${item.full_name || item.username} (${item.employee_code || "-"})`
         : (item.exam_title || item.part_code || "-");
       return `
         <article class="history-card">
-          <div>
-            <strong>${title}</strong>
-            <p>${item.model_name || "-"} / ${item.part_code || "-"}</p>
-            <p>${formatDateTime(item.submitted_at)}</p>
+          <div class="history-card-layout">
+            <div class="history-card-copy">
+              <strong>${title}</strong>
+              <p>${item.model_name || "-"} / ${item.part_code || "-"}</p>
+              <p>${formatDateTime(item.submitted_at)}</p>
+            </div>
+            <div class="history-avatar-wrap">
+              ${avatar.photoUrl
+                ? `<img class="employee-avatar history-avatar" src="${avatar.photoUrl}" alt="${avatar.alt}" />`
+                : `<div class="employee-avatar placeholder history-avatar">${getEmployeeAvatarFallback(avatar.alt)}</div>`}
+            </div>
           </div>
           <div class="history-score ${item.passed ? "pass" : "fail"}">
             <strong>${item.percent}%</strong>
@@ -1385,6 +1393,20 @@ function formatEmployeeMeta(employee) {
 function getEmployeeAvatarFallback(employeeName) {
   const normalized = String(employeeName || "").trim();
   return normalized ? normalized.slice(0, 1) : "?";
+}
+
+function getHistoryAvatar(item) {
+  if (state.user?.role === "admin") {
+    const employee = (state.employees || []).find((entry) => entry.employeeCode === (item.employee_code || item.employeeCode));
+    return {
+      photoUrl: employee?.photoUrl || "",
+      alt: employee?.fullName || item.full_name || item.username || item.employee_code || "Employee"
+    };
+  }
+  return {
+    photoUrl: state.user?.photoUrl || "",
+    alt: state.user?.fullName || item.full_name || item.username || item.employee_code || "Employee"
+  };
 }
 
 function renderSkillMatrix() {

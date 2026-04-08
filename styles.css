@@ -2819,6 +2819,33 @@ body {
   box-shadow: 0 20px 30px rgba(130, 149, 173, 0.14);
 }
 
+.history-card-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.history-card-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.history-avatar-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+}
+
+.history-avatar {
+  width: 84px;
+  height: 84px;
+  border-width: 4px;
+  box-shadow: 0 16px 28px rgba(130, 149, 173, 0.18);
+}
+
 .history-meta {
   gap: 10px;
 }
@@ -2836,6 +2863,15 @@ body {
   .result-grid,
   .history-stats {
     grid-template-columns: 1fr;
+  }
+
+  .history-card-layout {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .history-avatar-wrap {
+    min-width: 0;
   }
 
   .exam-option {
