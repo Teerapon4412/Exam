@@ -1046,6 +1046,28 @@ async function loadExams() {
   }
 }
 
+async function loadResults() {
+  try {
+    const payload = await api("/api/results");
+    state.results = Array.isArray(payload.results) ? payload.results : [];
+    renderHistory();
+    renderProfile();
+    if (state.user?.role === "admin") {
+      renderSkillMatrix();
+      syncEvaluationSelectors();
+    }
+  } catch (error) {
+    state.results = [];
+    renderHistory();
+    renderProfile();
+    if (state.user?.role === "admin") {
+      renderSkillMatrix();
+      syncEvaluationSelectors();
+    }
+    showMessage(els.loadStatus, `โหลดประวัติผลสอบไม่สำเร็จ: ${error.message}`, true);
+  }
+}
+
 function renderHistory() {
   const results = state.results;
   const total = results.length;
