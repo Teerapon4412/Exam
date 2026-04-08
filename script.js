@@ -1980,10 +1980,6 @@ function renderAdminEditor() {
                 <input id="adminExamPartCodeInput" type="text" value="${selectedExam.partCode || ""}" />
               </label>
               <label class="field">
-                <span>เวลาสอบ (นาที)</span>
-                <input id="adminExamDurationInput" type="number" min="1" value="${selectedExam.durationMinutes || 10}" />
-              </label>
-              <label class="field">
                 <span>คะแนนผ่านเกณฑ์</span>
                 <input id="adminExamPassScoreInput" type="number" min="0" value="${selectedExam.passScore || 0}" />
               </label>
@@ -2250,12 +2246,6 @@ function bindAdminEditorEvents() {
       updateAdminDraftExam(selectedExam.id, (exam) => ({
         ...exam,
         partCode: String(event.target.value || "").trim().toUpperCase()
-      }));
-    });
-    setInputValue("adminExamDurationInput", (event) => {
-      updateAdminDraftExam(selectedExam.id, (exam) => ({
-        ...exam,
-        durationMinutes: Math.max(1, Number(event.target.value) || 10)
       }));
     });
     setInputValue("adminExamPassScoreInput", (event) => {
