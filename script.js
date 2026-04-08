@@ -192,6 +192,7 @@ const state = {
   activeView: "exam",
   skillMatrixPage: 0,
   adminSaving: false,
+  adminSaveStatus: { kind: "", message: "" },
   adminEditor: {
     draft: null,
     selectedModelCode: "",
@@ -213,6 +214,35 @@ function setText(element, value) {
   if (element) {
     element.textContent = value;
   }
+}
+
+let toastTimer = null;
+
+function showToast(message, kind = "info", duration = 2600) {
+  let toast = document.getElementById("appToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "appToast";
+    toast.className = "app-toast hidden";
+    document.body.appendChild(toast);
+  }
+  toast.className = `app-toast app-toast-${kind}`;
+  toast.textContent = message || "";
+  clearTimeout(toastTimer);
+  requestAnimationFrame(() => {
+    toast.classList.remove("hidden");
+    toast.classList.add("is-visible");
+  });
+  if (duration > 0) {
+    toastTimer = window.setTimeout(() => {
+      toast.classList.remove("is-visible");
+      toast.classList.add("hidden");
+    }, duration);
+  }
+}
+
+function setAdminSaveStatus(kind = "", message = "") {
+  state.adminSaveStatus = { kind, message };
 }
 
 function escapeHtml(value) {
@@ -1974,7 +2004,10 @@ function renderAdminEditor() {
           <strong>พร้อมบันทึกการเปลี่ยนแปลงคลังข้อสอบ</strong>
           <span>หลังตรวจสอบ Model, Part และคำถามเรียบร้อยแล้ว กดปุ่มนี้เพื่อบันทึกขึ้นระบบ</span>
         </div>
-        <button id="adminSaveBuilderBtn" class="primary-btn admin-save-btn" type="button" ${state.adminSaving ? "disabled" : ""}>${state.adminSaving ? "กำลังบันทึก..." : "บันทึกคลังข้อสอบ"}</button>
+        <div class="admin-save-actions">
+          ${state.adminSaveStatus?.message ? `<span class="admin-save-badge admin-save-badge-${state.adminSaveStatus.kind || "info"}">${state.adminSaveStatus.message}</span>` : ""}
+          <button id="adminSaveBuilderBtn" class="primary-btn admin-save-btn" type="button" ${state.adminSaving ? "disabled" : ""}>${state.adminSaving ? "กำลังบันทึก..." : "บันทึกคลังข้อสอบ"}</button>
+        </div>
       </div>
     </div>
   `;
@@ -2369,19 +2402,25 @@ async function saveAdminBuilder() {
 
   try {
     state.adminSaving = true;
+    setAdminSaveStatus("loading", "กำลังบันทึก...");
     showMessage(els.adminMessage, "กำลังบันทึกคลังข้อสอบ...");
+    showToast("กำลังบันทึกคลังข้อสอบ...", "loading", 0);
     renderAdminEditor();
     const response = await api("/api/admin/exam-bank", {
       method: "POST",
       body: JSON.stringify({ payload: draft })
     });
     state.adminSaving = false;
+    setAdminSaveStatus("success", `บันทึกสำเร็จ ${response.examSetCount} ชุด`);
     showMessage(els.adminMessage, `บันทึกคลังข้อสอบเรียบร้อยแล้ว จำนวน ${response.examSetCount} ชุด`);
+    showToast(`บันทึกคลังข้อสอบสำเร็จ ${response.examSetCount} ชุด`, "success");
     await loadExams();
     renderAdminEditor();
   } catch (error) {
     state.adminSaving = false;
+    setAdminSaveStatus("error", "บันทึกไม่สำเร็จ");
     showMessage(els.adminMessage, `บันทึกคลังข้อสอบไม่สำเร็จ: ${error.message}`, true);
+    showToast(`บันทึกคลังข้อสอบไม่สำเร็จ: ${error.message}`, "error", 4200);
     renderAdminEditor();
   }
 }

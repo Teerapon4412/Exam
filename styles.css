@@ -1726,6 +1726,78 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   white-space: nowrap;
 }
 
+.admin-save-actions {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
+.admin-save-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  border: 1px solid #d8e2ec;
+  background: #f7fbff;
+  color: #314766;
+}
+
+.admin-save-badge-loading {
+  border-color: rgba(255, 143, 69, 0.24);
+  background: #fff5ee;
+  color: #a24d17;
+}
+
+.admin-save-badge-success {
+  border-color: rgba(30, 174, 115, 0.24);
+  background: #edf9f3;
+  color: #17764f;
+}
+
+.admin-save-badge-error {
+  border-color: rgba(220, 38, 38, 0.2);
+  background: #fff1f1;
+  color: #a11f2d;
+}
+
+.app-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 80;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(214, 225, 235, 0.9);
+  background: rgba(17, 31, 47, 0.96);
+  color: #fff;
+  box-shadow: 0 22px 48px rgba(18, 34, 52, 0.28);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: none;
+}
+
+.app-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.app-toast-loading {
+  background: rgba(156, 76, 29, 0.96);
+}
+
+.app-toast-success {
+  background: rgba(22, 118, 79, 0.96);
+}
+
+.app-toast-error {
+  background: rgba(161, 31, 45, 0.96);
+}
+
 .admin-quick-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2049,6 +2121,10 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   .admin-save-bar {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .admin-save-actions {
+    justify-items: stretch;
   }
 
   .admin-save-btn {
