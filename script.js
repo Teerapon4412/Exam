@@ -245,6 +245,15 @@ function setAdminSaveStatus(kind = "", message = "") {
   state.adminSaveStatus = { kind, message };
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("อ่านไฟล์รูปไม่สำเร็จ"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function selectAdminExamById(examId) {
   if (!examId) return;
   const exam = state.adminEditor.draft?.examSets?.find((item) => item.id === examId);
@@ -2158,10 +2167,17 @@ function buildAdminQuestionCard(question, index) {
         </label>
       </div>
       <div class="admin-question-media">
-        <label class="field">
-          <span>รูปประกอบคำถาม</span>
-          <input data-admin-field="question-image" data-question-id="${question.id}" type="url" value="${question.imageUrl || ""}" placeholder="https://example.com/question-image.jpg" />
-        </label>
+        <div class="admin-question-media-row">
+          <label class="field">
+            <span>รูปประกอบคำถาม (URL)</span>
+            <input data-admin-field="question-image" data-question-id="${question.id}" type="url" value="${question.imageUrl || ""}" placeholder="https://example.com/question-image.jpg" />
+          </label>
+          <div class="admin-image-actions">
+            <input id="adminQuestionImageFile-${question.id}" class="hidden" data-admin-file="question-image-file" data-question-id="${question.id}" type="file" accept="image/*" />
+            <button class="secondary-btn" data-admin-action="pick-question-image" data-file-target="adminQuestionImageFile-${question.id}" type="button">เลือกรูปจากเครื่อง</button>
+            <button class="secondary-btn" data-admin-action="clear-question-image" data-question-id="${question.id}" type="button">ลบรูป</button>
+          </div>
+        </div>
         ${question.imageUrl ? `<img class="admin-question-preview" src="${question.imageUrl}" alt="Question preview" />` : ""}
       </div>
       <div class="admin-choice-grid">
@@ -2319,6 +2335,53 @@ function bindAdminEditorEvents() {
     button.addEventListener("click", () => {
       deleteAdminQuestion(selectedExam.id, button.dataset.questionId);
       renderAdminEditor();
+    });
+  });
+
+  document.querySelectorAll("[data-admin-action='pick-question-image']").forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetId = button.dataset.fileTarget;
+      const input = targetId ? document.getElementById(targetId) : null;
+      input?.click();
+    });
+  });
+
+  document.querySelectorAll("[data-admin-action='clear-question-image']").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!selectedExam) return;
+      const questionId = button.dataset.questionId;
+      if (!questionId) return;
+      updateAdminDraftExam(selectedExam.id, (exam) => ({
+        ...exam,
+        questions: (exam.questions || []).map((question) => (
+          question.id === questionId ? { ...question, imageUrl: null } : question
+        ))
+      }));
+      showMessage(els.adminMessage, "ลบรูปประกอบคำถามแล้ว");
+      renderAdminEditor();
+    });
+  });
+
+  document.querySelectorAll("[data-admin-file='question-image-file']").forEach((node) => {
+    node.addEventListener("change", async () => {
+      if (!selectedExam) return;
+      const questionId = node.dataset.questionId;
+      const file = node.files?.[0];
+      if (!questionId || !file) return;
+      try {
+        showMessage(els.adminMessage, "กำลังนำเข้ารูปประกอบคำถาม...");
+        const imageUrl = await readFileAsDataUrl(file);
+        updateAdminDraftExam(selectedExam.id, (exam) => ({
+          ...exam,
+          questions: (exam.questions || []).map((question) => (
+            question.id === questionId ? { ...question, imageUrl } : question
+          ))
+        }));
+        showMessage(els.adminMessage, `เพิ่มรูปประกอบคำถามเรียบร้อยแล้ว: ${file.name}`);
+        renderAdminEditor();
+      } catch (error) {
+        showMessage(els.adminMessage, `นำเข้ารูปไม่สำเร็จ: ${error.message}`, true);
+      }
     });
   });
 
