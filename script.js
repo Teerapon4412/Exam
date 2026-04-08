@@ -191,6 +191,7 @@ const state = {
   evaluations: [],
   activeView: "exam",
   skillMatrixPage: 0,
+  adminSaving: false,
   adminEditor: {
     draft: null,
     selectedModelCode: "",
@@ -1894,10 +1895,6 @@ function renderAdminEditor() {
             <button id="adminAddPartBtn" class="primary-btn" type="button">เพิ่ม Part</button>
           </div>
         </div>
-        <div class="admin-divider"></div>
-        <div class="result-actions" style="margin-top: 14px;">
-          <button id="adminSaveBuilderBtn" class="secondary-btn" type="button">บันทึกคลังข้อสอบ</button>
-        </div>
         <div class="evaluation-grid">
           <label class="field">
             <span>เลือก Model</span>
@@ -1971,6 +1968,13 @@ function renderAdminEditor() {
           <div class="mini-note">จำนวนข้อสอบ: <strong>${questionCount}</strong></div>
           <div class="mini-note">จำนวนชุดในคลัง: <strong>${state.adminEditor.draft.examSets.length} ชุด</strong></div>
         </div>
+      </div>
+      <div class="admin-save-bar">
+        <div class="admin-save-copy">
+          <strong>พร้อมบันทึกการเปลี่ยนแปลงคลังข้อสอบ</strong>
+          <span>หลังตรวจสอบ Model, Part และคำถามเรียบร้อยแล้ว กดปุ่มนี้เพื่อบันทึกขึ้นระบบ</span>
+        </div>
+        <button id="adminSaveBuilderBtn" class="primary-btn admin-save-btn" type="button" ${state.adminSaving ? "disabled" : ""}>${state.adminSaving ? "กำลังบันทึก..." : "บันทึกคลังข้อสอบ"}</button>
       </div>
     </div>
   `;
@@ -2313,6 +2317,7 @@ function bindAdminEditorEvents() {
 }
 
 async function saveAdminBuilder() {
+  if (state.adminSaving) return;
   ensureAdminDraft();
 
   const draft = deepClone(state.adminEditor.draft);
@@ -2363,15 +2368,21 @@ async function saveAdminBuilder() {
   }
 
   try {
+    state.adminSaving = true;
+    showMessage(els.adminMessage, "กำลังบันทึกคลังข้อสอบ...");
+    renderAdminEditor();
     const response = await api("/api/admin/exam-bank", {
       method: "POST",
       body: JSON.stringify({ payload: draft })
     });
+    state.adminSaving = false;
     showMessage(els.adminMessage, `บันทึกคลังข้อสอบเรียบร้อยแล้ว จำนวน ${response.examSetCount} ชุด`);
     await loadExams();
     renderAdminEditor();
   } catch (error) {
+    state.adminSaving = false;
     showMessage(els.adminMessage, `บันทึกคลังข้อสอบไม่สำเร็จ: ${error.message}`, true);
+    renderAdminEditor();
   }
 }
 
