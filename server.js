@@ -187,6 +187,23 @@ const getActiveEmployees = db.prepare(`
   ORDER BY full_name COLLATE NOCASE ASC
 `);
 
+const getManageableEmployees = db.prepare(`
+  SELECT id, employee_code, full_name, department, position, photo_url, role, is_active, created_at, updated_at
+  FROM users
+  WHERE COALESCE(employee_code, '') <> ''
+  ORDER BY updated_at DESC, full_name COLLATE NOCASE ASC
+`);
+
+const insertEmployee = db.prepare(`
+  INSERT INTO users (
+    id, username, password, password_hash, employee_code, full_name, department,
+    position, photo_url, role, is_active, created_at, updated_at
+  ) VALUES (
+    @id, @username, @password, @password_hash, @employee_code, @full_name, @department,
+    @position, @photo_url, @role, @is_active, @created_at, @updated_at
+  )
+`);
+
 const getAllEvaluations = db.prepare(`
   SELECT *
   FROM evaluations
@@ -520,6 +537,14 @@ function serializeEmployee(user) {
   };
 }
 
+function serializeManagedEmployee(user) {
+  return {
+    ...serializeEmployee(user),
+    createdAt: user.created_at || "",
+    updatedAt: user.updated_at || ""
+  };
+}
+
 function serializeEvaluation(row) {
   return {
     id: row.id,
@@ -690,6 +715,48 @@ app.get("/api/admin/employees", requireAdmin, (req, res) => {
   }
 
   return res.json({ employees: employees.map(serializeEmployee) });
+});
+
+app.get("/api/admin/employees/manage", requireAdmin, (_req, res) => {
+  return res.json({ employees: getManageableEmployees.all().map(serializeManagedEmployee) });
+});
+
+app.post("/api/admin/employees", requireAdmin, (req, res) => {
+  const payload = req.body || {};
+  const employeeCode = normalizeEmployeeCode(payload.employeeCode);
+  const fullName = String(payload.fullName || "").trim();
+  const department = String(payload.department || "").trim();
+  const position = String(payload.position || "").trim();
+  const photoUrl = String(payload.photoUrl || "").trim();
+  const role = "student";
+
+  if (!employeeCode || !fullName) {
+    return res.status(400).json({ error: "employeeCode and fullName are required" });
+  }
+
+  if (getUserByEmployeeCode.get(employeeCode)) {
+    return res.status(409).json({ error: "Employee code already exists" });
+  }
+
+  const now = new Date().toISOString();
+  const record = {
+    id: randomId("EMP"),
+    username: employeeCode,
+    password: "[HASHED]",
+    password_hash: hashEmployeeCode(employeeCode),
+    employee_code: employeeCode,
+    full_name: fullName,
+    department,
+    position,
+    photo_url: photoUrl,
+    role,
+    is_active: 1,
+    created_at: now,
+    updated_at: now
+  };
+
+  insertEmployee.run(record);
+  return res.status(201).json({ employee: serializeManagedEmployee(record) });
 });
 
 app.get("/api/evaluations", requireAdmin, (req, res) => {

@@ -199,7 +199,17 @@ const state = {
     selectedExamId: "",
     newModelName: "",
     newPartCode: "",
-    newPartTitle: ""
+    newPartTitle: "",
+    newEmployee: {
+      employeeCode: "",
+      fullName: "",
+      department: "",
+      position: "",
+      photoUrl: ""
+    },
+    employeeSaveStatus: { kind: "", message: "" },
+    employeeSaving: false,
+    managedEmployees: []
   }
 };
 
@@ -243,6 +253,10 @@ function showToast(message, kind = "info", duration = 2600) {
 
 function setAdminSaveStatus(kind = "", message = "") {
   state.adminSaveStatus = { kind, message };
+}
+
+function setAdminEmployeeSaveStatus(kind = "", message = "") {
+  state.adminEditor.employeeSaveStatus = { kind, message };
 }
 
 function readFileAsDataUrl(file) {
@@ -1783,6 +1797,23 @@ async function loadEmployees() {
   renderEvaluationForm();
 }
 
+async function loadManagedEmployees() {
+  if (state.user?.role !== "admin") return;
+  const payload = await api("/api/admin/employees/manage");
+  state.adminEditor.managedEmployees = Array.isArray(payload.employees) ? payload.employees : [];
+  renderAdminEditor();
+}
+
+function resetAdminEmployeeDraft() {
+  state.adminEditor.newEmployee = {
+    employeeCode: "",
+    fullName: "",
+    department: "",
+    position: "",
+    photoUrl: ""
+  };
+}
+
 async function loadEvaluations() {
   if (state.user?.role !== "admin") return;
   const payload = await api("/api/evaluations");
@@ -1936,6 +1967,17 @@ function renderAdminEditor() {
     state.adminEditor.newModelName = selectedGroup.modelName;
   }
 
+  const newEmployee = state.adminEditor.newEmployee || {
+    employeeCode: "",
+    fullName: "",
+    department: "",
+    position: "",
+    photoUrl: ""
+  };
+  const employeeRows = Array.isArray(state.adminEditor.managedEmployees)
+    ? state.adminEditor.managedEmployees.slice(0, 6)
+    : [];
+
   root.innerHTML = `
     <div class="panel-head">
       <div>
@@ -2062,9 +2104,90 @@ function renderAdminEditor() {
           <strong>พร้อมบันทึกการเปลี่ยนแปลงคลังข้อสอบ</strong>
           <span>หลังตรวจสอบ Model, Part และคำถามเรียบร้อยแล้ว กดปุ่มนี้เพื่อบันทึกขึ้นระบบ</span>
         </div>
-        <div class="admin-save-actions">
+      <div class="admin-save-actions">
           ${state.adminSaveStatus?.message ? `<span class="admin-save-badge admin-save-badge-${state.adminSaveStatus.kind || "info"}">${state.adminSaveStatus.message}</span>` : ""}
           <button id="adminSaveBuilderBtn" class="primary-btn admin-save-btn" type="button" ${state.adminSaving ? "disabled" : ""}>${state.adminSaving ? "กำลังบันทึก..." : "บันทึกคลังข้อสอบ"}</button>
+        </div>
+      </div>
+      <div class="admin-employee-layout">
+        <div class="admin-card">
+          <div class="panel-head">
+            <div>
+              <p class="card-label">Members</p>
+              <h3>เพิ่มพนักงานใหม่</h3>
+            </div>
+          </div>
+          <div class="evaluation-grid admin-member-grid">
+            <label class="field">
+              <span>รหัสพนักงาน</span>
+              <input id="adminEmployeeCodeInput" type="text" value="${newEmployee.employeeCode || ""}" placeholder="เช่น L00999" />
+            </label>
+            <label class="field">
+              <span>ชื่อพนักงาน</span>
+              <input id="adminEmployeeNameInput" type="text" value="${newEmployee.fullName || ""}" placeholder="ชื่อ - นามสกุล" />
+            </label>
+            <label class="field">
+              <span>แผนก</span>
+              <input id="adminEmployeeDepartmentInput" type="text" value="${newEmployee.department || ""}" placeholder="เช่น Production" />
+            </label>
+            <label class="field">
+              <span>ตำแหน่ง</span>
+              <input id="adminEmployeePositionInput" type="text" value="${newEmployee.position || ""}" placeholder="เช่น Operator" />
+            </label>
+          </div>
+          <div class="admin-question-media" style="margin-top: 14px;">
+            <div class="admin-question-media-row">
+              <label class="field">
+                <span>รูปพนักงาน</span>
+                <input id="adminEmployeePhotoUrlInput" type="url" value="${newEmployee.photoUrl || ""}" placeholder="หรือเลือกไฟล์รูปจากเครื่องด้านขวา" />
+              </label>
+              <div class="admin-image-actions">
+                <input id="adminEmployeePhotoFileInput" class="hidden" type="file" accept="image/*" />
+                <button id="adminPickEmployeePhotoBtn" class="secondary-btn" type="button">เลือกรูปจากเครื่อง</button>
+                <button id="adminClearEmployeePhotoBtn" class="secondary-btn" type="button">ลบรูป</button>
+              </div>
+            </div>
+            ${newEmployee.photoUrl ? `<img class="admin-question-preview admin-employee-preview" src="${newEmployee.photoUrl}" alt="Employee preview" />` : ""}
+          </div>
+          <div class="admin-save-bar admin-member-save-bar">
+            <div class="admin-save-copy">
+              <strong>บันทึกสมาชิกใหม่เข้าระบบ</strong>
+              <span>พนักงานที่เพิ่มใหม่จะถูกนำไปใช้ต่อในประเมินหน้างาน, ประวัติผลสอบ และ Skill Matrix</span>
+            </div>
+            <div class="admin-save-actions">
+              ${state.adminEditor.employeeSaveStatus?.message ? `<span class="admin-save-badge admin-save-badge-${state.adminEditor.employeeSaveStatus.kind || "info"}">${state.adminEditor.employeeSaveStatus.message}</span>` : ""}
+              <button id="adminSaveEmployeeBtn" class="primary-btn admin-save-btn" type="button" ${state.adminEditor.employeeSaving ? "disabled" : ""}>${state.adminEditor.employeeSaving ? "กำลังบันทึก..." : "เพิ่มพนักงานใหม่"}</button>
+            </div>
+          </div>
+        </div>
+        <div class="admin-card">
+          <div class="panel-head">
+            <div>
+              <p class="card-label">Directory</p>
+              <h3>รายชื่อพนักงานล่าสุด</h3>
+            </div>
+          </div>
+          <div class="admin-employee-list">
+            ${employeeRows.length
+              ? employeeRows.map((employee) => `
+                <article class="admin-employee-row">
+                  <div class="admin-employee-avatar-wrap">
+                    ${employee.photoUrl
+                      ? `<img class="employee-avatar" src="${employee.photoUrl}" alt="${employee.fullName}" />`
+                      : `<div class="employee-avatar placeholder">${getEmployeeAvatarFallback(employee.fullName)}</div>`}
+                  </div>
+                  <div class="admin-employee-copy">
+                    <strong>${employee.fullName || "-"}</strong>
+                    <span>${employee.employeeCode || "-"}</span>
+                    <span>${employee.department || "-"}${employee.position ? ` · ${employee.position}` : ""}</span>
+                  </div>
+                  <div class="admin-employee-status ${employee.isActive ? "is-active" : "is-inactive"}">
+                    ${employee.isActive ? "Active" : "Inactive"}
+                  </div>
+                </article>
+              `).join("")
+              : `<div class="inline-message">ยังไม่มีรายชื่อพนักงานในระบบ</div>`}
+          </div>
         </div>
       </div>
     </div>
@@ -2313,6 +2436,56 @@ function bindAdminEditorEvents() {
     addPartBtn.addEventListener("click", addAdminPartToSelectedModel);
   }
 
+  setInputValue("adminEmployeeCodeInput", (event) => {
+    state.adminEditor.newEmployee.employeeCode = String(event.target.value || "").trim().toUpperCase();
+  });
+  setInputValue("adminEmployeeNameInput", (event) => {
+    state.adminEditor.newEmployee.fullName = event.target.value;
+  });
+  setInputValue("adminEmployeeDepartmentInput", (event) => {
+    state.adminEditor.newEmployee.department = event.target.value;
+  });
+  setInputValue("adminEmployeePositionInput", (event) => {
+    state.adminEditor.newEmployee.position = event.target.value;
+  });
+  setInputValue("adminEmployeePhotoUrlInput", (event) => {
+    state.adminEditor.newEmployee.photoUrl = String(event.target.value || "").trim();
+  });
+
+  const pickEmployeePhotoBtn = document.getElementById("adminPickEmployeePhotoBtn");
+  const employeePhotoFileInput = document.getElementById("adminEmployeePhotoFileInput");
+  if (pickEmployeePhotoBtn && employeePhotoFileInput) {
+    pickEmployeePhotoBtn.addEventListener("click", () => employeePhotoFileInput.click());
+  }
+
+  if (employeePhotoFileInput) {
+    employeePhotoFileInput.addEventListener("change", async () => {
+      const file = employeePhotoFileInput.files?.[0];
+      if (!file) return;
+      try {
+        showMessage(els.adminMessage, "กำลังนำเข้ารูปพนักงาน...");
+        state.adminEditor.newEmployee.photoUrl = await readFileAsDataUrl(file);
+        showMessage(els.adminMessage, `เพิ่มรูปพนักงานเรียบร้อยแล้ว: ${file.name}`);
+        renderAdminEditor();
+      } catch (error) {
+        showMessage(els.adminMessage, `นำเข้ารูปพนักงานไม่สำเร็จ: ${error.message}`, true);
+      }
+    });
+  }
+
+  const clearEmployeePhotoBtn = document.getElementById("adminClearEmployeePhotoBtn");
+  if (clearEmployeePhotoBtn) {
+    clearEmployeePhotoBtn.addEventListener("click", () => {
+      state.adminEditor.newEmployee.photoUrl = "";
+      renderAdminEditor();
+    });
+  }
+
+  const saveEmployeeBtn = document.getElementById("adminSaveEmployeeBtn");
+  if (saveEmployeeBtn) {
+    saveEmployeeBtn.addEventListener("click", saveAdminEmployee);
+  }
+
   const addQuestionBtn = document.getElementById("adminAddQuestionBtn");
   if (addQuestionBtn && selectedExam) {
     addQuestionBtn.addEventListener("click", () => {
@@ -2559,6 +2732,53 @@ async function saveAdminBuilder() {
   }
 }
 
+async function saveAdminEmployee() {
+  if (state.adminEditor.employeeSaving) return;
+
+  const draft = {
+    employeeCode: String(state.adminEditor.newEmployee.employeeCode || "").trim().toUpperCase(),
+    fullName: String(state.adminEditor.newEmployee.fullName || "").trim(),
+    department: String(state.adminEditor.newEmployee.department || "").trim(),
+    position: String(state.adminEditor.newEmployee.position || "").trim(),
+    photoUrl: String(state.adminEditor.newEmployee.photoUrl || "").trim()
+  };
+
+  if (!draft.employeeCode || !draft.fullName) {
+    setAdminEmployeeSaveStatus("error", "ข้อมูลไม่ครบ");
+    showMessage(els.adminMessage, "กรุณากรอกรหัสพนักงานและชื่อพนักงานให้ครบ", true);
+    showToast("กรุณากรอกรหัสพนักงานและชื่อพนักงานให้ครบ", "error", 3600);
+    renderAdminEditor();
+    return;
+  }
+
+  try {
+    state.adminEditor.employeeSaving = true;
+    setAdminEmployeeSaveStatus("loading", "กำลังบันทึก...");
+    showMessage(els.adminMessage, "กำลังบันทึกสมาชิกใหม่...");
+    showToast("กำลังบันทึกสมาชิกใหม่...", "loading", 0);
+    renderAdminEditor();
+
+    const response = await api("/api/admin/employees", {
+      method: "POST",
+      body: JSON.stringify(draft)
+    });
+
+    state.adminEditor.employeeSaving = false;
+    setAdminEmployeeSaveStatus("success", `เพิ่มแล้ว ${response.employee.employeeCode}`);
+    resetAdminEmployeeDraft();
+    showMessage(els.adminMessage, `เพิ่มพนักงานใหม่เรียบร้อยแล้ว: ${response.employee.fullName} (${response.employee.employeeCode})`);
+    showToast(`เพิ่มพนักงานใหม่แล้ว: ${response.employee.employeeCode}`, "success");
+    await loadEmployees();
+    await loadManagedEmployees();
+  } catch (error) {
+    state.adminEditor.employeeSaving = false;
+    setAdminEmployeeSaveStatus("error", "บันทึกไม่สำเร็จ");
+    showMessage(els.adminMessage, `เพิ่มพนักงานใหม่ไม่สำเร็จ: ${error.message}`, true);
+    showToast(`เพิ่มพนักงานใหม่ไม่สำเร็จ: ${error.message}`, "error", 4200);
+    renderAdminEditor();
+  }
+}
+
 function renderAdminInfo() {
   els.adminDataInfo.innerHTML = `
     <div class="mini-note">แหล่งข้อมูล: <strong>${state.bank.source === "custom" ? "ใช้คลังข้อสอบแบบอัปโหลด" : "ใช้คลังข้อสอบหลักของระบบ"}</strong></div>
@@ -2627,6 +2847,7 @@ async function handleLogin(event) {
     await loadResults();
     if (state.user.role === "admin") {
       await loadEmployees();
+      await loadManagedEmployees();
       await loadEvaluations();
     }
     setView("exam");
@@ -2641,6 +2862,10 @@ function logout() {
   state.results = [];
   state.employees = [];
   state.evaluations = [];
+  state.adminEditor.managedEmployees = [];
+  state.adminEditor.employeeSaveStatus = { kind: "", message: "" };
+  state.adminEditor.employeeSaving = false;
+  resetAdminEmployeeDraft();
   window.localStorage.removeItem(STORAGE_KEYS.authToken);
   window.localStorage.removeItem(STORAGE_KEYS.authUser);
   els.loginForm.reset();
@@ -2878,6 +3103,7 @@ function init() {
       await loadResults();
       if (state.user.role === "admin") {
         await loadEmployees();
+        await loadManagedEmployees();
         await loadEvaluations();
       }
       setView("exam");
