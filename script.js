@@ -45,7 +45,16 @@ const els = {
   questionTitle: $("questionTitle"),
   questionBadge: $("questionBadge"),
   questionText: $("questionText"),
+  questionImageButton: $("questionImageButton"),
   questionImage: $("questionImage"),
+  imageViewer: $("imageViewer"),
+  imageViewerViewport: $("imageViewerViewport"),
+  imageViewerImage: $("imageViewerImage"),
+  imageZoomLevel: $("imageZoomLevel"),
+  imageZoomOutBtn: $("imageZoomOutBtn"),
+  imageZoomInBtn: $("imageZoomInBtn"),
+  imageZoomResetBtn: $("imageZoomResetBtn"),
+  imageViewerCloseBtn: $("imageViewerCloseBtn"),
   choicesContainer: $("choicesContainer"),
   prevBtn: $("prevBtn"),
   nextBtn: $("nextBtn"),
@@ -213,6 +222,13 @@ const state = {
     employeeSaving: false,
     managedEmployees: []
   }
+};
+
+const imageViewerState = {
+  scale: 1,
+  fitScale: 1,
+  naturalWidth: 0,
+  naturalHeight: 0
 };
 
 function showMessage(element, message, isError = false) {
@@ -916,6 +932,54 @@ function updateExamStatus() {
   });
 }
 
+function setImageViewerScale(nextScale) {
+  if (!imageViewerState.naturalWidth || !imageViewerState.naturalHeight) return;
+  const scale = Math.min(Math.max(Number(nextScale) || 1, 0.1), 5);
+  imageViewerState.scale = scale;
+  els.imageViewerImage.style.width = `${Math.round(imageViewerState.naturalWidth * scale)}px`;
+  els.imageViewerImage.style.height = `${Math.round(imageViewerState.naturalHeight * scale)}px`;
+  setText(els.imageZoomLevel, `${Math.round(scale * 100)}%`);
+}
+
+function fitImageViewer() {
+  if (!imageViewerState.naturalWidth || !imageViewerState.naturalHeight) return;
+  const widthScale = Math.max((els.imageViewerViewport.clientWidth - 32) / imageViewerState.naturalWidth, 0.1);
+  const heightScale = Math.max((els.imageViewerViewport.clientHeight - 32) / imageViewerState.naturalHeight, 0.1);
+  imageViewerState.fitScale = Math.min(widthScale, heightScale, 1);
+  setImageViewerScale(imageViewerState.fitScale);
+  els.imageViewerViewport.scrollTop = 0;
+  els.imageViewerViewport.scrollLeft = 0;
+}
+
+function openImageViewer() {
+  const source = els.questionImage.getAttribute("src");
+  if (!source) return;
+
+  els.imageViewer.classList.remove("hidden");
+  document.body.classList.add("image-viewer-open");
+  els.imageViewerImage.src = source;
+
+  const prepareImage = () => {
+    imageViewerState.naturalWidth = els.imageViewerImage.naturalWidth;
+    imageViewerState.naturalHeight = els.imageViewerImage.naturalHeight;
+    fitImageViewer();
+  };
+
+  if (els.imageViewerImage.complete && els.imageViewerImage.naturalWidth) {
+    prepareImage();
+  } else {
+    els.imageViewerImage.onload = prepareImage;
+  }
+  els.imageViewerCloseBtn.focus();
+}
+
+function closeImageViewer() {
+  els.imageViewer.classList.add("hidden");
+  document.body.classList.remove("image-viewer-open");
+  els.imageViewerImage.removeAttribute("src");
+  els.questionImageButton.focus();
+}
+
 function renderQuestion() {
   const exam = state.currentExam;
   const question = exam?.questions?.[state.currentQuestionIndex];
@@ -923,7 +987,7 @@ function renderQuestion() {
     setText(els.questionTitle, "ข้อ 0");
     setText(els.questionText, "ยังไม่มีคำถามสำหรับชุดข้อสอบนี้");
     setText(els.questionBadge, "ยังไม่ได้เลือกคำตอบ");
-    els.questionImage.classList.add("hidden");
+    els.questionImageButton.classList.add("hidden");
     els.choicesContainer.innerHTML = "";
     updateExamStatus();
     return;
@@ -941,10 +1005,10 @@ function renderQuestion() {
 
   if (question.imageUrl) {
     els.questionImage.src = question.imageUrl;
-    els.questionImage.classList.remove("hidden");
+    els.questionImageButton.classList.remove("hidden");
   } else {
     els.questionImage.removeAttribute("src");
-    els.questionImage.classList.add("hidden");
+    els.questionImageButton.classList.add("hidden");
   }
 
   els.choicesContainer.innerHTML = "";
@@ -2954,6 +3018,30 @@ function bindEvents() {
     state.currentQuestionIndex = Math.min(state.currentQuestionIndex + 1, Math.max(total - 1, 0));
     renderQuestion();
     renderQuestionNav();
+  });
+  els.questionImageButton.addEventListener("click", openImageViewer);
+  els.imageZoomInBtn.addEventListener("click", () => setImageViewerScale(imageViewerState.scale * 1.25));
+  els.imageZoomOutBtn.addEventListener("click", () => setImageViewerScale(imageViewerState.scale / 1.25));
+  els.imageZoomResetBtn.addEventListener("click", () => setImageViewerScale(1));
+  els.imageViewerCloseBtn.addEventListener("click", closeImageViewer);
+  els.imageViewer.addEventListener("click", (event) => {
+    if (event.target === els.imageViewer) closeImageViewer();
+  });
+  els.imageViewerImage.addEventListener("dblclick", () => {
+    const nextScale = Math.abs(imageViewerState.scale - imageViewerState.fitScale) < 0.01
+      ? Math.min(imageViewerState.fitScale * 2.5, 5)
+      : imageViewerState.fitScale;
+    setImageViewerScale(nextScale);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (els.imageViewer.classList.contains("hidden")) return;
+    if (event.key === "Escape") closeImageViewer();
+    if (event.key === "+" || event.key === "=") setImageViewerScale(imageViewerState.scale * 1.25);
+    if (event.key === "-") setImageViewerScale(imageViewerState.scale / 1.25);
+    if (event.key === "0") setImageViewerScale(1);
+  });
+  window.addEventListener("resize", () => {
+    if (!els.imageViewer.classList.contains("hidden")) fitImageViewer();
   });
   els.importJsonBtn.addEventListener("click", importExamBank);
   els.adminFileInput.addEventListener("change", previewExamBankFile);

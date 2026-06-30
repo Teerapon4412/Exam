@@ -1508,14 +1508,121 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   line-height: 1.75;
 }
 
+.question-image-button {
+  width: 100%;
+  display: block;
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+
 .question-image {
+  display: block;
   width: 100%;
   max-height: 340px;
   object-fit: contain;
-  margin: 0 0 18px;
   border-radius: 18px;
   background: #f7faff;
   border: 1px solid var(--line);
+}
+
+.question-image-button:focus-visible {
+  outline: 3px solid rgba(255, 126, 76, 0.4);
+  outline-offset: 4px;
+  border-radius: 18px;
+}
+
+body.image-viewer-open {
+  overflow: hidden;
+}
+
+.image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: rgba(10, 18, 22, 0.96);
+}
+
+.image-viewer-toolbar {
+  min-height: 64px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.image-viewer-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.image-viewer-btn:hover,
+.image-viewer-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+}
+
+.image-viewer-close {
+  margin-left: 8px;
+  background: #d94452;
+  border-color: #d94452;
+}
+
+.image-zoom-level {
+  width: 64px;
+  color: white;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.image-viewer-viewport {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  display: grid;
+  place-items: start center;
+  overscroll-behavior: contain;
+}
+
+.image-viewer-image {
+  display: block;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+@media (max-width: 520px) {
+  .image-viewer-toolbar {
+    padding: 8px;
+    justify-content: center;
+  }
+
+  .image-viewer-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .image-viewer-close {
+    margin-left: 0;
+  }
 }
 
 .question-badge {

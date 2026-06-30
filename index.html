@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260630-zoom" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -168,7 +168,9 @@
 
                 <div class="question-card">
                   <p id="questionText" class="question-text">-</p>
-                  <img id="questionImage" class="question-image hidden" alt="Question" />
+                  <button id="questionImageButton" class="question-image-button hidden" type="button" aria-label="ขยายรูปคำถาม" title="ขยายรูปคำถาม">
+                    <img id="questionImage" class="question-image" alt="Question" />
+                  </button>
                   <div id="choicesContainer" class="choices"></div>
                 </div>
 
@@ -534,6 +536,19 @@
         </div>
       </div>
 
-    <script src="./script.js"></script>
+    <div id="imageViewer" class="image-viewer hidden" role="dialog" aria-modal="true" aria-label="ดูรูปคำถามขนาดใหญ่">
+      <div class="image-viewer-toolbar">
+        <button id="imageZoomOutBtn" class="image-viewer-btn" type="button" aria-label="ซูมออก" title="ซูมออก">−</button>
+        <span id="imageZoomLevel" class="image-zoom-level">100%</span>
+        <button id="imageZoomInBtn" class="image-viewer-btn" type="button" aria-label="ซูมเข้า" title="ซูมเข้า">+</button>
+        <button id="imageZoomResetBtn" class="image-viewer-btn" type="button" aria-label="แสดงภาพขนาดจริง" title="แสดงภาพขนาดจริง">1:1</button>
+        <button id="imageViewerCloseBtn" class="image-viewer-btn image-viewer-close" type="button" aria-label="ปิดรูป" title="ปิดรูป">×</button>
+      </div>
+      <div id="imageViewerViewport" class="image-viewer-viewport">
+        <img id="imageViewerImage" class="image-viewer-image" alt="รูปคำถามขนาดใหญ่" draggable="false" />
+      </div>
+    </div>
+
+    <script src="./script.js?v=20260630-zoom"></script>
   </body>
 </html>
