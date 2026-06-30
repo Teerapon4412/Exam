@@ -68,6 +68,8 @@ const els = {
   profileExamCount: $("profileExamCount"),
   profileLastScore: $("profileLastScore"),
   adminFileInput: $("adminFileInput"),
+  adminImportMode: $("adminImportMode"),
+  adminFileSummary: $("adminFileSummary"),
   importJsonBtn: $("importJsonBtn"),
   resetJsonBtn: $("resetJsonBtn"),
   adminMessage: $("adminMessage"),
@@ -2798,14 +2800,62 @@ async function importExamBank() {
   try {
     const raw = await file.text();
     const payload = JSON.parse(raw);
+    const mode = els.adminImportMode?.value === "replace" ? "replace" : "merge";
+    const examSets = Array.isArray(payload.examSets)
+      ? payload.examSets
+      : (payload.models || []).flatMap((model) => model.parts || []);
+    const questionCount = examSets.reduce((total, exam) => total + (exam.questions?.length || 0), 0);
+    const actionLabel = mode === "replace" ? "แทนที่คลังข้อสอบทั้งหมด" : "รวมกับคลังข้อสอบเดิม";
+
+    if (!examSets.length) {
+      throw new Error("ไม่พบชุดข้อสอบในไฟล์ JSON");
+    }
+
+    if (!window.confirm(`ยืนยัน${actionLabel}\n${examSets.length} ชุด รวม ${questionCount} ข้อ`)) {
+      return;
+    }
+
+    els.importJsonBtn.disabled = true;
+    showMessage(els.adminMessage, "กำลังนำเข้าคลังข้อสอบ...");
     const response = await api("/api/admin/exam-bank", {
       method: "POST",
-      body: JSON.stringify({ payload })
+      body: JSON.stringify({ payload, mode })
     });
-    showMessage(els.adminMessage, `นำเข้าคลังข้อสอบเรียบร้อยแล้ว จำนวน ${response.examSetCount} ชุด`);
+    const importResult = response.mode === "merge"
+      ? `เพิ่ม ${response.addedExamSetCount} ชุด อัปเดต ${response.updatedExamSetCount} ชุด`
+      : `แทนที่ด้วย ${response.importedExamSetCount} ชุด`;
+    showMessage(els.adminMessage, `นำเข้าสำเร็จ: ${importResult} ขณะนี้มีทั้งหมด ${response.examSetCount} ชุด`);
+    showToast(`นำเข้าคลังข้อสอบสำเร็จ ${response.examSetCount} ชุด`, "success");
+    els.adminFileInput.value = "";
+    if (els.adminFileSummary) els.adminFileSummary.textContent = "ยังไม่ได้เลือกไฟล์";
     await loadExams();
   } catch (error) {
     showMessage(els.adminMessage, `นำเข้าคลังข้อสอบไม่สำเร็จ: ${error.message}`, true);
+    showToast(`นำเข้าคลังข้อสอบไม่สำเร็จ: ${error.message}`, "error", 4200);
+  } finally {
+    els.importJsonBtn.disabled = false;
+  }
+}
+
+async function previewExamBankFile() {
+  const file = els.adminFileInput.files?.[0];
+  if (!els.adminFileSummary) return;
+  if (!file) {
+    els.adminFileSummary.textContent = "ยังไม่ได้เลือกไฟล์";
+    return;
+  }
+
+  els.adminFileSummary.textContent = `กำลังตรวจสอบ ${file.name}...`;
+  try {
+    const payload = JSON.parse(await file.text());
+    const examSets = Array.isArray(payload.examSets)
+      ? payload.examSets
+      : (payload.models || []).flatMap((model) => model.parts || []);
+    const questionCount = examSets.reduce((total, exam) => total + (exam.questions?.length || 0), 0);
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    els.adminFileSummary.textContent = `${file.name} | ${examSets.length} ชุด | ${questionCount} ข้อ | ${sizeMb} MB`;
+  } catch (error) {
+    els.adminFileSummary.textContent = `ไฟล์ไม่ถูกต้อง: ${error.message}`;
   }
 }
 
@@ -2906,6 +2956,7 @@ function bindEvents() {
     renderQuestionNav();
   });
   els.importJsonBtn.addEventListener("click", importExamBank);
+  els.adminFileInput.addEventListener("change", previewExamBankFile);
   els.resetJsonBtn.addEventListener("click", resetExamBank);
   els.saveEvaluationBtn.addEventListener("click", saveEvaluation);
   els.resetEvaluationBtn.addEventListener("click", resetEvaluationForm);

@@ -569,7 +569,7 @@ function serializeEvaluation(row) {
   };
 }
 
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "30mb" }));
 app.use(express.static(__dirname));
 
 function getBearerToken(req) {
@@ -822,7 +822,36 @@ app.post("/api/evaluations", requireAdmin, (req, res) => {
 
 app.post("/api/admin/exam-bank", requireAdmin, (req, res) => {
   try {
-    const normalized = normalizeExamData(req.body.payload);
+    const imported = normalizeExamData(req.body.payload);
+    const mode = req.body.mode === "replace" ? "replace" : "merge";
+    const current = normalizeExamData(getCurrentBankPayload());
+    let normalized = imported;
+    let addedExamSetCount = imported.examSets.length;
+    let updatedExamSetCount = 0;
+
+    if (mode === "merge") {
+      const examKey = (exam) => String(exam.id || `${exam.modelCode || ""}::${exam.partCode || ""}`).trim();
+      const mergedExamSets = current.examSets.map((exam) => ({ ...exam }));
+      const indexByKey = new Map(mergedExamSets.map((exam, index) => [examKey(exam), index]));
+
+      imported.examSets.forEach((exam) => {
+        const key = examKey(exam);
+        if (indexByKey.has(key)) {
+          mergedExamSets[indexByKey.get(key)] = exam;
+          updatedExamSetCount += 1;
+          addedExamSetCount -= 1;
+          return;
+        }
+        indexByKey.set(key, mergedExamSets.length);
+        mergedExamSets.push(exam);
+      });
+
+      normalized = {
+        title: imported.title || current.title,
+        examSets: mergedExamSets
+      };
+    }
+
     upsertBank.run({
       title: normalized.title,
       payload: JSON.stringify(normalized),
@@ -831,8 +860,12 @@ app.post("/api/admin/exam-bank", requireAdmin, (req, res) => {
     });
     return res.json({
       ok: true,
+      mode,
       title: normalized.title,
-      examSetCount: normalized.examSets.length
+      examSetCount: normalized.examSets.length,
+      importedExamSetCount: imported.examSets.length,
+      addedExamSetCount,
+      updatedExamSetCount
     });
   } catch (error) {
     return res.status(400).json({ error: error.message });

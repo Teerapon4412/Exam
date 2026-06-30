@@ -1670,6 +1670,23 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   grid-template-columns: 1.2fr 1fr;
 }
 
+.admin-import-description,
+.admin-file-summary {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.admin-file-summary {
+  min-height: 24px;
+  overflow-wrap: anywhere;
+}
+
+.admin-import-grid .admin-card:first-child {
+  display: grid;
+  gap: 16px;
+}
+
 .admin-card {
   background: #fbfdff;
 }

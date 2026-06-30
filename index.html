@@ -485,19 +485,28 @@
 
           <section id="adminView" class="view-section hidden">
             <section class="panel admin-only hidden" id="adminPanel">
-              <div class="panel-head hidden">
+              <div class="panel-head">
                 <div>
                   <p class="card-label">Admin</p>
                   <h3>นำเข้าคลังข้อสอบ JSON</h3>
+                  <p class="admin-import-description">เพิ่มชุดข้อสอบจากไฟล์ JSON โดยรวมกับคลังเดิม หรือแทนที่ทั้งคลังเมื่อจำเป็น</p>
                 </div>
               </div>
 
-              <div class="admin-grid hidden">
+              <div class="admin-grid admin-import-grid">
                 <div class="admin-card">
                   <label class="field">
                     <span>ไฟล์ข้อมูลข้อสอบ JSON</span>
                     <input id="adminFileInput" type="file" accept=".json,application/json" />
                   </label>
+                  <label class="field">
+                    <span>วิธีนำเข้า</span>
+                    <select id="adminImportMode">
+                      <option value="merge" selected>รวมกับคลังเดิม (แนะนำ)</option>
+                      <option value="replace">แทนที่คลังข้อสอบทั้งหมด</option>
+                    </select>
+                  </label>
+                  <p id="adminFileSummary" class="admin-file-summary">ยังไม่ได้เลือกไฟล์</p>
                   <div class="admin-actions">
                     <button id="importJsonBtn" class="primary-btn" type="button">นำเข้าข้อสอบ</button>
                     <button id="resetJsonBtn" class="secondary-btn" type="button">รีเซ็ตกลับไฟล์หลัก</button>
