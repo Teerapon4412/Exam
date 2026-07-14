@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20260714-score-popup" />
+    <link rel="stylesheet" href="./styles.css?v=20260714-answer-review" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -222,6 +222,7 @@
               </div>
 
               <div id="resultMessage" class="result-message"></div>
+              <div id="answerReviewPanel" class="answer-review-panel hidden"></div>
 
               <div class="result-actions">
                 <button id="restartExamBtn" class="secondary-btn" type="button">เริ่มทำใหม่</button>
@@ -562,6 +563,7 @@
           </div>
         </div>
         <p id="scorePopupMessage" class="score-popup-message">-</p>
+        <div id="scorePopupReview" class="score-popup-review hidden"></div>
         <div class="score-popup-actions">
           <button id="scorePopupHistoryBtn" class="secondary-btn" type="button">ดูประวัติผลสอบ</button>
           <button id="scorePopupNextPartBtn" class="secondary-btn" type="button">ทำ Part ถัดไป</button>
@@ -583,6 +585,6 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20260714-score-popup"></script>
+    <script src="./script.js?v=20260714-answer-review"></script>
   </body>
 </html>

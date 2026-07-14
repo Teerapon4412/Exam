@@ -65,6 +65,7 @@ const els = {
   correctCount: $("correctCount"),
   wrongCount: $("wrongCount"),
   resultMessage: $("resultMessage"),
+  answerReviewPanel: $("answerReviewPanel"),
   scorePopup: $("scorePopup"),
   scorePopupStatus: $("scorePopupStatus"),
   scorePopupScore: $("scorePopupScore"),
@@ -72,6 +73,7 @@ const els = {
   scorePopupCorrect: $("scorePopupCorrect"),
   scorePopupWrong: $("scorePopupWrong"),
   scorePopupMessage: $("scorePopupMessage"),
+  scorePopupReview: $("scorePopupReview"),
   scorePopupCloseBtn: $("scorePopupCloseBtn"),
   scorePopupHistoryBtn: $("scorePopupHistoryBtn"),
   scorePopupNextPartBtn: $("scorePopupNextPartBtn"),
@@ -1110,7 +1112,72 @@ function renderResult(result) {
   }
   showMessage(els.loadStatus, "ส่งข้อสอบเรียบร้อยแล้ว");
   updateExamStatus();
+  renderAnswerReview(els.answerReviewPanel, result.review, { compact: false });
   openScorePopup(result);
+}
+
+function formatAnswerLabel(key, text) {
+  const cleanKey = String(key || "").trim();
+  const cleanText = String(text || "").trim();
+  if (!cleanText) return cleanKey || "-";
+  return cleanKey ? `${cleanKey}. ${cleanText}` : cleanText;
+}
+
+function buildAnswerReviewHtml(review = [], options = {}) {
+  const items = Array.isArray(review) ? review : [];
+  if (!items.length) return "";
+
+  const visibleItems = options.compact ? items.filter((item) => !item.isCorrect) : items;
+  if (!visibleItems.length) {
+    return `
+      <div class="answer-review-head">
+        <h4>เฉลยคำตอบ</h4>
+        <span>ตอบถูกทุกข้อ</span>
+      </div>
+      <div class="answer-review-empty">ยอดเยี่ยม ตอบถูกทุกข้อในชุดนี้</div>
+    `;
+  }
+
+  return `
+    <div class="answer-review-head">
+      <h4>${options.compact ? "ข้อที่ตอบผิดและคำตอบที่ถูกต้อง" : "เฉลยคำตอบ"}</h4>
+      <span>${visibleItems.length} รายการ</span>
+    </div>
+    <div class="answer-review-list">
+      ${visibleItems.map((item) => {
+        const selectedLabel = item.selectedAnswer === null || item.selectedAnswer === undefined
+          ? "ยังไม่ได้ตอบ"
+          : formatAnswerLabel(item.selectedKey, item.selectedText);
+        const correctLabel = formatAnswerLabel(item.correctKey, item.correctText);
+        return `
+          <article class="answer-review-item ${item.isCorrect ? "correct" : "wrong"}">
+            <div class="answer-review-question">
+              <strong>ข้อ ${escapeHtml(item.number)}</strong>
+              <span>${escapeHtml(item.isCorrect ? "ถูกต้อง" : "ตอบผิด")}</span>
+            </div>
+            <p>${escapeHtml(item.text)}</p>
+            <div class="answer-review-answers">
+              <div>
+                <span>คำตอบของคุณ</span>
+                <strong>${escapeHtml(selectedLabel)}</strong>
+              </div>
+              <div>
+                <span>คำตอบที่ถูกต้อง</span>
+                <strong>${escapeHtml(correctLabel)}</strong>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderAnswerReview(container, review, options = {}) {
+  if (!container) return;
+  const html = buildAnswerReviewHtml(review, options);
+  container.classList.toggle("hidden", !html);
+  container.innerHTML = html;
 }
 
 function openScorePopup(result) {
@@ -1137,6 +1204,7 @@ function openScorePopup(result) {
       ? `ทำ ${nextExam.partCode || "Part ถัดไป"}`
       : "ยังไม่มี Part ถัดไป";
   }
+  renderAnswerReview(els.scorePopupReview, result.review, { compact: true });
   els.scorePopup.classList.remove("hidden");
   document.body.classList.add("score-popup-open");
   els.scorePopupOkBtn?.focus();

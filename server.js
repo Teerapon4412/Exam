@@ -659,14 +659,34 @@ app.post("/api/results", requireAuth, (req, res) => {
   let score = 0;
   let totalScore = 0;
   let correctCount = 0;
+  const review = [];
 
   questions.forEach((question, index) => {
     const weight = Number(question.score) || 1;
+    const selectedAnswer = Number.isInteger(answers[index]) ? Number(answers[index]) : null;
+    const correctAnswer = Number(question.answer);
+    const choices = Array.isArray(question.choices) ? question.choices : [];
+    const isCorrect = selectedAnswer !== null && selectedAnswer === correctAnswer;
+
     totalScore += weight;
-    if (Number.isInteger(answers[index]) && Number(answers[index]) === Number(question.answer)) {
+    if (isCorrect) {
       score += weight;
       correctCount += 1;
     }
+
+    review.push({
+      number: Number(question.number || index + 1),
+      text: String(question.text || ""),
+      selectedAnswer,
+      selectedKey: selectedAnswer !== null ? String(question.choiceKeys?.[selectedAnswer] || "") : "",
+      selectedText: selectedAnswer !== null ? String(choices[selectedAnswer] || "") : "",
+      correctAnswer,
+      correctKey: String(question.choiceKeys?.[correctAnswer] || ""),
+      correctText: String(choices[correctAnswer] || ""),
+      isCorrect,
+      score: isCorrect ? weight : 0,
+      totalScore: weight
+    });
   });
 
   const wrongCount = Math.max(questions.length - correctCount, 0);
@@ -697,7 +717,7 @@ app.post("/api/results", requireAuth, (req, res) => {
 
   insertResult.run(record);
 
-  res.json({ ok: true, result: serializeResult(record) });
+  res.json({ ok: true, result: { ...serializeResult(record), review } });
 });
 
 app.get("/api/results", requireAuth, (req, res) => {
