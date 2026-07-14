@@ -199,6 +199,16 @@ const SKILL_MATRIX_CONFIG = {
   ]
 };
 
+const SCORING_MODES = {
+  examOnly: "exam_only",
+  examEvaluation: "exam_evaluation"
+};
+
+const SCORING_MODE_LABELS = {
+  [SCORING_MODES.examOnly]: "ข้อสอบ 100%",
+  [SCORING_MODES.examEvaluation]: "ข้อสอบ 40% + ประเมิน 60%"
+};
+
 const state = {
   user: null,
   authToken: "",
@@ -607,14 +617,51 @@ async function api(url, options = {}) {
   }
   return data;
 }
+
+function normalizeScoringMode(value) {
+  return value === SCORING_MODES.examOnly ? SCORING_MODES.examOnly : SCORING_MODES.examEvaluation;
+}
+
+function getScoringModeLabel(mode) {
+  return SCORING_MODE_LABELS[normalizeScoringMode(mode)];
+}
+
+function getBankModelMetaMap() {
+  const modelMap = new Map();
+  (state.bank?.models || []).forEach((model) => {
+    const modelCode = String(model.modelCode || model.modelName || "").trim();
+    if (!modelCode) return;
+    modelMap.set(modelCode, {
+      modelCode,
+      modelName: String(model.modelName || modelCode).trim(),
+      scoringMode: normalizeScoringMode(model.scoringMode)
+    });
+  });
+
+  (state.bank?.examSets || []).forEach((exam) => {
+    const modelCode = String(exam.modelCode || exam.modelName || "").trim();
+    if (!modelCode || modelMap.has(modelCode)) return;
+    modelMap.set(modelCode, {
+      modelCode,
+      modelName: String(exam.modelName || modelCode).trim(),
+      scoringMode: normalizeScoringMode(exam.scoringMode)
+    });
+  });
+
+  return modelMap;
+}
+
 function groupExamSets(examSets) {
   const grouped = new Map();
+  const modelMetaMap = getBankModelMetaMap();
   examSets.forEach((exam) => {
     const key = exam.modelCode || "UNKNOWN";
+    const modelMeta = modelMetaMap.get(key);
     if (!grouped.has(key)) {
       grouped.set(key, {
         modelCode: key,
         modelName: exam.modelName || key,
+        scoringMode: normalizeScoringMode(modelMeta?.scoringMode || exam.scoringMode),
         exams: []
       });
     }
@@ -631,16 +678,33 @@ function makeId(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
 }
 
+function buildAdminModelsFromBank() {
+  const modelMap = new Map();
+  (state.bank.models || []).forEach((model) => {
+    const modelCode = String(model.modelCode || model.modelName || "").trim();
+    if (!modelCode) return;
+    modelMap.set(modelCode, {
+      modelCode,
+      modelName: String(model.modelName || modelCode).trim(),
+      scoringMode: normalizeScoringMode(model.scoringMode)
+    });
+  });
+  (state.bank.examSets || []).forEach((exam) => {
+    const modelCode = String(exam.modelCode || exam.modelName || "").trim();
+    if (!modelCode) return;
+    const current = modelMap.get(modelCode);
+    modelMap.set(modelCode, {
+      modelCode,
+      modelName: String(current?.modelName || exam.modelName || modelCode).trim(),
+      scoringMode: normalizeScoringMode(current?.scoringMode || exam.scoringMode)
+    });
+  });
+  return Array.from(modelMap.values()).filter((model) => model.modelCode);
+}
+
 function ensureAdminDraft() {
   if (!state.adminEditor.draft) {
-    const models = Array.from(
-      new Map(
-        (state.bank.examSets || []).map((exam) => {
-          const modelCode = String(exam.modelCode || exam.modelName || "").trim();
-          return [modelCode, { modelCode, modelName: String(exam.modelName || modelCode).trim() }];
-        })
-      ).values()
-    ).filter((model) => model.modelCode);
+    const models = buildAdminModelsFromBank();
 
     state.adminEditor.draft = {
       title: state.bank.title || "Factory Online Exam",
@@ -658,14 +722,7 @@ function ensureAdminDraft() {
 }
 
 function syncAdminDraftFromBank() {
-  const models = Array.from(
-    new Map(
-      (state.bank.examSets || []).map((exam) => {
-        const modelCode = String(exam.modelCode || exam.modelName || "").trim();
-        return [modelCode, { modelCode, modelName: String(exam.modelName || modelCode).trim() }];
-      })
-    ).values()
-  ).filter((model) => model.modelCode);
+  const models = buildAdminModelsFromBank();
 
   state.adminEditor.draft = {
     title: state.bank.title || "Factory Online Exam",
@@ -681,10 +738,17 @@ function getAdminDraftGroups() {
   const grouped = groupExamSets(state.adminEditor.draft?.examSets || []);
   (state.adminEditor.draft?.models || []).forEach((model) => {
     const modelCode = String(model.modelCode || model.modelName || "").trim();
-    if (!modelCode || grouped.has(modelCode)) return;
+    if (!modelCode) return;
+    if (grouped.has(modelCode)) {
+      const group = grouped.get(modelCode);
+      group.modelName = String(model.modelName || group.modelName || modelCode).trim();
+      group.scoringMode = normalizeScoringMode(model.scoringMode || group.scoringMode);
+      return;
+    }
     grouped.set(modelCode, {
       modelCode,
       modelName: String(model.modelName || modelCode).trim(),
+      scoringMode: normalizeScoringMode(model.scoringMode),
       exams: []
     });
   });
@@ -717,6 +781,7 @@ function createBlankExam(modelCode, modelName, partCode, title) {
     modelCode,
     modelName,
     partCode,
+    scoringMode: SCORING_MODES.examEvaluation,
     durationMinutes: 10,
     passScore: 0,
     randomizeQuestions: false,
@@ -1337,6 +1402,23 @@ function getSkillBand(percent) {
   ) || SKILL_MATRIX_CONFIG.skillBands[0];
 }
 
+function calculateFinalPercent(examPercent, evaluationPercent, scoringMode) {
+  if (normalizeScoringMode(scoringMode) === SCORING_MODES.examOnly) {
+    return Math.round(Number(examPercent || 0));
+  }
+  return Math.round(
+    ((Number(examPercent || 0) * SKILL_MATRIX_CONFIG.examWeight)
+      + (Number(evaluationPercent || 0) * SKILL_MATRIX_CONFIG.evaluationWeight))
+    / SKILL_MATRIX_CONFIG.totalWeight
+  );
+}
+
+function getCompletionStatus(hasExam, hasEvaluation, scoringMode) {
+  if (!hasExam) return "ยังไม่มีข้อมูลการสอบ";
+  if (normalizeScoringMode(scoringMode) === SCORING_MODES.examOnly) return "ใช้คะแนนสอบอย่างเดียว";
+  return hasEvaluation ? "มีข้อมูลครบ" : "รอประเมินหน้างาน";
+}
+
 function buildSkillMatrixRows() {
   if (state.user?.role !== "admin") return [];
 
@@ -1345,6 +1427,7 @@ function buildSkillMatrixRows() {
   const evaluations = Array.isArray(state.evaluations) ? state.evaluations : [];
   const latestResultMap = new Map();
   const latestEvaluationMap = new Map();
+  const modelMetaMap = getBankModelMetaMap();
 
   allResults.forEach((result) => {
     const key = `${result.employee_code || result.employeeCode || ""}::${result.part_code || result.partCode || ""}`;
@@ -1370,22 +1453,24 @@ function buildSkillMatrixRows() {
     const result = latestResultMap.get(key) || null;
     const evaluation = latestEvaluationMap.get(key) || null;
     const employee = employees.find((item) => item.employeeCode === employeeCode);
+    const modelCode = result?.model_code || result?.modelCode || evaluation?.modelCode || "";
+    const modelMeta = modelMetaMap.get(modelCode);
+    const scoringMode = normalizeScoringMode(modelMeta?.scoringMode);
     const examPercent = Number(result?.percent || 0);
     const evaluationPercent = evaluation
       ? Math.round((Number(evaluation.totalScore || 0) / Math.max(Number(evaluation.maxScore || 0), 1)) * 100)
       : 0;
-    const finalPercent = Math.round(
-      ((examPercent * SKILL_MATRIX_CONFIG.examWeight) + (evaluationPercent * SKILL_MATRIX_CONFIG.evaluationWeight))
-      / SKILL_MATRIX_CONFIG.totalWeight
-    );
+    const finalPercent = calculateFinalPercent(examPercent, evaluationPercent, scoringMode);
     const band = getSkillBand(finalPercent);
 
     rows.push({
       employeeCode,
       employeeName: employee?.fullName || result?.full_name || evaluation?.employeeName || employeeCode,
       department: employee?.department || "",
-      modelName: result?.model_name || evaluation?.modelName || "",
+      modelName: result?.model_name || evaluation?.modelName || modelMeta?.modelName || "",
       partName: result?.exam_title || evaluation?.partName || partCode,
+      scoringMode,
+      scoringLabel: getScoringModeLabel(scoringMode),
       examPercent,
       evaluationPercent,
       finalPercent,
@@ -1394,7 +1479,7 @@ function buildSkillMatrixRows() {
       bandColor: band.color,
       hasExam: Boolean(result),
       hasEvaluation: Boolean(evaluation),
-      status: result && evaluation ? "มีข้อมูลครบ" : result ? "รอประเมินหน้างาน" : "ยังไม่มีข้อมูลการสอบ"
+      status: getCompletionStatus(Boolean(result), Boolean(evaluation), scoringMode)
     });
   });
 
@@ -1447,7 +1532,9 @@ function renderSkillMatrix() {
     return matchesSearch && matchesModel && matchesPart && matchesBand;
   });
 
-  const completeCount = filteredRows.filter((row) => row.hasExam && row.hasEvaluation).length;
+  const completeCount = filteredRows.filter((row) =>
+    row.hasExam && (row.scoringMode === SCORING_MODES.examOnly || row.hasEvaluation)
+  ).length;
   const avgFinal = filteredRows.length
     ? Math.round(filteredRows.reduce((sum, row) => sum + row.finalPercent, 0) / filteredRows.length)
     : 0;
@@ -1482,10 +1569,10 @@ function renderSkillMatrix() {
           <div class="table-subline">${row.partName || "-"}</div>
         </td>
         <td>${row.hasExam ? `${row.examPercent}%` : "-"}</td>
-        <td>${row.hasEvaluation ? `${row.evaluationPercent}%` : "-"}</td>
+        <td>${row.scoringMode === SCORING_MODES.examOnly ? "ไม่ใช้" : (row.hasEvaluation ? `${row.evaluationPercent}%` : "-")}</td>
         <td><strong>${row.finalPercent}%</strong></td>
         <td><span class="skill-pill" style="--skill-pill:${row.bandColor || "#cbd5e1"}">${row.bandLabel}</span></td>
-        <td>${row.status}</td>
+        <td>${row.status}<div class="table-subline">${row.scoringLabel}</div></td>
       </tr>
     `).join("");
   }
@@ -1502,6 +1589,7 @@ function buildSkillMatrixRows() {
   const allResults = Array.isArray(state.results) ? state.results : [];
   const evaluations = Array.isArray(state.evaluations) ? state.evaluations : [];
   const examSets = Array.isArray(state.bank?.examSets) ? state.bank.examSets : [];
+  const modelMetaMap = getBankModelMetaMap();
   const latestResultMap = new Map();
   const latestEvaluationMap = new Map();
 
@@ -1522,6 +1610,15 @@ function buildSkillMatrixRows() {
   });
 
   const columns = examSets.map((exam) => ({
+    ...(() => {
+      const modelCode = String(exam.modelCode || "");
+      const modelMeta = modelMetaMap.get(modelCode);
+      const scoringMode = normalizeScoringMode(modelMeta?.scoringMode || exam.scoringMode);
+      return {
+        scoringMode,
+        scoringLabel: getScoringModeLabel(scoringMode)
+      };
+    })(),
     examId: String(exam.id),
     modelCode: String(exam.modelCode || ""),
     modelName: String(exam.modelName || ""),
@@ -1544,10 +1641,7 @@ function buildSkillMatrixRows() {
       const evaluationPercent = evaluation
         ? Math.round((Number(evaluation.totalScore || 0) / Math.max(Number(evaluation.maxScore || 0), 1)) * 100)
         : 0;
-      const finalPercent = Math.round(
-        ((examPercent * SKILL_MATRIX_CONFIG.examWeight) + (evaluationPercent * SKILL_MATRIX_CONFIG.evaluationWeight))
-        / SKILL_MATRIX_CONFIG.totalWeight
-      );
+      const finalPercent = calculateFinalPercent(examPercent, evaluationPercent, column.scoringMode);
       const band = getSkillBand(finalPercent);
 
       return {
@@ -1556,6 +1650,8 @@ function buildSkillMatrixRows() {
         bandColor: band.color,
         hasExam: Boolean(result),
         hasEvaluation: Boolean(evaluation),
+        scoringMode: column.scoringMode,
+        scoringLabel: column.scoringLabel,
         displayScore: `${finalPercent}/100`
       };
     })
@@ -1576,6 +1672,7 @@ function renderSkillCircle(cell) {
         <span>${cell.skillPct}%</span>
       </div>
       <div class="skill-circle-meta">${cell.displayScore}</div>
+      <div class="skill-circle-formula">${cell.scoringMode === SCORING_MODES.examOnly ? "สอบ 100%" : "40/60"}</div>
     </div>
   `;
 }
@@ -1665,7 +1762,9 @@ function renderSkillMatrix() {
   });
 
   const allVisibleCells = filteredEmployees.flatMap((employee) => visibleColumns.map((column) => employee.cells[column.index]));
-  const completeCount = allVisibleCells.filter((cell) => cell.hasExam && cell.hasEvaluation).length;
+  const completeCount = allVisibleCells.filter((cell) =>
+    cell.hasExam && (cell.scoringMode === SCORING_MODES.examOnly || cell.hasEvaluation)
+  ).length;
   const avgFinal = allVisibleCells.length
     ? Math.round(allVisibleCells.reduce((sum, cell) => sum + cell.finalPercent, 0) / allVisibleCells.length)
     : 0;
@@ -1675,6 +1774,7 @@ function renderSkillMatrix() {
     els.skillMatrixConfig.innerHTML = `
       <span>Exam ${SKILL_MATRIX_CONFIG.examWeight}%</span>
       <span>Evaluation ${SKILL_MATRIX_CONFIG.evaluationWeight}%</span>
+      <span>Model เลือกได้: สอบ 100% หรือ 40/60</span>
       <span>Total ${SKILL_MATRIX_CONFIG.totalWeight}%</span>
       <span>พนักงานทั้งหมด ${matrix.employees.length} คน</span>
     `;
@@ -1700,6 +1800,7 @@ function renderSkillMatrix() {
             <div class="matrix-part-head-inner">
               <strong>${column.modelCode}/${column.partCode}</strong>
               <div class="table-subline matrix-part-name">${column.partName}</div>
+              <div class="table-subline matrix-scoring-mode">${column.scoringLabel}</div>
             </div>
           </th>
         `).join("")}
@@ -2141,6 +2242,7 @@ function renderAdminEditor() {
   const selectedExam = getAdminSelectedExam();
   const questionCount = selectedExam?.questions?.length || 0;
   const selectedGroup = groups.find((group) => group.modelCode === state.adminEditor.selectedModelCode) || groups[0];
+  const selectedScoringMode = normalizeScoringMode(selectedGroup?.scoringMode || selectedExam?.scoringMode);
 
   if (!state.adminEditor.selectedModelCode && selectedGroup) {
     state.adminEditor.selectedModelCode = selectedGroup.modelCode;
@@ -2219,6 +2321,13 @@ function renderAdminEditor() {
             </select>
           </label>
           <label class="field">
+            <span>สูตรคะแนนของ Model</span>
+            <select id="adminModelScoringModeSelect">
+              <option value="${SCORING_MODES.examEvaluation}" ${selectedScoringMode === SCORING_MODES.examEvaluation ? "selected" : ""}>ข้อสอบ 40% + ประเมิน 60%</option>
+              <option value="${SCORING_MODES.examOnly}" ${selectedScoringMode === SCORING_MODES.examOnly ? "selected" : ""}>ข้อสอบอย่างเดียว 100%</option>
+            </select>
+          </label>
+          <label class="field">
             <span>เลือก Part ใน Model ที่เลือก</span>
             <select id="adminPartSelect">
               ${(groups.find((group) => group.modelCode === state.adminEditor.selectedModelCode)?.exams || []).map((exam) => `<option value="${exam.id}" ${exam.id === state.adminEditor.selectedExamId ? "selected" : ""}>${exam.partCode} - ${exam.title}</option>`).join("")}
@@ -2227,6 +2336,7 @@ function renderAdminEditor() {
         </div>
         <div class="admin-info-list">
           <div class="mini-note">Model ปัจจุบัน: <strong>${selectedExam?.modelName || "-"}</strong></div>
+          <div class="mini-note">สูตรคะแนน Model: <strong>${getScoringModeLabel(selectedScoringMode)}</strong></div>
           <div class="mini-note">Part ปัจจุบัน: <strong>${selectedExam?.partCode || "-"}</strong></div>
           <div class="mini-note">จำนวนข้อสอบ: <strong>${questionCount}</strong></div>
         </div>
@@ -2401,7 +2511,10 @@ function addAdminModel() {
     return;
   }
 
-  state.adminEditor.draft.models = [...(state.adminEditor.draft.models || []), { modelCode, modelName }];
+  state.adminEditor.draft.models = [
+    ...(state.adminEditor.draft.models || []),
+    { modelCode, modelName, scoringMode: SCORING_MODES.examEvaluation }
+  ];
   state.adminEditor.selectedModelCode = modelCode;
   state.adminEditor.selectedExamId = "";
   state.adminEditor.newModelName = modelName;
@@ -2439,12 +2552,17 @@ function addAdminPartToSelectedModel() {
   }
 
   const exam = createBlankExam(modelCode, modelName, partCode, partTitle);
+  exam.scoringMode = normalizeScoringMode(selectedGroup?.scoringMode);
   state.adminEditor.draft.examSets.push(exam);
   state.adminEditor.draft.models = (state.adminEditor.draft.models || []).some((model) => model.modelCode === modelCode)
     ? (state.adminEditor.draft.models || []).map((model) => (
-      model.modelCode === modelCode ? { ...model, modelName } : model
+      model.modelCode === modelCode ? { ...model, modelName, scoringMode: normalizeScoringMode(model.scoringMode) } : model
     ))
-    : [...(state.adminEditor.draft.models || []), { modelCode, modelName }];
+    : [...(state.adminEditor.draft.models || []), {
+      modelCode,
+      modelName,
+      scoringMode: normalizeScoringMode(selectedGroup?.scoringMode)
+    }];
   state.adminEditor.selectedModelCode = modelCode;
   state.adminEditor.selectedExamId = exam.id;
   state.adminEditor.newPartCode = "";
@@ -2570,6 +2688,33 @@ function bindAdminEditorEvents() {
     });
   }
 
+  const modelScoringModeSelect = document.getElementById("adminModelScoringModeSelect");
+  if (modelScoringModeSelect) {
+    modelScoringModeSelect.addEventListener("change", (event) => {
+      const nextMode = normalizeScoringMode(event.target.value);
+      const modelCode = String(state.adminEditor.selectedModelCode || "").trim();
+      const selectedGroup = getAdminDraftGroups().get(modelCode);
+      const currentModels = state.adminEditor.draft.models || [];
+      state.adminEditor.draft.models = currentModels.some((model) => String(model.modelCode || "") === modelCode)
+        ? currentModels.map((model) => (
+          String(model.modelCode || "") === modelCode
+            ? { ...model, scoringMode: nextMode }
+            : model
+        ))
+        : [...currentModels, {
+          modelCode,
+          modelName: selectedGroup?.modelName || modelCode,
+          scoringMode: nextMode
+        }];
+      state.adminEditor.draft.examSets = (state.adminEditor.draft.examSets || []).map((exam) => (
+        String(exam.modelCode || "") === modelCode
+          ? { ...exam, scoringMode: nextMode }
+          : exam
+      ));
+      renderAdminEditor();
+    });
+  }
+
   const partSelect = document.getElementById("adminPartSelect");
   if (partSelect) {
     partSelect.addEventListener("change", (event) => {
@@ -2582,9 +2727,17 @@ function bindAdminEditorEvents() {
   if (selectedExam) {
     setInputValue("adminExamModelNameInput", (event) => {
       const nextValue = String(event.target.value || "").trim();
-      updateAdminDraftExam(selectedExam.id, (exam) => ({ ...exam, modelName: nextValue, modelCode: nextValue }));
+      const currentMode = normalizeScoringMode(selectedGroup?.scoringMode || selectedExam.scoringMode);
+      updateAdminDraftExam(selectedExam.id, (exam) => ({
+        ...exam,
+        modelName: nextValue,
+        modelCode: nextValue,
+        scoringMode: currentMode
+      }));
       state.adminEditor.draft.models = (state.adminEditor.draft.models || []).map((model) => (
-        model.modelCode === selectedExam.modelCode ? { modelCode: nextValue, modelName: nextValue } : model
+        model.modelCode === selectedExam.modelCode
+          ? { modelCode: nextValue, modelName: nextValue, scoringMode: currentMode }
+          : model
       ));
       state.adminEditor.selectedModelCode = nextValue;
     });
@@ -2818,17 +2971,19 @@ async function saveAdminBuilder() {
   draft.models = Array.from(
     new Map(
       (draft.models || []).map((model) => {
-        const modelCode = String(model.modelCode || model.modelName || "").trim();
+        const modelCode = String(model.modelCode || model.modelName || "").trim().toUpperCase();
         const modelName = String(model.modelName || modelCode).trim();
-        return [modelCode, { modelCode, modelName }];
+        return [modelCode, { modelCode, modelName, scoringMode: normalizeScoringMode(model.scoringMode) }];
       })
     ).values()
   ).filter((model) => model.modelCode);
+  const scoringModeByModel = new Map(draft.models.map((model) => [model.modelCode, normalizeScoringMode(model.scoringMode)]));
   draft.examSets = (draft.examSets || []).map((exam) => ({
     ...exam,
     modelCode: String(exam.modelCode || "").trim().toUpperCase(),
     modelName: String(exam.modelName || "").trim(),
     partCode: String(exam.partCode || "").trim().toUpperCase(),
+    scoringMode: normalizeScoringMode(scoringModeByModel.get(String(exam.modelCode || "").trim().toUpperCase()) || exam.scoringMode),
     title: String(exam.title || "").trim(),
     description: String(exam.description || "").trim(),
     durationMinutes: Math.max(1, Number(exam.durationMinutes) || 10),

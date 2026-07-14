@@ -360,13 +360,38 @@ function normalizeEmployeeData(data) {
 
 function normalizeExamData(data) {
   if (data && Array.isArray(data.examSets)) {
+    const models = Array.from(
+      new Map(
+        [
+          ...data.examSets.map((exam) => ({
+            modelCode: exam.modelCode || exam.modelName || "",
+            modelName: exam.modelName || exam.modelCode || "",
+            scoringMode: exam.scoringMode
+          })),
+          ...(Array.isArray(data.models) ? data.models : [])
+        ].map((model) => {
+          const modelCode = String(model.modelCode || model.modelName || "").trim();
+          const scoringMode = model.scoringMode === "exam_only" ? "exam_only" : "exam_evaluation";
+          return [modelCode, {
+            modelCode,
+            modelName: String(model.modelName || modelCode).trim(),
+            scoringMode
+          }];
+        })
+      ).values()
+    ).filter((model) => model.modelCode);
+    const scoringModeByModel = new Map(models.map((model) => [model.modelCode, model.scoringMode]));
+
     return {
       title: data.title || "Factory Online Exam",
+      models,
       examSets: data.examSets.map((exam) => ({
         ...exam,
         description: String(exam.description || exam.modelName || "").trim(),
         durationMinutes: Number(exam.durationMinutes) || 10,
         passScore: Number(exam.passScore) || 0,
+        scoringMode: scoringModeByModel.get(String(exam.modelCode || exam.modelName || "").trim())
+          || (exam.scoringMode === "exam_only" ? "exam_only" : "exam_evaluation"),
         randomizeQuestions: Boolean(exam.randomizeQuestions),
         showResultImmediately: exam.showResultImmediately !== false,
         questions: (exam.questions || []).map((question, index) => ({
@@ -385,8 +410,14 @@ function normalizeExamData(data) {
 
   if (data && Array.isArray(data.models)) {
     const examSets = [];
+    const models = data.models.map((model) => ({
+      modelCode: String(model.modelCode || model.modelName || "").trim(),
+      modelName: String(model.modelName || model.modelCode || "").trim(),
+      scoringMode: model.scoringMode === "exam_only" ? "exam_only" : "exam_evaluation"
+    })).filter((model) => model.modelCode);
 
     data.models.forEach((model) => {
+      const scoringMode = model.scoringMode === "exam_only" ? "exam_only" : "exam_evaluation";
       (model.parts || []).forEach((part) => {
         const questions = (part.questions || []).map((question, index) => {
           const entries = Object.entries(question.choices || {}).sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
@@ -413,6 +444,7 @@ function normalizeExamData(data) {
           modelCode: String(model.modelCode || "").trim(),
           modelName: String(model.modelName || "").trim(),
           partCode: String(part.partCode || "").trim(),
+          scoringMode,
           durationMinutes: Math.max(Math.ceil(questions.length * 1.5), 10),
           passScore: Number(part.passScore) || 0,
           randomizeQuestions: Boolean(part.randomizeQuestions),
@@ -424,6 +456,7 @@ function normalizeExamData(data) {
 
     return {
       title: data.title || "Factory Online Exam",
+      models,
       examSets
     };
   }
@@ -866,8 +899,14 @@ app.post("/api/admin/exam-bank", requireAdmin, (req, res) => {
         mergedExamSets.push(exam);
       });
 
+      const mergedModelsByCode = new Map([
+        ...(current.models || []),
+        ...(imported.models || [])
+      ].map((model) => [String(model.modelCode || model.modelName || "").trim(), model]));
+
       normalized = {
         title: imported.title || current.title,
+        models: Array.from(mergedModelsByCode.values()).filter((model) => model.modelCode),
         examSets: mergedExamSets
       };
     }
