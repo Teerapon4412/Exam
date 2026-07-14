@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20260630-zoom" />
+    <link rel="stylesheet" href="./styles.css?v=20260714-score-popup" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -536,6 +536,40 @@
         </div>
       </div>
 
+    <div id="scorePopup" class="score-popup hidden" role="dialog" aria-modal="true" aria-labelledby="scorePopupTitle">
+      <div class="score-popup-card">
+        <div class="score-popup-head">
+          <div>
+            <p class="card-label">Result Summary</p>
+            <h3 id="scorePopupTitle">สรุปคะแนนข้อสอบ</h3>
+          </div>
+          <button id="scorePopupCloseBtn" class="score-popup-close" type="button" aria-label="ปิดผลคะแนน">×</button>
+        </div>
+        <div id="scorePopupStatus" class="score-popup-status">-</div>
+        <div class="score-popup-score">
+          <span>คะแนนที่ได้</span>
+          <strong id="scorePopupScore">0 / 0</strong>
+          <em id="scorePopupPercent">0%</em>
+        </div>
+        <div class="score-popup-grid">
+          <div>
+            <span>ตอบถูก</span>
+            <strong id="scorePopupCorrect">0 ข้อ</strong>
+          </div>
+          <div>
+            <span>ตอบผิด</span>
+            <strong id="scorePopupWrong">0 ข้อ</strong>
+          </div>
+        </div>
+        <p id="scorePopupMessage" class="score-popup-message">-</p>
+        <div class="score-popup-actions">
+          <button id="scorePopupHistoryBtn" class="secondary-btn" type="button">ดูประวัติผลสอบ</button>
+          <button id="scorePopupNextPartBtn" class="secondary-btn" type="button">ทำ Part ถัดไป</button>
+          <button id="scorePopupOkBtn" class="primary-btn" type="button">ปิด</button>
+        </div>
+      </div>
+    </div>
+
     <div id="imageViewer" class="image-viewer hidden" role="dialog" aria-modal="true" aria-label="ดูรูปคำถามขนาดใหญ่">
       <div class="image-viewer-toolbar">
         <button id="imageZoomOutBtn" class="image-viewer-btn" type="button" aria-label="ซูมออก" title="ซูมออก">−</button>
@@ -549,6 +583,6 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20260630-zoom"></script>
+    <script src="./script.js?v=20260714-score-popup"></script>
   </body>
 </html>

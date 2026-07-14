@@ -65,6 +65,17 @@ const els = {
   correctCount: $("correctCount"),
   wrongCount: $("wrongCount"),
   resultMessage: $("resultMessage"),
+  scorePopup: $("scorePopup"),
+  scorePopupStatus: $("scorePopupStatus"),
+  scorePopupScore: $("scorePopupScore"),
+  scorePopupPercent: $("scorePopupPercent"),
+  scorePopupCorrect: $("scorePopupCorrect"),
+  scorePopupWrong: $("scorePopupWrong"),
+  scorePopupMessage: $("scorePopupMessage"),
+  scorePopupCloseBtn: $("scorePopupCloseBtn"),
+  scorePopupHistoryBtn: $("scorePopupHistoryBtn"),
+  scorePopupNextPartBtn: $("scorePopupNextPartBtn"),
+  scorePopupOkBtn: $("scorePopupOkBtn"),
   nextPartBtn: $("nextPartBtn"),
   restartExamBtn: $("restartExamBtn"),
   historyStats: $("historyStats"),
@@ -1099,6 +1110,43 @@ function renderResult(result) {
   }
   showMessage(els.loadStatus, "ส่งข้อสอบเรียบร้อยแล้ว");
   updateExamStatus();
+  openScorePopup(result);
+}
+
+function openScorePopup(result) {
+  if (!els.scorePopup || !result) return;
+
+  const nextExam = getNextExamInCurrentModel();
+  els.scorePopup.classList.toggle("passed", Boolean(result.passed));
+  els.scorePopup.classList.toggle("failed", !result.passed);
+  setText(els.scorePopupStatus, result.passed ? "ผ่านเกณฑ์" : "ยังไม่ผ่านเกณฑ์");
+  setText(els.scorePopupScore, `${result.score} / ${result.total_score}`);
+  setText(els.scorePopupPercent, `${result.percent}%`);
+  setText(els.scorePopupCorrect, `${result.correct_count} ข้อ`);
+  setText(els.scorePopupWrong, `${result.wrong_count} ข้อ`);
+  setText(
+    els.scorePopupMessage,
+    result.passed
+      ? `ผ่านเกณฑ์แล้ว: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`
+      : `ยังไม่ผ่านเกณฑ์: ตอบถูก ${result.correct_count} ข้อ จาก ${result.question_count} ข้อ`
+  );
+  if (els.scorePopupNextPartBtn) {
+    els.scorePopupNextPartBtn.classList.toggle("hidden", !nextExam);
+    els.scorePopupNextPartBtn.disabled = !nextExam;
+    els.scorePopupNextPartBtn.textContent = nextExam
+      ? `ทำ ${nextExam.partCode || "Part ถัดไป"}`
+      : "ยังไม่มี Part ถัดไป";
+  }
+  els.scorePopup.classList.remove("hidden");
+  document.body.classList.add("score-popup-open");
+  els.scorePopupOkBtn?.focus();
+}
+
+function closeScorePopup() {
+  if (!els.scorePopup) return;
+  els.scorePopup.classList.add("hidden");
+  document.body.classList.remove("score-popup-open");
+  els.submitExamBtn?.focus();
 }
 
 async function loadExams() {
@@ -3007,6 +3055,23 @@ function bindEvents() {
       renderSelectors();
     });
   }
+  els.scorePopupCloseBtn.addEventListener("click", closeScorePopup);
+  els.scorePopupOkBtn.addEventListener("click", closeScorePopup);
+  els.scorePopup.addEventListener("click", (event) => {
+    if (event.target === els.scorePopup) closeScorePopup();
+  });
+  els.scorePopupHistoryBtn.addEventListener("click", () => {
+    closeScorePopup();
+    setView("history");
+  });
+  els.scorePopupNextPartBtn.addEventListener("click", () => {
+    const nextExam = getNextExamInCurrentModel();
+    if (!nextExam) return;
+    closeScorePopup();
+    state.selectedExamId = nextExam.id;
+    resetExamSession();
+    renderSelectors();
+  });
   els.restartExamBtn.addEventListener("click", resetExamSession);
   els.prevBtn.addEventListener("click", () => {
     state.currentQuestionIndex = Math.max(state.currentQuestionIndex - 1, 0);
@@ -3034,6 +3099,10 @@ function bindEvents() {
     setImageViewerScale(nextScale);
   });
   document.addEventListener("keydown", (event) => {
+    if (!els.scorePopup.classList.contains("hidden")) {
+      if (event.key === "Escape") closeScorePopup();
+      return;
+    }
     if (els.imageViewer.classList.contains("hidden")) return;
     if (event.key === "Escape") closeImageViewer();
     if (event.key === "+" || event.key === "=") setImageViewerScale(imageViewerState.scale * 1.25);

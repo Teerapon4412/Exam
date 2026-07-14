@@ -1538,6 +1538,145 @@ body.image-viewer-open {
   overflow: hidden;
 }
 
+body.score-popup-open {
+  overflow: hidden;
+}
+
+.score-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(17, 28, 42, 0.58);
+  backdrop-filter: blur(10px);
+}
+
+.score-popup-card {
+  width: min(560px, 100%);
+  border: 1px solid rgba(214, 225, 235, 0.92);
+  border-radius: 8px;
+  padding: 24px;
+  background: #ffffff;
+  box-shadow: 0 28px 70px rgba(23, 36, 54, 0.28);
+}
+
+.score-popup-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.score-popup-head h3 {
+  margin: 4px 0 0;
+  font-size: 1.35rem;
+  color: #18283d;
+}
+
+.score-popup-close {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7f9fc;
+  color: #35445d;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.score-popup-close:hover,
+.score-popup-close:focus-visible {
+  background: #edf3fb;
+  outline: none;
+}
+
+.score-popup-status {
+  display: inline-flex;
+  margin-top: 18px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #eef8f3;
+  color: #167249;
+  font-weight: 800;
+}
+
+.score-popup.failed .score-popup-status {
+  background: #fff1f2;
+  color: #bd303f;
+}
+
+.score-popup-score {
+  margin-top: 18px;
+  padding: 22px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f7fbff, #eef6ff);
+  border: 1px solid #dce9f7;
+  text-align: center;
+}
+
+.score-popup-score span,
+.score-popup-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.score-popup-score strong {
+  display: block;
+  margin-top: 6px;
+  color: #16253b;
+  font-size: 2.5rem;
+  line-height: 1.1;
+}
+
+.score-popup-score em {
+  display: inline-block;
+  margin-top: 8px;
+  color: #247cff;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.score-popup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.score-popup-grid div {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.score-popup-grid strong {
+  display: block;
+  margin-top: 6px;
+  color: #22334e;
+  font-size: 1.2rem;
+}
+
+.score-popup-message {
+  margin: 16px 0 0;
+  color: #33415f;
+  line-height: 1.65;
+}
+
+.score-popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
 .image-viewer {
   position: fixed;
   inset: 0;
