@@ -1157,11 +1157,11 @@ function buildAnswerReviewHtml(review = [], options = {}) {
             </div>
             <p>${escapeHtml(item.text)}</p>
             <div class="answer-review-answers">
-              <div>
+              <div class="answer-review-selected">
                 <span>คำตอบของคุณ</span>
                 <strong>${escapeHtml(selectedLabel)}</strong>
               </div>
-              <div>
+              <div class="answer-review-correct-answer">
                 <span>คำตอบที่ถูกต้อง</span>
                 <strong>${escapeHtml(correctLabel)}</strong>
               </div>

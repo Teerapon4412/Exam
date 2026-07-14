@@ -1735,8 +1735,9 @@ body.score-popup-open {
 }
 
 .answer-review-item.wrong {
-  border-color: #ffd5dc;
-  background: #fff8f9;
+  border-color: #ff9aa9;
+  background: #fff5f6;
+  box-shadow: inset 4px 0 0 #d94452;
 }
 
 .answer-review-question {
@@ -1796,6 +1797,26 @@ body.score-popup-open {
   margin-top: 4px;
   color: #22334e;
   line-height: 1.45;
+}
+
+.answer-review-item.wrong .answer-review-selected {
+  border-color: #ffb4bf;
+  background: #fff1f2;
+}
+
+.answer-review-item.wrong .answer-review-selected span,
+.answer-review-item.wrong .answer-review-selected strong {
+  color: #bd303f;
+}
+
+.answer-review-correct-answer {
+  border-color: #a9e7c2 !important;
+  background: #eef8f3 !important;
+}
+
+.answer-review-correct-answer span,
+.answer-review-correct-answer strong {
+  color: #167249;
 }
 
 .answer-review-empty {
