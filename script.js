@@ -2340,6 +2340,9 @@ function renderAdminEditor() {
           <div class="mini-note">Part ปัจจุบัน: <strong>${selectedExam?.partCode || "-"}</strong></div>
           <div class="mini-note">จำนวนข้อสอบ: <strong>${questionCount}</strong></div>
         </div>
+        <div class="result-actions" style="margin-top: 14px;">
+          <button id="adminDeleteModelBtn" class="secondary-btn" type="button" ${selectedGroup ? "" : "disabled"}>ลบ Model นี้</button>
+        </div>
       </div>
       <div class="admin-builder-main">
         <div class="admin-card">
@@ -2571,6 +2574,35 @@ function addAdminPartToSelectedModel() {
   renderAdminEditor();
 }
 
+function deleteAdminSelectedModel() {
+  ensureAdminDraft();
+  const modelCode = String(state.adminEditor.selectedModelCode || "").trim();
+  const selectedGroup = getAdminDraftGroups().get(modelCode);
+  if (!modelCode || !selectedGroup) {
+    showMessage(els.adminMessage, "ยังไม่ได้เลือก Model ที่ต้องการลบ", true);
+    return;
+  }
+
+  const partCount = selectedGroup.exams?.length || 0;
+  const modelName = selectedGroup.modelName || modelCode;
+  const confirmMessage = `ยืนยันลบ Model: ${modelName}\nระบบจะลบ Part ใต้ Model นี้ทั้งหมด ${partCount} Part`;
+  if (!window.confirm(confirmMessage)) return;
+
+  state.adminEditor.draft.examSets = (state.adminEditor.draft.examSets || [])
+    .filter((exam) => String(exam.modelCode || "").trim() !== modelCode);
+  state.adminEditor.draft.models = (state.adminEditor.draft.models || [])
+    .filter((model) => String(model.modelCode || model.modelName || "").trim() !== modelCode);
+
+  const nextGroup = Array.from(getAdminDraftGroups().values())[0] || null;
+  state.adminEditor.selectedModelCode = nextGroup?.modelCode || "";
+  state.adminEditor.selectedExamId = nextGroup?.exams?.[0]?.id || "";
+  state.adminEditor.newModelName = nextGroup?.modelName || "";
+  state.adminEditor.newPartCode = "";
+  state.adminEditor.newPartTitle = "";
+  showMessage(els.adminMessage, `ลบ Model ${modelName} แล้ว กรุณากดบันทึกคลังข้อสอบเพื่อยืนยันการเปลี่ยนแปลง`);
+  renderAdminEditor();
+}
+
 function duplicateAdminQuestion(examId, questionId) {
   updateAdminDraftExam(examId, (exam) => {
     const questions = [...(exam.questions || [])];
@@ -2768,6 +2800,11 @@ function bindAdminEditorEvents() {
   const addModelBtn = document.getElementById("adminAddModelBtn");
   if (addModelBtn) {
     addModelBtn.addEventListener("click", addAdminModel);
+  }
+
+  const deleteModelBtn = document.getElementById("adminDeleteModelBtn");
+  if (deleteModelBtn) {
+    deleteModelBtn.addEventListener("click", deleteAdminSelectedModel);
   }
 
   const addPartBtn = document.getElementById("adminAddPartBtn");
@@ -3056,7 +3093,7 @@ async function saveAdminBuilder() {
     renderAdminEditor();
     const response = await api("/api/admin/exam-bank", {
       method: "POST",
-      body: JSON.stringify({ payload: draft })
+      body: JSON.stringify({ payload: draft, mode: "replace" })
     });
     state.adminSaving = false;
     setAdminSaveStatus("success", `บันทึกสำเร็จ ${response.examSetCount} ชุด`);
