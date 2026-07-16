@@ -2727,18 +2727,22 @@ function bindAdminEditorEvents() {
   if (selectedExam) {
     setInputValue("adminExamModelNameInput", (event) => {
       const nextValue = String(event.target.value || "").trim();
-      const currentMode = normalizeScoringMode(selectedGroup?.scoringMode || selectedExam.scoringMode);
-      updateAdminDraftExam(selectedExam.id, (exam) => ({
-        ...exam,
-        modelName: nextValue,
-        modelCode: nextValue,
-        scoringMode: currentMode
-      }));
-      state.adminEditor.draft.models = (state.adminEditor.draft.models || []).map((model) => (
-        model.modelCode === selectedExam.modelCode
-          ? { modelCode: nextValue, modelName: nextValue, scoringMode: currentMode }
-          : model
+      const previousModelCode = String(selectedExam.modelCode || "").trim();
+      const currentGroup = getAdminDraftGroups().get(previousModelCode);
+      const currentMode = normalizeScoringMode(currentGroup?.scoringMode || selectedExam.scoringMode);
+      state.adminEditor.draft.examSets = (state.adminEditor.draft.examSets || []).map((exam) => (
+        String(exam.modelCode || "").trim() === previousModelCode
+          ? { ...exam, modelName: nextValue, modelCode: nextValue, scoringMode: currentMode }
+          : exam
       ));
+      const currentModels = state.adminEditor.draft.models || [];
+      state.adminEditor.draft.models = currentModels.some((model) => String(model.modelCode || "").trim() === previousModelCode)
+        ? currentModels.map((model) => (
+          String(model.modelCode || "").trim() === previousModelCode
+            ? { modelCode: nextValue, modelName: nextValue, scoringMode: currentMode }
+            : model
+        ))
+        : [...currentModels, { modelCode: nextValue, modelName: nextValue, scoringMode: currentMode }];
       state.adminEditor.selectedModelCode = nextValue;
     });
     setInputValue("adminExamTitleInput", (event) => {
