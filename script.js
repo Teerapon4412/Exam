@@ -81,6 +81,7 @@ const els = {
   nextPartBtn: $("nextPartBtn"),
   restartExamBtn: $("restartExamBtn"),
   historyStats: $("historyStats"),
+  historyWrongSummary: $("historyWrongSummary"),
   historyList: $("historyList"),
   profileUserName: $("profileUserName"),
   profileEmployeeCode: $("profileEmployeeCode"),
@@ -1282,6 +1283,119 @@ function closeScorePopup() {
   els.submitExamBtn?.focus();
 }
 
+function buildWrongAnswerSummary(results = []) {
+  const summaryMap = new Map();
+
+  results.forEach((result) => {
+    const review = Array.isArray(result.review) ? result.review : [];
+    const employeeLabel = result.full_name || result.username || result.employee_code || "ไม่ระบุชื่อ";
+    review.filter((entry) => !entry.isCorrect).forEach((entry) => {
+      const key = [
+        result.exam_id || result.examId || result.part_code || result.partCode || "",
+        entry.number || "",
+        entry.text || ""
+      ].join("::");
+      const selectedLabel = entry.selectedAnswer === null || entry.selectedAnswer === undefined
+        ? "ยังไม่ได้ตอบ"
+        : formatAnswerLabel(entry.selectedKey, entry.selectedText);
+      const correctLabel = formatAnswerLabel(entry.correctKey, entry.correctText);
+
+      if (!summaryMap.has(key)) {
+        summaryMap.set(key, {
+          modelName: result.model_name || result.modelName || "-",
+          partCode: result.part_code || result.partCode || "-",
+          partName: result.exam_title || result.examTitle || "-",
+          questionNumber: entry.number || "-",
+          questionText: entry.text || "-",
+          correctLabel,
+          wrongCount: 0,
+          employees: new Map(),
+          selectedAnswers: new Map()
+        });
+      }
+
+      const item = summaryMap.get(key);
+      item.wrongCount += 1;
+      item.employees.set(result.employee_code || result.employeeCode || employeeLabel, employeeLabel);
+      item.selectedAnswers.set(selectedLabel, (item.selectedAnswers.get(selectedLabel) || 0) + 1);
+    });
+  });
+
+  return Array.from(summaryMap.values()).sort((left, right) => {
+    if (right.wrongCount !== left.wrongCount) return right.wrongCount - left.wrongCount;
+    return String(left.questionText || "").localeCompare(String(right.questionText || ""), "th");
+  });
+}
+
+function renderWrongAnswerSummary(results = []) {
+  if (!els.historyWrongSummary) return;
+  const items = buildWrongAnswerSummary(results);
+  const reviewedCount = results.filter((result) => Array.isArray(result.review) && result.review.length).length;
+
+  if (!items.length) {
+    els.historyWrongSummary.innerHTML = `
+      <section class="wrong-summary-panel">
+        <div class="wrong-summary-head">
+          <div>
+            <p class="card-label">Training Focus</p>
+            <h3>สรุปข้อที่ผิดเพื่อวางแผนอบรม</h3>
+          </div>
+          <span>${reviewedCount} ผลสอบมีรายละเอียดรายข้อ</span>
+        </div>
+        <div class="inline-message">ยังไม่มีข้อที่ตอบผิดจากผลสอบที่มีรายละเอียดรายข้อ</div>
+      </section>
+    `;
+    return;
+  }
+
+  const topItems = items.slice(0, 12);
+  els.historyWrongSummary.innerHTML = `
+    <section class="wrong-summary-panel">
+      <div class="wrong-summary-head">
+        <div>
+          <p class="card-label">Training Focus</p>
+          <h3>สรุปข้อที่ผิดเพื่อวางแผนอบรม</h3>
+        </div>
+        <span>${items.length} หัวข้อที่พบข้อผิด</span>
+      </div>
+      <div class="wrong-summary-list">
+        ${topItems.map((item, index) => {
+          const employeeNames = Array.from(item.employees.values());
+          const selectedAnswers = Array.from(item.selectedAnswers.entries())
+            .sort((left, right) => right[1] - left[1])
+            .map(([answer, count]) => `${answer} (${count})`)
+            .join(", ");
+          return `
+            <details class="wrong-summary-item" ${index < 3 ? "open" : ""}>
+              <summary>
+                <span>ผิด ${item.wrongCount} ครั้ง</span>
+                <strong>${escapeHtml(item.modelName)} / ${escapeHtml(item.partCode)} / ข้อ ${escapeHtml(item.questionNumber)}</strong>
+              </summary>
+              <div class="wrong-summary-body">
+                <p>${escapeHtml(item.questionText)}</p>
+                <div class="wrong-summary-grid">
+                  <div class="wrong-summary-correct">
+                    <span>คำตอบที่ถูกต้อง</span>
+                    <strong>${escapeHtml(item.correctLabel)}</strong>
+                  </div>
+                  <div>
+                    <span>คำตอบที่พนักงานเลือกผิดบ่อย</span>
+                    <strong>${escapeHtml(selectedAnswers || "-")}</strong>
+                  </div>
+                </div>
+                <div class="wrong-summary-training">
+                  <span>พนักงานที่ควรทบทวนหัวข้อนี้</span>
+                  <strong>${escapeHtml(employeeNames.join(", ") || "-")}</strong>
+                </div>
+              </div>
+            </details>
+          `;
+        }).join("")}
+      </div>
+    </section>
+  `;
+}
+
 async function loadExams() {
   showMessage(els.loadStatus, "กำลังโหลดชุดข้อสอบ...");
   try {
@@ -1343,6 +1457,7 @@ function renderHistory() {
     <div class="stat-box"><span>คะแนนเฉลี่ย</span><strong>${avgPercent}%</strong></div>
     <div class="stat-box"><span>ผ่านเกณฑ์</span><strong>${passedCount}</strong></div>
   `;
+  renderWrongAnswerSummary(results);
 
   if (!total) {
     els.historyList.innerHTML = `<div class="inline-message">ยังไม่มีประวัติผลสอบในระบบ</div>`;
