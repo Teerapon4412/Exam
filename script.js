@@ -1355,6 +1355,11 @@ function renderHistory() {
       const title = state.user?.role === "admin"
         ? `${item.full_name || item.username} (${item.employee_code || "-"})`
         : (item.exam_title || item.part_code || "-");
+      const review = Array.isArray(item.review) ? item.review : [];
+      const wrongCount = review.filter((entry) => !entry.isCorrect).length;
+      const reviewHtml = review.length
+        ? buildAnswerReviewHtml(review, { compact: true })
+        : `<div class="answer-review-empty">ผลสอบรายการนี้ยังไม่มีรายละเอียดรายข้อ</div>`;
       return `
         <article class="history-card">
           <div class="history-card-layout">
@@ -1373,6 +1378,15 @@ function renderHistory() {
             <strong>${item.percent}%</strong>
             <span>${item.passed ? "ผ่าน" : "ไม่ผ่าน"}</span>
           </div>
+          <details class="history-review">
+            <summary>
+              <span>ดูข้อที่ทำผิด</span>
+              <strong>${review.length ? `${wrongCount} ข้อ` : "ไม่มีข้อมูล"}</strong>
+            </summary>
+            <div class="history-review-body">
+              ${reviewHtml}
+            </div>
+          </details>
         </article>
       `;
     })

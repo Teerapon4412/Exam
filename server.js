@@ -61,6 +61,7 @@ db.exec(`
     wrong_count INTEGER NOT NULL,
     question_count INTEGER NOT NULL,
     passed INTEGER NOT NULL,
+    answer_review TEXT,
     submitted_at TEXT NOT NULL
   );
 
@@ -112,6 +113,7 @@ ensureColumn("users", "updated_at", "updated_at TEXT");
 
 ensureColumn("exam_results", "employee_code", "employee_code TEXT");
 ensureColumn("exam_results", "full_name", "full_name TEXT");
+ensureColumn("exam_results", "answer_review", "answer_review TEXT");
 
 db.exec(`
   CREATE UNIQUE INDEX IF NOT EXISTS idx_users_employee_code ON users(employee_code);
@@ -160,10 +162,10 @@ const getUserByEmployeeCode = db.prepare(`
 const insertResult = db.prepare(`
   INSERT INTO exam_results (
     user_id, username, employee_code, full_name, role, exam_id, exam_title, model_code, model_name, part_code,
-    score, total_score, percent, correct_count, wrong_count, question_count, passed, submitted_at
+    score, total_score, percent, correct_count, wrong_count, question_count, passed, answer_review, submitted_at
   ) VALUES (
     @user_id, @username, @employee_code, @full_name, @role, @exam_id, @exam_title, @model_code, @model_name, @part_code,
-    @score, @total_score, @percent, @correct_count, @wrong_count, @question_count, @passed, @submitted_at
+    @score, @total_score, @percent, @correct_count, @wrong_count, @question_count, @passed, @answer_review, @submitted_at
   )
 `);
 
@@ -545,6 +547,14 @@ function serializeUser(user) {
 }
 
 function serializeResult(row) {
+  let review = [];
+  if (row.answer_review) {
+    try {
+      review = JSON.parse(row.answer_review);
+    } catch (_error) {
+      review = [];
+    }
+  }
   return {
     ...row,
     score: Number(row.score || 0),
@@ -553,7 +563,8 @@ function serializeResult(row) {
     correct_count: Number(row.correct_count || 0),
     wrong_count: Number(row.wrong_count || 0),
     question_count: Number(row.question_count || 0),
-    passed: Boolean(row.passed)
+    passed: Boolean(row.passed),
+    review
   };
 }
 
@@ -745,6 +756,7 @@ app.post("/api/results", requireAuth, (req, res) => {
     wrong_count: wrongCount,
     question_count: questions.length,
     passed: passed ? 1 : 0,
+    answer_review: JSON.stringify(review),
     submitted_at: submittedAt
   };
 

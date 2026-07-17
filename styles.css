@@ -3374,6 +3374,52 @@ body {
   box-shadow: 0 16px 28px rgba(130, 149, 173, 0.18);
 }
 
+.history-review {
+  margin-top: 16px;
+}
+
+.history-review summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdff;
+  color: #243853;
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+}
+
+.history-review summary::-webkit-details-marker {
+  display: none;
+}
+
+.history-review summary::after {
+  content: "ดู";
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #eef3fb;
+  color: #247cff;
+  font-size: 0.78rem;
+}
+
+.history-review[open] summary::after {
+  content: "ซ่อน";
+}
+
+.history-review summary strong {
+  margin: 0;
+  color: #bd303f;
+  font-size: 0.95rem;
+}
+
+.history-review-body {
+  margin-top: 12px;
+}
+
 .history-meta {
   gap: 10px;
 }
