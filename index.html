@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20260717-training-summary" />
+    <link rel="stylesheet" href="./styles.css?v=20260717-training-focus-view" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -241,6 +241,19 @@
               <div class="history-stats" id="historyStats"></div>
               <div id="historyWrongSummary" class="wrong-summary"></div>
               <div id="historyList" class="history-list"></div>
+            </section>
+          </section>
+
+          <section id="trainingFocusView" class="view-section hidden">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <p class="card-label">Training Focus</p>
+                  <h3>สรุปข้อที่ผิดเพื่อวางแผนอบรม</h3>
+                </div>
+                <button id="trainingFocusBackBtn" class="secondary-btn" type="button">กลับประวัติผลสอบ</button>
+              </div>
+              <div id="trainingFocusSummary" class="wrong-summary wrong-summary-full"></div>
             </section>
           </section>
 
@@ -586,6 +599,6 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20260717-training-summary"></script>
+    <script src="./script.js?v=20260717-training-focus-view"></script>
   </body>
 </html>

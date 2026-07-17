@@ -24,6 +24,7 @@ const els = {
   logoutBtn: $("logoutBtn"),
   examView: $("examView"),
   historyView: $("historyView"),
+  trainingFocusView: $("trainingFocusView"),
   profileView: $("profileView"),
   skillMatrixView: $("skillMatrixView"),
   evaluationView: $("evaluationView"),
@@ -83,6 +84,8 @@ const els = {
   historyStats: $("historyStats"),
   historyWrongSummary: $("historyWrongSummary"),
   historyList: $("historyList"),
+  trainingFocusSummary: $("trainingFocusSummary"),
+  trainingFocusBackBtn: $("trainingFocusBackBtn"),
   profileUserName: $("profileUserName"),
   profileEmployeeCode: $("profileEmployeeCode"),
   profileUserRole: $("profileUserRole"),
@@ -147,6 +150,7 @@ const TEXT = {
   titleByView: {
     exam: "ทำข้อสอบออนไลน์",
     history: "ประวัติผลสอบ",
+    trainingFocus: "Training Focus",
     profile: "ข้อมูลพนักงาน",
     evaluation: "ประเมินผลหน้างาน",
     admin: "จัดการคลังข้อสอบ"
@@ -830,6 +834,7 @@ function setView(view) {
   const views = {
     exam: els.examView,
     history: els.historyView,
+    trainingFocus: els.trainingFocusView,
     profile: els.profileView,
     skillMatrix: els.skillMatrixView,
     evaluation: els.evaluationView,
@@ -852,6 +857,8 @@ function setView(view) {
 
   if (view === "history") {
     renderHistory();
+  } else if (view === "trainingFocus") {
+    renderTrainingFocus();
   } else if (view === "profile") {
     renderProfile();
   } else if (view === "skillMatrix") {
@@ -1327,13 +1334,15 @@ function buildWrongAnswerSummary(results = []) {
   });
 }
 
-function renderWrongAnswerSummary(results = []) {
-  if (!els.historyWrongSummary) return;
+function renderWrongAnswerSummary(target, results = [], options = {}) {
+  if (!target) return;
   const items = buildWrongAnswerSummary(results);
   const reviewedCount = results.filter((result) => Array.isArray(result.review) && result.review.length).length;
+  const isCompact = Boolean(options.compact);
+  const openDetails = !isCompact;
 
   if (!items.length) {
-    els.historyWrongSummary.innerHTML = `
+    target.innerHTML = `
       <section class="wrong-summary-panel">
         <div class="wrong-summary-head">
           <div>
@@ -1348,8 +1357,28 @@ function renderWrongAnswerSummary(results = []) {
     return;
   }
 
+  if (isCompact) {
+    target.innerHTML = `
+      <section class="wrong-summary-panel wrong-summary-compact">
+        <div class="wrong-summary-head">
+          <div>
+            <p class="card-label">Training Focus</p>
+            <h3>สรุปข้อที่ผิดเพื่อวางแผนอบรม</h3>
+          </div>
+          <span>${items.length} หัวข้อที่พบข้อผิด</span>
+        </div>
+        <div class="wrong-summary-compact-body">
+          <p>รวมข้อที่พนักงานตอบผิดบ่อย พร้อมคำตอบที่ถูกต้องและรายชื่อพนักงานที่ควรทบทวน</p>
+          <button id="openTrainingFocusBtn" class="primary-btn" type="button">เปิด Training Focus</button>
+        </div>
+      </section>
+    `;
+    document.getElementById("openTrainingFocusBtn")?.addEventListener("click", () => setView("trainingFocus"));
+    return;
+  }
+
   const topItems = items.slice(0, 12);
-  els.historyWrongSummary.innerHTML = `
+  target.innerHTML = `
     <section class="wrong-summary-panel">
       <div class="wrong-summary-head">
         <div>
@@ -1366,7 +1395,7 @@ function renderWrongAnswerSummary(results = []) {
             .map(([answer, count]) => `${answer} (${count})`)
             .join(", ");
           return `
-            <details class="wrong-summary-item" ${index < 3 ? "open" : ""}>
+            <details class="wrong-summary-item" ${openDetails || index < 3 ? "open" : ""}>
               <summary>
                 <span>ผิด ${item.wrongCount} ครั้ง</span>
                 <strong>${escapeHtml(item.modelName)} / ${escapeHtml(item.partCode)} / ข้อ ${escapeHtml(item.questionNumber)}</strong>
@@ -1394,6 +1423,10 @@ function renderWrongAnswerSummary(results = []) {
       </div>
     </section>
   `;
+}
+
+function renderTrainingFocus() {
+  renderWrongAnswerSummary(els.trainingFocusSummary, state.results, { compact: false });
 }
 
 async function loadExams() {
@@ -1457,7 +1490,7 @@ function renderHistory() {
     <div class="stat-box"><span>คะแนนเฉลี่ย</span><strong>${avgPercent}%</strong></div>
     <div class="stat-box"><span>ผ่านเกณฑ์</span><strong>${passedCount}</strong></div>
   `;
-  renderWrongAnswerSummary(results);
+  renderWrongAnswerSummary(els.historyWrongSummary, results, { compact: true });
 
   if (!total) {
     els.historyList.innerHTML = `<div class="inline-message">ยังไม่มีประวัติผลสอบในระบบ</div>`;
@@ -3448,6 +3481,7 @@ function bindEvents() {
       renderSelectors();
     });
   }
+  els.trainingFocusBackBtn.addEventListener("click", () => setView("history"));
   els.scorePopupCloseBtn.addEventListener("click", closeScorePopup);
   els.scorePopupOkBtn.addEventListener("click", closeScorePopup);
   els.scorePopup.addEventListener("click", (event) => {

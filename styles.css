@@ -3431,6 +3431,27 @@ body {
   background: linear-gradient(180deg, #ffffff, #f8fbff);
 }
 
+.wrong-summary-full {
+  margin-top: 0;
+}
+
+.wrong-summary-compact .wrong-summary-head {
+  margin-bottom: 10px;
+}
+
+.wrong-summary-compact-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.wrong-summary-compact-body p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .wrong-summary-head {
   display: flex;
   align-items: flex-start;
@@ -3577,6 +3598,11 @@ body {
 
   .wrong-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .wrong-summary-compact-body {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .history-avatar-wrap {
