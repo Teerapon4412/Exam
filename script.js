@@ -137,6 +137,7 @@ const els = {
   skillMatrixPrevPageBtn: $("skillMatrixPrevPageBtn"),
   skillMatrixNextPageBtn: $("skillMatrixNextPageBtn"),
   skillMatrixPageIndicator: $("skillMatrixPageIndicator"),
+  skillMatrixExportExcelBtn: $("skillMatrixExportExcelBtn"),
   skillMatrixExportPdfBtn: $("skillMatrixExportPdfBtn"),
   previewToolbar: $("previewToolbar")
 };
@@ -601,6 +602,125 @@ function exportSkillMatrixPdf() {
   </html>`;
 
   openPrintWindow("Skill Matrix Export", html);
+}
+
+function getSkillMatrixExportContext() {
+  const matrix = buildSkillMatrixRows();
+  const searchValue = String(els.skillMatrixSearchInput?.value || "").trim().toLowerCase();
+  const modelOptions = [...new Set(matrix.columns.map((column) => column.modelName).filter(Boolean))];
+  const rawSelectedModel = String(els.skillMatrixModelFilter?.value || "");
+  const selectedModel = modelOptions.includes(rawSelectedModel) ? rawSelectedModel : "";
+  const partOptions = [...new Set(
+    matrix.columns
+      .filter((column) => !selectedModel || column.modelName === selectedModel)
+      .map((column) => column.partName)
+      .filter(Boolean)
+  )];
+  const rawSelectedPart = String(els.skillMatrixPartFilter?.value || "");
+  const selectedPart = partOptions.includes(rawSelectedPart) ? rawSelectedPart : "";
+  const bandOptions = SKILL_MATRIX_CONFIG.skillBands.map((band) => String(band.skillPct));
+  const rawSelectedBand = String(els.skillMatrixBandFilter?.value || "");
+  const selectedBand = bandOptions.includes(rawSelectedBand) ? rawSelectedBand : "";
+  const visibleColumns = matrix.columns
+    .map((column, index) => ({ ...column, index }))
+    .filter((column) => (!selectedModel || column.modelName === selectedModel) && (!selectedPart || column.partName === selectedPart));
+  const filteredEmployees = matrix.employees.filter((employee) => {
+    const matchesSearch = !searchValue
+      || String(employee.employeeCode || "").toLowerCase().includes(searchValue)
+      || String(employee.employeeName || "").toLowerCase().includes(searchValue);
+    const matchesBand = !selectedBand || visibleColumns.some((column) => String(employee.cells[column.index].skillPct) === selectedBand);
+    return matchesSearch && matchesBand;
+  });
+
+  return {
+    visibleColumns,
+    filteredEmployees,
+    searchValue: searchValue || "-",
+    selectedModel: selectedModel || "ทุก Model",
+    selectedPart: selectedPart || "ทุก Part",
+    selectedBand: els.skillMatrixBandFilter?.selectedOptions?.[0]?.textContent?.trim() || "ทุกระดับทักษะ"
+  };
+}
+
+function downloadTextFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function formatSkillMatrixCellForExcel(cell) {
+  if (!cell) return "-";
+  const status = getCompletionStatus(cell.hasExam, cell.hasEvaluation, cell.scoringMode);
+  const formula = cell.scoringMode === SCORING_MODES.examOnly ? "สอบ 100%" : "ข้อสอบ 40% + ประเมิน 60%";
+  return `${cell.displayScore} | Skill ${cell.skillPct}% | ${status} | ${formula}`;
+}
+
+function exportSkillMatrixExcel() {
+  if (state.user?.role !== "admin") return;
+
+  const context = getSkillMatrixExportContext();
+  if (!context.filteredEmployees.length || !context.visibleColumns.length) {
+    window.alert("ไม่มีข้อมูลสำหรับ Export Excel");
+    return;
+  }
+
+  const exportedAt = new Date().toLocaleString("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+  const timestamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
+  const headers = [
+    "รหัสพนักงาน",
+    "ชื่อพนักงาน",
+    "แผนก",
+    "ตำแหน่ง",
+    ...context.visibleColumns.map((column) =>
+      `${column.modelCode}/${column.partCode} ${column.partName || "-"} (${column.scoringLabel})`)
+  ];
+  const metaRows = [
+    ["Factory Online Exam - Skill Matrix"],
+    [`วันที่ส่งออก: ${exportedAt}`],
+    [`ค้นหา: ${context.searchValue}`],
+    [`Model: ${context.selectedModel}`],
+    [`Part: ${context.selectedPart}`],
+    [`ระดับ Skill: ${context.selectedBand}`],
+    []
+  ];
+  const bodyRows = context.filteredEmployees.map((employee) => [
+    employee.employeeCode || "",
+    employee.employeeName || "",
+    employee.department || "",
+    employee.position || "",
+    ...context.visibleColumns.map((column) => formatSkillMatrixCellForExcel(employee.cells[column.index]))
+  ]);
+  const tableRows = [...metaRows, headers, ...bodyRows]
+    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+    .join("");
+  const html = `<!doctype html>
+  <html lang="th">
+    <head>
+      <meta charset="utf-8" />
+      <style>
+        table { border-collapse: collapse; font-family: "Segoe UI", Tahoma, sans-serif; }
+        td { border: 1px solid #cbd5e1; padding: 8px; mso-number-format:"\\@"; }
+        tr:nth-child(8) td { background: #eaf3fb; font-weight: 700; }
+      </style>
+    </head>
+    <body>
+      <table>${tableRows}</table>
+    </body>
+  </html>`;
+
+  downloadTextFile(`Skill_Matrix_${timestamp}.xls`, `\ufeff${html}`, "application/vnd.ms-excel;charset=utf-8");
 }
 
 async function api(url, options = {}) {
@@ -2005,6 +2125,9 @@ function renderSkillMatrix() {
   }
   if (els.skillMatrixNextPageBtn) {
     els.skillMatrixNextPageBtn.disabled = state.skillMatrixPage >= totalPages - 1 || visibleColumns.length === 0;
+  }
+  if (els.skillMatrixExportExcelBtn) {
+    els.skillMatrixExportExcelBtn.disabled = filteredEmployees.length === 0 || visibleColumns.length === 0;
   }
   if (els.skillMatrixExportPdfBtn) {
     els.skillMatrixExportPdfBtn.disabled = filteredEmployees.length === 0 || visibleColumns.length === 0;
@@ -3598,6 +3721,9 @@ function bindEvents() {
   }
   if (els.skillMatrixExportPdfBtn) {
     els.skillMatrixExportPdfBtn.addEventListener("click", exportSkillMatrixPdf);
+  }
+  if (els.skillMatrixExportExcelBtn) {
+    els.skillMatrixExportExcelBtn.addEventListener("click", exportSkillMatrixExcel);
   }
 }
 
