@@ -655,10 +655,8 @@ function downloadTextFile(filename, content, mimeType) {
 }
 
 function formatSkillMatrixCellForExcel(cell) {
-  if (!cell) return "-";
-  const status = getCompletionStatus(cell.hasExam, cell.hasEvaluation, cell.scoringMode);
-  const formula = cell.scoringMode === SCORING_MODES.examOnly ? "สอบ 100%" : "ข้อสอบ 40% + ประเมิน 60%";
-  return `${cell.displayScore} | Skill ${cell.skillPct}% | ${status} | ${formula}`;
+  if (!cell || !cell.hasExam) return "";
+  return Number.isFinite(Number(cell.finalPercent)) ? String(Math.round(Number(cell.finalPercent))) : "";
 }
 
 function exportSkillMatrixExcel() {
