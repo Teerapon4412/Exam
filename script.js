@@ -211,10 +211,11 @@ TEXT.titleByView.skillMatrix = "Skill Matrix";
 TEXT.titleByView.practicalAssessment = "ประเมินภาคปฏิบัติ";
 
 const PRACTICAL_ASSESSMENT = {
-  modelCode: "RG01",
-  modelName: "RG01",
-  partCode: "MC16_PRACTICAL",
-  partName: "RG01 PANEL INST UPR PAD LHD (HARD)",
+  modelCode: "ประเมินภาคปฏิบัติบันทึกCondition",
+  modelName: "ประเมินภาคปฏิบัติบันทึกCondition",
+  partCode: "Check Sheet Condition",
+  legacyPartCodes: ["MC16_PRACTICAL"],
+  partName: "Check Sheet Condition",
   machine: "MC16",
   sectionTitle: "แบบประเมินภาคปฏิบัติการตรวจสอบ Condition - MC16",
   passPercent: 80,
@@ -1771,6 +1772,11 @@ function getCompletionStatus(hasExam, hasEvaluation, scoringMode) {
   return hasEvaluation ? "มีข้อมูลครบ" : "รอประเมินหน้างาน";
 }
 
+function isPracticalAssessmentPart(partCode) {
+  const value = String(partCode || "");
+  return value === PRACTICAL_ASSESSMENT.partCode || (PRACTICAL_ASSESSMENT.legacyPartCodes || []).includes(value);
+}
+
 function buildSkillMatrixRows() {
   if (state.user?.role !== "admin") return [];
 
@@ -1978,15 +1984,15 @@ function buildSkillMatrixRows() {
     partName: String(exam.title || exam.partName || "")
   }));
 
-  const hasPracticalResult = evaluations.some((evaluation) => evaluation.partCode === PRACTICAL_ASSESSMENT.partCode);
-  const hasPracticalColumn = columns.some((column) => column.partCode === PRACTICAL_ASSESSMENT.partCode);
+  const hasPracticalResult = evaluations.some((evaluation) => isPracticalAssessmentPart(evaluation.partCode));
+  const hasPracticalColumn = columns.some((column) => isPracticalAssessmentPart(column.partCode));
   if (hasPracticalResult && !hasPracticalColumn) {
     columns.push({
       examId: PRACTICAL_ASSESSMENT.partCode,
       modelCode: PRACTICAL_ASSESSMENT.modelCode,
       modelName: PRACTICAL_ASSESSMENT.modelName,
       partCode: PRACTICAL_ASSESSMENT.partCode,
-      partName: "บันทึก Condition",
+      partName: PRACTICAL_ASSESSMENT.partName,
       scoringMode: SCORING_MODES.examOnly,
       scoringLabel: "Practical 100%",
       isPractical: true
@@ -2003,7 +2009,13 @@ function buildSkillMatrixRows() {
       const result = latestResultMap.get(`${employee.employeeCode}::${column.examId}`)
         || latestResultMap.get(`${employee.employeeCode}::${column.partCode}`)
         || null;
-      const evaluation = latestEvaluationMap.get(`${employee.employeeCode}::${column.partCode}`) || null;
+      const evaluation = column.isPractical
+        ? (latestEvaluationMap.get(`${employee.employeeCode}::${PRACTICAL_ASSESSMENT.partCode}`)
+          || (PRACTICAL_ASSESSMENT.legacyPartCodes || [])
+            .map((partCode) => latestEvaluationMap.get(`${employee.employeeCode}::${partCode}`))
+            .find(Boolean)
+          || null)
+        : latestEvaluationMap.get(`${employee.employeeCode}::${column.partCode}`) || null;
       const examPercent = Number(result?.percent || 0);
       const evaluationPercent = evaluation
         ? Math.round((Number(evaluation.totalScore || 0) / Math.max(Number(evaluation.maxScore || 0), 1)) * 100)
@@ -2782,13 +2794,13 @@ async function savePracticalAssessment() {
         modelCode: PRACTICAL_ASSESSMENT.modelCode,
         modelName: PRACTICAL_ASSESSMENT.modelName,
         partCode: PRACTICAL_ASSESSMENT.partCode,
-        partName: `${PRACTICAL_ASSESSMENT.partName} / ${PRACTICAL_ASSESSMENT.machine}`,
+        partName: PRACTICAL_ASSESSMENT.partName,
         totalScore: summary.earned,
         maxScore: summary.max,
         rows
       })
     });
-    showMessage(els.practicalMessage, "บันทึกผลประเมินภาคปฏิบัติ RG01 / MC16 เรียบร้อยแล้ว");
+    showMessage(els.practicalMessage, "บันทึกผลประเมินภาคปฏิบัติบันทึกCondition เรียบร้อยแล้ว");
     await loadEvaluations();
   } catch (error) {
     showMessage(els.practicalMessage, `บันทึกผลประเมินภาคปฏิบัติไม่สำเร็จ: ${error.message}`, true);
