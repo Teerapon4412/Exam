@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20260724-practical-entry-visible" />
+    <link rel="stylesheet" href="./styles.css?v=20260724-practical-assessment-content" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -504,6 +504,88 @@
             </div>
           </section>
 
+          <section id="practicalAssessmentView" class="view-section hidden">
+            <div class="evaluation-layout practical-layout">
+              <section class="panel">
+                <div class="panel-head">
+                  <div>
+                    <p class="card-label">Practical Assessment</p>
+                    <h3>แบบประเมินภาคปฏิบัติ RG01 / MC16</h3>
+                    <p class="section-intro">ใช้รายชื่อพนักงานจากระบบเดิม แล้วประเมินการตรวจสอบ Condition ตามหัวข้อจากไฟล์ RG01 MC16</p>
+                  </div>
+                  <button id="practicalBackToExamBtn" class="secondary-btn" type="button">กลับภาพรวมการสอบ</button>
+                </div>
+
+                <div class="evaluation-form">
+                  <div class="evaluation-grid">
+                    <label class="field">
+                      <span>รหัสพนักงาน</span>
+                      <select id="practicalEmployeeCodeSelect"></select>
+                    </label>
+                    <label class="field">
+                      <span>ชื่อพนักงาน</span>
+                      <select id="practicalEmployeeNameSelect"></select>
+                    </label>
+                    <label class="field">
+                      <span>วันที่ประเมิน</span>
+                      <input id="practicalAssessmentDate" type="date" />
+                    </label>
+                    <label class="field">
+                      <span>ผู้ประเมิน</span>
+                      <select id="practicalAssessorSelect"></select>
+                    </label>
+                    <label class="field">
+                      <span>ครั้งที่ประเมิน</span>
+                      <input id="practicalAttemptNo" type="number" min="1" value="1" />
+                    </label>
+                  </div>
+
+                  <div class="evaluation-summary-strip">
+                    <div class="mini-note">Machine: <strong>MC16</strong></div>
+                    <div class="mini-note">Part: <strong>RG01 PANEL INST UPR PAD LHD (HARD)</strong></div>
+                    <div class="mini-note">หัวข้อทั้งหมด: <strong>37 หัวข้อ</strong></div>
+                  </div>
+
+                  <p id="practicalMessage" class="inline-message hidden"></p>
+                </div>
+              </section>
+
+              <section class="panel practical-summary-panel">
+                <div class="history-stats">
+                  <div class="stat-box"><span>คะแนนที่ได้</span><strong id="practicalEarnedScore">0</strong></div>
+                  <div class="stat-box"><span>คะแนนเต็ม</span><strong id="practicalMaxScore">0</strong></div>
+                  <div class="stat-box"><span>เปอร์เซ็นต์</span><strong id="practicalPercent">0.00%</strong></div>
+                  <div class="stat-box"><span>หัวข้อสำคัญได้ 0</span><strong id="practicalCriticalZero">0</strong></div>
+                </div>
+                <div id="practicalResultText" class="status-note">กรุณาลงคะแนนทุกหัวข้อที่ใช้งาน</div>
+              </section>
+
+              <section class="panel">
+                <div class="dashboard-table-wrap evaluation-sheet-wrap practical-table-wrap">
+                  <table class="evaluation-table practical-table">
+                    <thead>
+                      <tr>
+                        <th>ลำดับ</th>
+                        <th>กลุ่ม Condition</th>
+                        <th>หัวข้อทดสอบ</th>
+                        <th>ค่ามาตรฐาน</th>
+                        <th>สิ่งที่ให้พนักงานปฏิบัติ</th>
+                        <th>คะแนนหัวหน้า</th>
+                        <th>หมายเหตุ</th>
+                      </tr>
+                    </thead>
+                    <tbody id="practicalAssessmentRows"></tbody>
+                  </table>
+                </div>
+                <div class="note"><span class="critical">★</span> = หัวข้อสำคัญ หากได้ 0 คะแนน ต้องทบทวนและประเมินซ้ำ</div>
+                <div class="result-actions">
+                  <button id="savePracticalAssessmentBtn" class="primary-btn" type="button">บันทึกผลประเมินภาคปฏิบัติ</button>
+                  <button id="resetPracticalAssessmentBtn" class="secondary-btn" type="button">ล้างค่าฟอร์ม</button>
+                </div>
+              </section>
+            </div>
+          </section>
+
           <section id="adminView" class="view-section hidden">
             <section class="panel admin-only hidden" id="adminPanel">
               <div class="panel-head">
@@ -603,6 +685,6 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20260724-practical-entry-visible"></script>
+    <script src="./script.js?v=20260724-practical-assessment-content"></script>
   </body>
 </html>

@@ -28,6 +28,7 @@ const els = {
   profileView: $("profileView"),
   skillMatrixView: $("skillMatrixView"),
   evaluationView: $("evaluationView"),
+  practicalAssessmentView: $("practicalAssessmentView"),
   adminView: $("adminView"),
   pageHeading: $("pageHeading"),
   modelSelector: $("modelSelector"),
@@ -126,6 +127,21 @@ const els = {
   evaluationHistoryEmpty: $("evaluationHistoryEmpty"),
   evaluationHistoryTableWrap: $("evaluationHistoryTableWrap"),
   evaluationHistoryBody: $("evaluationHistoryBody"),
+  practicalBackToExamBtn: $("practicalBackToExamBtn"),
+  practicalEmployeeCodeSelect: $("practicalEmployeeCodeSelect"),
+  practicalEmployeeNameSelect: $("practicalEmployeeNameSelect"),
+  practicalAssessmentDate: $("practicalAssessmentDate"),
+  practicalAssessorSelect: $("practicalAssessorSelect"),
+  practicalAttemptNo: $("practicalAttemptNo"),
+  practicalMessage: $("practicalMessage"),
+  practicalEarnedScore: $("practicalEarnedScore"),
+  practicalMaxScore: $("practicalMaxScore"),
+  practicalPercent: $("practicalPercent"),
+  practicalCriticalZero: $("practicalCriticalZero"),
+  practicalResultText: $("practicalResultText"),
+  practicalAssessmentRows: $("practicalAssessmentRows"),
+  savePracticalAssessmentBtn: $("savePracticalAssessmentBtn"),
+  resetPracticalAssessmentBtn: $("resetPracticalAssessmentBtn"),
   skillMatrixConfig: $("skillMatrixConfig"),
   skillMatrixSummary: $("skillMatrixSummary"),
   skillMatrixSearchInput: $("skillMatrixSearchInput"),
@@ -192,6 +208,58 @@ const TEXT = {
 };
 
 TEXT.titleByView.skillMatrix = "Skill Matrix";
+TEXT.titleByView.practicalAssessment = "ประเมินภาคปฏิบัติ";
+
+const PRACTICAL_ASSESSMENT = {
+  modelCode: "RG01",
+  modelName: "RG01",
+  partCode: "MC16_PRACTICAL",
+  partName: "RG01 PANEL INST UPR PAD LHD (HARD)",
+  machine: "MC16",
+  sectionTitle: "แบบประเมินภาคปฏิบัติการตรวจสอบ Condition - MC16",
+  passPercent: 80,
+  reviewPercent: 70,
+  storageKey: "rg01_mc16_practical_assessment_draft",
+  items: [
+    { group: "Mold Temperature", topic: "Cavity", standard: "22-32 °C", task: "ให้พนักงานระบุตำแหน่ง อ่านค่า และตัดสินว่าอยู่ในมาตรฐานหรือไม่", critical: true },
+    { group: "Mold Temperature", topic: "Core", standard: "22-32 °C", task: "ให้พนักงานระบุตำแหน่ง อ่านค่า และตัดสินว่าอยู่ในมาตรฐานหรือไม่", critical: true },
+    { group: "Cylinder Temperature", topic: "N1", standard: "210 °C ±10", task: "อ่านค่าอุณหภูมิและเปรียบเทียบกับค่ามาตรฐาน", critical: true },
+    { group: "Cylinder Temperature", topic: "N2", standard: "210 °C ±10", task: "อ่านค่าอุณหภูมิและเปรียบเทียบกับค่ามาตรฐาน", critical: true },
+    { group: "Cylinder Temperature", topic: "C1", standard: "220 °C ±10", task: "อ่านค่าอุณหภูมิและตัดสิน OK/NG", critical: true },
+    { group: "Cylinder Temperature", topic: "C2", standard: "210 °C ±10", task: "อ่านค่าอุณหภูมิและตัดสิน OK/NG", critical: true },
+    { group: "Cylinder Temperature", topic: "C3", standard: "200 °C ±10", task: "อ่านค่าอุณหภูมิและตัดสิน OK/NG", critical: true },
+    { group: "Cylinder Temperature", topic: "C4", standard: "190 °C ±10", task: "อ่านค่าอุณหภูมิและตัดสิน OK/NG", critical: true },
+    { group: "Cylinder Temperature", topic: "C5", standard: "ไม่ได้ใช้งาน", task: "ตรวจสอบและยืนยันว่า Zone นี้ไม่ได้ใช้งาน", defaultScore: "NA" },
+    { group: "Valve Gate", topic: "Valve 1", standard: "0.5 / 9.0 sec", task: "ตรวจสอบค่า Timing เปิด-ปิด Valve และระบุค่าปัจจุบัน", critical: true },
+    { group: "Valve Gate", topic: "Valve 2", standard: "0.9 / 9.3 sec", task: "ตรวจสอบค่า Timing เปิด-ปิด Valve และระบุค่าปัจจุบัน", critical: true },
+    { group: "Valve Gate", topic: "Valve 3", standard: "ไม่ได้ใช้งาน", task: "ตรวจสอบและยืนยันว่า Valve นี้ไม่ได้ใช้งาน", defaultScore: "NA" },
+    { group: "Valve Gate", topic: "Valve 4", standard: "ไม่ได้ใช้งาน", task: "ตรวจสอบและยืนยันว่า Valve นี้ไม่ได้ใช้งาน", defaultScore: "NA" },
+    { group: "Valve Gate", topic: "Valve 5", standard: "ไม่ได้ใช้งาน", task: "ตรวจสอบและยืนยันว่า Valve นี้ไม่ได้ใช้งาน", defaultScore: "NA" },
+    { group: "Valve Gate", topic: "Valve 6", standard: "ไม่ได้ใช้งาน", task: "ตรวจสอบและยืนยันว่า Valve นี้ไม่ได้ใช้งาน", defaultScore: "NA" },
+    { group: "Injection Pressure", topic: "Injection Max", standard: "74.3 MPa ±5", task: "อ่านค่าแรงดันฉีดสูงสุด และตัดสินว่าอยู่ในมาตรฐานหรือไม่", critical: true },
+    { group: "Clamp Pressure", topic: "Clamp Max", standard: "830 ton ±30", task: "อ่านค่าแรงปิด Mold และตัดสินผล", critical: true },
+    { group: "Time", topic: "Injection Time", standard: "3.24 sec ±0.5", task: "อ่านค่า Injection Time และเปรียบเทียบกับค่ามาตรฐาน", critical: true },
+    { group: "Time", topic: "Cure / Cooling Time", standard: "15 sec ±5", task: "อ่านค่า Cooling Time และตัดสินผล", critical: true },
+    { group: "Time", topic: "Plast Time", standard: "10.59 sec ±3", task: "อ่านค่า Plast Time และตัดสินผล", critical: true },
+    { group: "Time", topic: "Cycle Time", standard: "41.3 sec ±3", task: "จับ/อ่านค่า Cycle Time และตัดสินผล", critical: true },
+    { group: "Cushion", topic: "Cushion Position", standard: "8 mm ±2", task: "อ่านค่า Cushion Position และอธิบายผลกระทบเมื่อค่านอกมาตรฐาน", critical: true },
+    { group: "Mold Cooling", topic: "Cavity Set", standard: "24 °C", task: "ตรวจสอบค่า Set ของฝั่ง Cavity" },
+    { group: "Mold Cooling", topic: "Cavity Display", standard: "19-29 °C", task: "อ่านค่า Display ของฝั่ง Cavity และตัดสินผล", critical: true },
+    { group: "Mold Cooling", topic: "Core Set", standard: "24 °C", task: "ตรวจสอบค่า Set ของฝั่ง Core" },
+    { group: "Mold Cooling", topic: "Core Display", standard: "19-29 °C", task: "อ่านค่า Display ของฝั่ง Core และตัดสินผล", critical: true },
+    { group: "Mold Temp Control Box", topic: "Zone 1", standard: "220 °C", task: "ระบุตำแหน่ง Zone และอ่านค่าอุณหภูมิ", critical: true },
+    { group: "Mold Temp Control Box", topic: "Zone 2", standard: "220 °C", task: "ระบุตำแหน่ง Zone และอ่านค่าอุณหภูมิ", critical: true },
+    { group: "Mold Temp Control Box", topic: "Zone 3", standard: "220 °C", task: "ระบุตำแหน่ง Zone และอ่านค่าอุณหภูมิ", critical: true },
+    { group: "Hot Runner", topic: "Zone 1", standard: "210 °C", task: "อ่านค่า Hot Runner และตรวจสอบ Alarm/ความผิดปกติ", critical: true },
+    { group: "Hot Runner", topic: "Zone 2", standard: "210 °C", task: "อ่านค่า Hot Runner และตรวจสอบ Alarm/ความผิดปกติ", critical: true },
+    { group: "Hot Runner", topic: "Zone 3", standard: "210 °C", task: "อ่านค่า Hot Runner และตรวจสอบ Alarm/ความผิดปกติ", critical: true },
+    { group: "Hot Runner", topic: "Zone 4", standard: "210 °C", task: "อ่านค่า Hot Runner และตรวจสอบ Alarm/ความผิดปกติ", critical: true },
+    { group: "Hot Runner", topic: "Zone 5", standard: "210 °C", task: "อ่านค่า Hot Runner และตรวจสอบ Alarm/ความผิดปกติ", critical: true },
+    { group: "Hot Runner", topic: "Zone 6", standard: "210 °C", task: "อ่านค่า Hot Runner และตรวจสอบ Alarm/ความผิดปกติ", critical: true },
+    { group: "Dryer", topic: "Drying Temperature", standard: "90 °C ±10", task: "ตรวจสอบอุณหภูมิ Dryer และยืนยันความพร้อมก่อนผลิต", critical: true },
+    { group: "Material", topic: "Recycle Material", standard: "ใช้ = 1 / ไม่ใช้ = 0", task: "ตรวจสอบและระบุว่ารุ่นนี้ใช้ Recycle Material หรือไม่", critical: true }
+  ]
+};
 
 const SKILL_MATRIX_CONFIG = {
   examWeight: 40,
@@ -957,6 +1025,7 @@ function setView(view) {
     profile: els.profileView,
     skillMatrix: els.skillMatrixView,
     evaluation: els.evaluationView,
+    practicalAssessment: els.practicalAssessmentView,
     admin: els.adminView
   };
 
@@ -985,6 +1054,8 @@ function setView(view) {
   } else if (view === "evaluation") {
     renderEvaluationForm();
     renderEvaluationHistory();
+  } else if (view === "practicalAssessment") {
+    renderPracticalAssessment();
   } else if (view === "admin") {
     renderAdminInfo();
   }
@@ -2500,6 +2571,216 @@ function resetEvaluationForm() {
   syncEvaluationSelectors();
 }
 
+function getLocalDateValue() {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+function getPracticalEmployees() {
+  return (Array.isArray(state.employees) ? state.employees : [])
+    .filter((employee) => String(employee?.employeeCode || "").trim())
+    .sort((left, right) => String(left.employeeCode).localeCompare(String(right.employeeCode)));
+}
+
+function populatePracticalEmployeeSelectors(selectedCode = "") {
+  const employees = getPracticalEmployees();
+  const safeSelectedCode = employees.some((employee) => employee.employeeCode === selectedCode)
+    ? selectedCode
+    : (employees[0]?.employeeCode || "");
+  const codeOptions = employees.map((employee) =>
+    `<option value="${escapeHtml(employee.employeeCode)}" ${employee.employeeCode === safeSelectedCode ? "selected" : ""}>${escapeHtml(employee.employeeCode)}</option>`
+  ).join("");
+  const nameOptions = employees.map((employee) =>
+    `<option value="${escapeHtml(employee.employeeCode)}" ${employee.employeeCode === safeSelectedCode ? "selected" : ""}>${escapeHtml(employee.fullName || employee.employeeCode)}</option>`
+  ).join("");
+
+  if (els.practicalEmployeeCodeSelect) els.practicalEmployeeCodeSelect.innerHTML = codeOptions;
+  if (els.practicalEmployeeNameSelect) els.practicalEmployeeNameSelect.innerHTML = nameOptions;
+}
+
+function syncPracticalEmployeeSelectors(source = "code") {
+  const selectedCode = source === "name"
+    ? els.practicalEmployeeNameSelect?.value
+    : els.practicalEmployeeCodeSelect?.value;
+  if (els.practicalEmployeeCodeSelect) els.practicalEmployeeCodeSelect.value = selectedCode || "";
+  if (els.practicalEmployeeNameSelect) els.practicalEmployeeNameSelect.value = selectedCode || "";
+}
+
+function renderPracticalRows() {
+  if (!els.practicalAssessmentRows) return;
+  els.practicalAssessmentRows.innerHTML = PRACTICAL_ASSESSMENT.items.map((item, index) => {
+    const defaultScore = item.defaultScore || "";
+    const criticalMark = item.critical ? `<span class="critical" title="หัวข้อสำคัญ">★</span>` : "";
+    return `
+      <tr class="${index > 0 && item.group !== PRACTICAL_ASSESSMENT.items[index - 1].group ? "group-start" : ""}">
+        <td>${index + 1}</td>
+        <td><strong>${escapeHtml(item.group)}</strong></td>
+        <td><strong>${escapeHtml(item.topic)}</strong> ${criticalMark}</td>
+        <td>${escapeHtml(item.standard)}</td>
+        <td>${escapeHtml(item.task)}</td>
+        <td>
+          <select class="practical-score-select" data-index="${index}">
+            <option value="" ${defaultScore === "" ? "selected" : ""}>-- เลือกคะแนน --</option>
+            <option value="2" ${defaultScore === "2" ? "selected" : ""}>2 - ถูกต้องด้วยตนเอง</option>
+            <option value="1" ${defaultScore === "1" ? "selected" : ""}>1 - ต้องแนะนำ</option>
+            <option value="0" ${defaultScore === "0" ? "selected" : ""}>0 - ไม่ถูกต้อง</option>
+            <option value="NA" ${defaultScore === "NA" ? "selected" : ""}>N/A - ไม่ใช้งาน</option>
+          </select>
+        </td>
+        <td><input class="practical-remark" data-index="${index}" type="text" /></td>
+      </tr>
+    `;
+  }).join("");
+
+  Array.from(document.querySelectorAll(".practical-score-select")).forEach((select) => {
+    select.addEventListener("change", calculatePracticalAssessmentScore);
+  });
+  calculatePracticalAssessmentScore();
+}
+
+function calculatePracticalAssessmentScore() {
+  const selects = Array.from(document.querySelectorAll(".practical-score-select"));
+  let earned = 0;
+  let max = 0;
+  let answered = 0;
+  let required = 0;
+  let criticalZero = 0;
+
+  selects.forEach((select, index) => {
+    const value = select.value;
+    if (value !== "NA") required += 1;
+    if (["2", "1", "0"].includes(value)) {
+      earned += Number(value);
+      max += 2;
+      answered += 1;
+      if (PRACTICAL_ASSESSMENT.items[index]?.critical && value === "0") criticalZero += 1;
+    }
+  });
+
+  const percent = max ? (earned / max) * 100 : 0;
+  setText(els.practicalEarnedScore, String(earned));
+  setText(els.practicalMaxScore, String(max));
+  setText(els.practicalPercent, `${percent.toFixed(2)}%`);
+  setText(els.practicalCriticalZero, String(criticalZero));
+
+  let result = "ยังประเมินไม่ครบ";
+  let detail = `ลงคะแนนแล้ว ${answered} จาก ${required} หัวข้อที่ใช้งาน`;
+  if (answered >= required && percent >= PRACTICAL_ASSESSMENT.passPercent && criticalZero === 0) {
+    result = "ผ่าน";
+    detail = "พนักงานผ่านเกณฑ์คะแนนและไม่มีหัวข้อสำคัญที่ได้ 0 คะแนน";
+  } else if (answered >= required && (percent >= PRACTICAL_ASSESSMENT.reviewPercent || criticalZero > 0)) {
+    result = "ทบทวนและประเมินซ้ำ";
+    detail = criticalZero > 0
+      ? `พบหัวข้อสำคัญได้ 0 คะแนน จำนวน ${criticalZero} หัวข้อ ต้องทบทวนและประเมินซ้ำ`
+      : "คะแนนอยู่ระหว่าง 70-79.99% ต้องทบทวนและประเมินซ้ำ";
+  } else if (answered >= required) {
+    result = "ไม่ผ่าน";
+    detail = "คะแนนต่ำกว่า 70% ต้องอบรมใหม่ก่อนประเมินซ้ำ";
+  }
+
+  setText(els.practicalResultText, `${result} - ${detail}`);
+  return { earned, max, percent, criticalZero, answered, required, result };
+}
+
+function renderPracticalAssessment() {
+  if (state.user?.role !== "admin") return;
+  if (!getPracticalEmployees().length && state.authToken) {
+    loadEmployees().then(() => renderPracticalAssessment()).catch((error) => {
+      showMessage(els.practicalMessage, `โหลดรายชื่อพนักงานไม่สำเร็จ: ${error.message}`, true);
+    });
+    return;
+  }
+
+  populatePracticalEmployeeSelectors(els.practicalEmployeeCodeSelect?.value || "");
+  if (els.practicalAssessorSelect && !els.practicalAssessorSelect.options.length) {
+    els.practicalAssessorSelect.innerHTML = TEXT.evaluators
+      .map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
+      .join("");
+  }
+  if (els.practicalAssessmentDate && !els.practicalAssessmentDate.value) {
+    els.practicalAssessmentDate.value = getLocalDateValue();
+  }
+  if (els.practicalAttemptNo && !els.practicalAttemptNo.value) {
+    els.practicalAttemptNo.value = "1";
+  }
+  if (!els.practicalAssessmentRows?.children.length) {
+    renderPracticalRows();
+  } else {
+    calculatePracticalAssessmentScore();
+  }
+}
+
+function collectPracticalAssessmentRows() {
+  return PRACTICAL_ASSESSMENT.items.map((item, index) => {
+    const scoreValue = document.querySelector(`.practical-score-select[data-index="${index}"]`)?.value || "";
+    const isNotApplicable = scoreValue === "NA";
+    return {
+      group: item.group,
+      topic: item.topic,
+      standard: item.standard,
+      task: item.task,
+      critical: Boolean(item.critical),
+      maxScore: isNotApplicable ? 0 : 2,
+      weight: 1,
+      score: ["2", "1", "0"].includes(scoreValue) ? Number(scoreValue) : 0,
+      rawScore: scoreValue,
+      remark: document.querySelector(`.practical-remark[data-index="${index}"]`)?.value || ""
+    };
+  });
+}
+
+async function savePracticalAssessment() {
+  const employeeCode = els.practicalEmployeeCodeSelect?.value || "";
+  const employee = getPracticalEmployees().find((item) => item.employeeCode === employeeCode);
+  const evaluator = els.practicalAssessorSelect?.value || "";
+  const summary = calculatePracticalAssessmentScore();
+
+  if (!employee) {
+    showMessage(els.practicalMessage, "กรุณาเลือกพนักงานที่ต้องการประเมิน", true);
+    return;
+  }
+  if (!evaluator) {
+    showMessage(els.practicalMessage, "กรุณาเลือกผู้ประเมิน", true);
+    return;
+  }
+  if (summary.answered < summary.required) {
+    showMessage(els.practicalMessage, "กรุณาลงคะแนนทุกหัวข้อที่ใช้งานก่อนบันทึก", true);
+    return;
+  }
+
+  const rows = collectPracticalAssessmentRows();
+  try {
+    await api("/api/evaluations", {
+      method: "POST",
+      body: JSON.stringify({
+        employeeId: employee.id,
+        employeeCode: employee.employeeCode,
+        employeeName: employee.fullName,
+        evaluator,
+        sectionTitle: PRACTICAL_ASSESSMENT.sectionTitle,
+        modelCode: PRACTICAL_ASSESSMENT.modelCode,
+        modelName: PRACTICAL_ASSESSMENT.modelName,
+        partCode: PRACTICAL_ASSESSMENT.partCode,
+        partName: `${PRACTICAL_ASSESSMENT.partName} / ${PRACTICAL_ASSESSMENT.machine}`,
+        totalScore: summary.earned,
+        maxScore: summary.max,
+        rows
+      })
+    });
+    showMessage(els.practicalMessage, "บันทึกผลประเมินภาคปฏิบัติ RG01 / MC16 เรียบร้อยแล้ว");
+    await loadEvaluations();
+  } catch (error) {
+    showMessage(els.practicalMessage, `บันทึกผลประเมินภาคปฏิบัติไม่สำเร็จ: ${error.message}`, true);
+  }
+}
+
+function resetPracticalAssessmentForm() {
+  if (els.practicalAttemptNo) els.practicalAttemptNo.value = "1";
+  if (els.practicalAssessmentDate) els.practicalAssessmentDate.value = getLocalDateValue();
+  showMessage(els.practicalMessage, "");
+  renderPracticalRows();
+}
+
 function getAdminEditorRoot() {
   const panel = document.getElementById("adminPanel");
   if (!panel) return null;
@@ -3623,7 +3904,22 @@ function bindEvents() {
   });
   els.restartExamBtn.addEventListener("click", resetExamSession);
   if (els.openPracticalAssessmentBtn) {
-    els.openPracticalAssessmentBtn.addEventListener("click", () => setView("evaluation"));
+    els.openPracticalAssessmentBtn.addEventListener("click", () => setView("practicalAssessment"));
+  }
+  if (els.practicalBackToExamBtn) {
+    els.practicalBackToExamBtn.addEventListener("click", () => setView("exam"));
+  }
+  if (els.practicalEmployeeCodeSelect) {
+    els.practicalEmployeeCodeSelect.addEventListener("change", () => syncPracticalEmployeeSelectors("code"));
+  }
+  if (els.practicalEmployeeNameSelect) {
+    els.practicalEmployeeNameSelect.addEventListener("change", () => syncPracticalEmployeeSelectors("name"));
+  }
+  if (els.savePracticalAssessmentBtn) {
+    els.savePracticalAssessmentBtn.addEventListener("click", savePracticalAssessment);
+  }
+  if (els.resetPracticalAssessmentBtn) {
+    els.resetPracticalAssessmentBtn.addEventListener("click", resetPracticalAssessmentForm);
   }
   els.prevBtn.addEventListener("click", () => {
     state.currentQuestionIndex = Math.max(state.currentQuestionIndex - 1, 0);
