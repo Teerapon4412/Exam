@@ -724,7 +724,7 @@ function downloadTextFile(filename, content, mimeType) {
 }
 
 function formatSkillMatrixCellForExcel(cell) {
-  if (!cell || !cell.hasExam) return "";
+  if (!cell || (!cell.hasExam && !cell.hasEvaluation)) return "";
   return Number.isFinite(Number(cell.finalPercent)) ? String(Math.round(Number(cell.finalPercent))) : "";
 }
 
@@ -1978,6 +1978,21 @@ function buildSkillMatrixRows() {
     partName: String(exam.title || exam.partName || "")
   }));
 
+  const hasPracticalResult = evaluations.some((evaluation) => evaluation.partCode === PRACTICAL_ASSESSMENT.partCode);
+  const hasPracticalColumn = columns.some((column) => column.partCode === PRACTICAL_ASSESSMENT.partCode);
+  if (hasPracticalResult && !hasPracticalColumn) {
+    columns.push({
+      examId: PRACTICAL_ASSESSMENT.partCode,
+      modelCode: PRACTICAL_ASSESSMENT.modelCode,
+      modelName: PRACTICAL_ASSESSMENT.modelName,
+      partCode: PRACTICAL_ASSESSMENT.partCode,
+      partName: "บันทึก Condition",
+      scoringMode: SCORING_MODES.examOnly,
+      scoringLabel: "Practical 100%",
+      isPractical: true
+    });
+  }
+
   const employeeRows = employees.map((employee) => ({
     employeeCode: employee.employeeCode,
     employeeName: employee.fullName || employee.employeeCode,
@@ -1993,7 +2008,9 @@ function buildSkillMatrixRows() {
       const evaluationPercent = evaluation
         ? Math.round((Number(evaluation.totalScore || 0) / Math.max(Number(evaluation.maxScore || 0), 1)) * 100)
         : 0;
-      const finalPercent = calculateFinalPercent(examPercent, evaluationPercent, column.scoringMode);
+      const finalPercent = column.isPractical
+        ? evaluationPercent
+        : calculateFinalPercent(examPercent, evaluationPercent, column.scoringMode);
       const band = getSkillBand(finalPercent);
 
       return {
@@ -2004,6 +2021,7 @@ function buildSkillMatrixRows() {
         hasEvaluation: Boolean(evaluation),
         scoringMode: column.scoringMode,
         scoringLabel: column.scoringLabel,
+        isPractical: Boolean(column.isPractical),
         displayScore: `${finalPercent}/100`
       };
     })
@@ -2018,13 +2036,16 @@ function buildSkillMatrixRows() {
 
 function renderSkillCircle(cell) {
   const ringColor = cell.bandColor && cell.skillPct > 0 ? cell.bandColor : "#dbe5f0";
+  const formulaLabel = cell.isPractical
+    ? "Practical"
+    : (cell.scoringMode === SCORING_MODES.examOnly ? "สอบ 100%" : "40/60");
   return `
     <div class="skill-circle-card">
       <div class="skill-circle" style="--skill-value:${cell.skillPct}; --skill-color:${ringColor};">
         <span>${cell.skillPct}%</span>
       </div>
       <div class="skill-circle-meta">${cell.displayScore}</div>
-      <div class="skill-circle-formula">${cell.scoringMode === SCORING_MODES.examOnly ? "สอบ 100%" : "40/60"}</div>
+      <div class="skill-circle-formula">${formulaLabel}</div>
     </div>
   `;
 }
@@ -2115,7 +2136,7 @@ function renderSkillMatrix() {
 
   const allVisibleCells = filteredEmployees.flatMap((employee) => visibleColumns.map((column) => employee.cells[column.index]));
   const completeCount = allVisibleCells.filter((cell) =>
-    cell.hasExam && (cell.scoringMode === SCORING_MODES.examOnly || cell.hasEvaluation)
+    cell.isPractical ? cell.hasEvaluation : cell.hasExam && (cell.scoringMode === SCORING_MODES.examOnly || cell.hasEvaluation)
   ).length;
   const avgFinal = allVisibleCells.length
     ? Math.round(allVisibleCells.reduce((sum, cell) => sum + cell.finalPercent, 0) / allVisibleCells.length)
