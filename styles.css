@@ -637,6 +637,15 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   margin-top: 18px;
 }
 
+.exam-overview-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
 .exam-spotlight-meta span {
   padding: 10px 14px;
   border-radius: 999px;
