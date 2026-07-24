@@ -41,6 +41,7 @@ const els = {
   progressPercent: $("progressPercent"),
   progressBar: $("progressBar"),
   summaryStatus: $("summaryStatus"),
+  openPracticalAssessmentBtn: $("openPracticalAssessmentBtn"),
   loadStatus: $("loadStatus"),
   submitExamBtn: $("submitExamBtn"),
   questionTitle: $("questionTitle"),
@@ -3621,6 +3622,9 @@ function bindEvents() {
     renderSelectors();
   });
   els.restartExamBtn.addEventListener("click", resetExamSession);
+  if (els.openPracticalAssessmentBtn) {
+    els.openPracticalAssessmentBtn.addEventListener("click", () => setView("evaluation"));
+  }
   els.prevBtn.addEventListener("click", () => {
     state.currentQuestionIndex = Math.max(state.currentQuestionIndex - 1, 0);
     renderQuestion();
