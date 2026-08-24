@@ -39,6 +39,18 @@ const els = {
   dashboardRecentBody: $("dashboardRecentBody"),
   dashboardResultCount: $("dashboardResultCount"),
   dashboardEmpty: $("dashboardEmpty"),
+  individualSummaryView: $("individualSummaryView"),
+  individualEmployeeSelect: $("individualEmployeeSelect"),
+  individualModelSelect: $("individualModelSelect"),
+  individualSearchBtn: $("individualSearchBtn"),
+  individualEmployeeCard: $("individualEmployeeCard"),
+  individualKpis: $("individualKpis"),
+  individualPartCount: $("individualPartCount"),
+  individualPartsBody: $("individualPartsBody"),
+  individualPartsEmpty: $("individualPartsEmpty"),
+  individualWrongTitle: $("individualWrongTitle"),
+  individualWrongStats: $("individualWrongStats"),
+  individualWrongList: $("individualWrongList"),
   pageHeading: $("pageHeading"),
   modelSelector: $("modelSelector"),
   examSelector: $("examSelector"),
@@ -176,6 +188,7 @@ const submitExamButtons = Array.from(document.querySelectorAll(".submit-exam-btn
 const TEXT = {
   titleByView: {
     dashboard: "ภาพรวมระบบข้อสอบ",
+    individualSummary: "สรุปผลสอบรายบุคคล",
     exam: "ทำข้อสอบออนไลน์",
     history: "ประวัติผลสอบ",
     trainingFocus: "Training Focus",
@@ -313,6 +326,11 @@ const state = {
   skillMatrixPage: 0,
   adminSaving: false,
   adminSaveStatus: { kind: "", message: "" },
+  individualSummary: {
+    employeeCode: "",
+    modelCode: "",
+    examId: ""
+  },
   adminEditor: {
     draft: null,
     selectedModelCode: "",
@@ -1031,6 +1049,7 @@ function setView(view) {
   state.activeView = view;
   const views = {
     dashboard: els.dashboardView,
+    individualSummary: els.individualSummaryView,
     exam: els.examView,
     history: els.historyView,
     trainingFocus: els.trainingFocusView,
@@ -1057,6 +1076,8 @@ function setView(view) {
 
   if (view === "dashboard") {
     renderDashboard();
+  } else if (view === "individualSummary") {
+    renderIndividualSummary();
   } else if (view === "history") {
     renderHistory();
   } else if (view === "trainingFocus") {
@@ -1647,6 +1668,7 @@ async function loadExams() {
     renderBankSummary();
     resetExamSession();
     renderSelectors();
+    if (state.user?.role === "admin") renderIndividualSummary();
   } catch (error) {
     state.bank = { title: "Factory Online Exam", source: "default", examSets: [] };
     syncAdminDraftFromBank();
@@ -1666,6 +1688,7 @@ async function loadResults() {
     renderProfile();
     if (state.user?.role === "admin") {
       renderDashboard();
+      renderIndividualSummary();
       renderSkillMatrix();
       syncEvaluationSelectors();
     }
@@ -1675,6 +1698,7 @@ async function loadResults() {
     renderProfile();
     if (state.user?.role === "admin") {
       renderDashboard();
+      renderIndividualSummary();
       renderSkillMatrix();
       syncEvaluationSelectors();
     }
@@ -1965,6 +1989,257 @@ function exportDashboardExcel() {
   const html = `<!doctype html><html lang="th"><head><meta charset="utf-8"><style>table{border-collapse:collapse;font-family:Tahoma,sans-serif}td{border:1px solid #cbd5e1;padding:8px;mso-number-format:"\\@"}</style></head><body><h2>Factory Online Exam - Dashboard</h2><table>${table}</table></body></html>`;
   const timestamp = new Date().toISOString().slice(0, 10);
   downloadTextFile(`Factory_Exam_Dashboard_${timestamp}.xls`, `\ufeff${html}`, "application/vnd.ms-excel;charset=utf-8");
+}
+
+function getIndividualEmployees() {
+  return (state.employees || [])
+    .filter((employee) => employee.isActive !== false && String(employee.employeeCode || "").trim())
+    .sort((left, right) => String(left.employeeCode).localeCompare(String(right.employeeCode)));
+}
+
+function getIndividualModels() {
+  const models = new Map();
+  (state.bank?.examSets || []).forEach((exam) => {
+    const modelCode = String(exam.modelCode || exam.modelName || "").trim();
+    if (!modelCode || models.has(modelCode)) return;
+    models.set(modelCode, {
+      modelCode,
+      modelName: String(exam.modelName || modelCode).trim()
+    });
+  });
+  return Array.from(models.values());
+}
+
+function getIndividualResultEmployeeCode(result) {
+  return String(result.employee_code || result.employeeCode || result.username || "").trim();
+}
+
+function getIndividualAttempts(employeeCode, exam) {
+  return (state.results || [])
+    .filter((result) => {
+      if (getIndividualResultEmployeeCode(result) !== employeeCode) return false;
+      const sameExam = String(result.exam_id || "") === String(exam.id || "");
+      const samePart = String(result.part_code || "") === String(exam.partCode || "")
+        && String(result.model_code || "") === String(exam.modelCode || "");
+      return sameExam || samePart;
+    })
+    .sort((left, right) => new Date(right.submitted_at || 0) - new Date(left.submitted_at || 0));
+}
+
+function syncIndividualSelectors() {
+  if (!els.individualEmployeeSelect || !els.individualModelSelect) return { employee: null, model: null };
+  const employees = getIndividualEmployees();
+  const models = getIndividualModels();
+  const requestedEmployee = state.individualSummary.employeeCode || els.individualEmployeeSelect.value;
+  const requestedModel = state.individualSummary.modelCode || els.individualModelSelect.value;
+  const employee = employees.find((item) => item.employeeCode === requestedEmployee) || employees[0] || null;
+  const model = models.find((item) => item.modelCode === requestedModel) || models[0] || null;
+
+  els.individualEmployeeSelect.innerHTML = employees.length
+    ? employees.map((item) => `<option value="${escapeHtml(item.employeeCode)}">${escapeHtml(item.employeeCode)} - ${escapeHtml(item.fullName || item.employeeCode)}</option>`).join("")
+    : `<option value="">ไม่พบข้อมูลพนักงาน</option>`;
+  els.individualModelSelect.innerHTML = models.length
+    ? models.map((item) => `<option value="${escapeHtml(item.modelCode)}">${escapeHtml(item.modelCode)}${item.modelName !== item.modelCode ? ` - ${escapeHtml(item.modelName)}` : ""}</option>`).join("")
+    : `<option value="">ไม่พบ Model</option>`;
+
+  state.individualSummary.employeeCode = employee?.employeeCode || "";
+  state.individualSummary.modelCode = model?.modelCode || "";
+  els.individualEmployeeSelect.value = state.individualSummary.employeeCode;
+  els.individualModelSelect.value = state.individualSummary.modelCode;
+  return { employee, model };
+}
+
+function renderIndividualEmployee(employee) {
+  if (!els.individualEmployeeCard) return;
+  if (!employee) {
+    els.individualEmployeeCard.innerHTML = `<div class="empty-state">กรุณาเพิ่มข้อมูลพนักงานก่อนใช้งานสรุปรายบุคคล</div>`;
+    return;
+  }
+  const fallback = getEmployeeAvatarFallback(employee.fullName || employee.employeeCode);
+  els.individualEmployeeCard.innerHTML = `
+    <div class="individual-employee-identity">
+      ${employee.photoUrl
+        ? `<img class="employee-avatar individual-avatar" src="${escapeHtml(employee.photoUrl)}" alt="${escapeHtml(employee.fullName || employee.employeeCode)}" />`
+        : `<div class="employee-avatar placeholder individual-avatar">${escapeHtml(fallback)}</div>`}
+      <div>
+        <strong>${escapeHtml(employee.fullName || employee.employeeCode)}</strong>
+        <span>${escapeHtml(employee.employeeCode)}</span>
+      </div>
+    </div>
+    <div class="individual-employee-meta"><span>แผนก</span><strong>${escapeHtml(employee.department || "-")}</strong></div>
+    <div class="individual-employee-meta"><span>ตำแหน่ง</span><strong>${escapeHtml(employee.position || "-")}</strong></div>
+    <div class="individual-employee-meta"><span>สถานะ</span><strong class="individual-active-status">กำลังใช้งาน</strong></div>
+  `;
+}
+
+function buildIndividualPartRows(employeeCode, modelCode) {
+  return (state.bank?.examSets || [])
+    .filter((exam) => String(exam.modelCode || "") === modelCode)
+    .map((exam) => {
+      const attempts = getIndividualAttempts(employeeCode, exam);
+      const latest = attempts[0] || null;
+      return {
+        exam,
+        attempts,
+        latest,
+        status: !latest ? "pending" : (latest.passed ? "pass" : "fail")
+      };
+    });
+}
+
+function renderIndividualKpis(rows) {
+  if (!els.individualKpis) return;
+  const completed = rows.filter((row) => row.latest);
+  const passed = rows.filter((row) => row.status === "pass").length;
+  const failed = rows.filter((row) => row.status === "fail").length;
+  const average = completed.length
+    ? Math.round(completed.reduce((sum, row) => sum + Number(row.latest.percent || 0), 0) / completed.length)
+    : 0;
+  const items = [
+    { label: "Part ทั้งหมด", value: rows.length, tone: "blue" },
+    { label: "สอบแล้ว", value: completed.length, tone: "green" },
+    { label: "ยังไม่สอบ", value: rows.length - completed.length, tone: "orange" },
+    { label: "สอบผ่าน", value: passed, tone: "green" },
+    { label: "ไม่ผ่าน", value: failed, tone: "red" },
+    { label: "คะแนนเฉลี่ย", value: `${average}%`, tone: "blue" }
+  ];
+  els.individualKpis.innerHTML = items.map((item) => `
+    <article class="individual-kpi-card ${item.tone}">
+      <span>${item.label}</span>
+      <strong>${item.value}</strong>
+    </article>
+  `).join("");
+}
+
+function getIndividualStatusLabel(status) {
+  if (status === "pass") return "ผ่าน";
+  if (status === "fail") return "ไม่ผ่าน";
+  return "ยังไม่สอบ";
+}
+
+function renderIndividualParts(rows) {
+  if (!els.individualPartsBody) return;
+  setText(els.individualPartCount, `${rows.length} Part`);
+  els.individualPartsEmpty?.classList.toggle("hidden", rows.length > 0);
+
+  if (!rows.some((row) => String(row.exam.id) === String(state.individualSummary.examId))) {
+    const firstCompleted = rows.find((row) => row.latest);
+    state.individualSummary.examId = String(firstCompleted?.exam.id || rows[0]?.exam.id || "");
+  }
+
+  els.individualPartsBody.innerHTML = rows.map((row) => {
+    const selected = String(row.exam.id) === String(state.individualSummary.examId);
+    const title = row.exam.partCode
+      ? `${row.exam.partCode}${row.exam.title && row.exam.title !== row.exam.partCode ? ` - ${row.exam.title}` : ""}`
+      : (row.exam.title || row.exam.id || "-");
+    return `
+      <tr class="${selected ? "selected" : ""}">
+        <td><strong>${escapeHtml(title)}</strong></td>
+        <td><span class="individual-status ${row.status}">${getIndividualStatusLabel(row.status)}</span></td>
+        <td>${row.latest ? `<strong>${Number(row.latest.percent || 0)}%</strong><small>${Number(row.latest.score || 0)}/${Number(row.latest.total_score || 0)}</small>` : "-"}</td>
+        <td>${row.attempts.length}</td>
+        <td>${row.latest ? formatDateTime(row.latest.submitted_at) : "-"}</td>
+        <td><button class="individual-detail-btn" data-individual-exam-id="${escapeHtml(row.exam.id)}" type="button" aria-label="ดูรายละเอียด ${escapeHtml(title)}">ดู</button></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function getIndividualAnswerLabel(review, type) {
+  const isSelected = type === "selected";
+  const index = isSelected ? review.selectedAnswer : review.correctAnswer;
+  const key = String(isSelected ? review.selectedKey || "" : review.correctKey || "").trim()
+    || (Number.isInteger(index) ? String.fromCharCode(65 + Number(index)) : "");
+  const text = String(isSelected ? review.selectedText || "" : review.correctText || "").trim();
+  if (isSelected && index === null) return "ไม่ได้ตอบ";
+  return [key, text].filter(Boolean).join(" - ") || "-";
+}
+
+function buildIndividualWrongItems(attempts) {
+  const wrongMap = new Map();
+  attempts.forEach((attempt) => {
+    (Array.isArray(attempt.review) ? attempt.review : []).forEach((review, index) => {
+      if (review.isCorrect) return;
+      const number = Number(review.number || index + 1);
+      const key = `${number}::${String(review.text || "")}`;
+      if (!wrongMap.has(key)) {
+        wrongMap.set(key, {
+          number,
+          text: String(review.text || `ข้อที่ ${number}`),
+          selected: getIndividualAnswerLabel(review, "selected"),
+          correct: getIndividualAnswerLabel(review, "correct"),
+          count: 0
+        });
+      }
+      wrongMap.get(key).count += 1;
+    });
+  });
+  return Array.from(wrongMap.values()).sort((left, right) => left.number - right.number);
+}
+
+function renderIndividualWrongDetails(rows) {
+  if (!els.individualWrongTitle || !els.individualWrongStats || !els.individualWrongList) return;
+  const selected = rows.find((row) => String(row.exam.id) === String(state.individualSummary.examId)) || rows[0] || null;
+  if (!selected) {
+    setText(els.individualWrongTitle, "ข้อที่ตอบผิด");
+    els.individualWrongStats.innerHTML = "";
+    els.individualWrongList.innerHTML = `<div class="individual-wrong-empty">ไม่พบ Part ใน Model ที่เลือก</div>`;
+    return;
+  }
+
+  const partLabel = selected.exam.partCode || selected.exam.title || selected.exam.id;
+  setText(els.individualWrongTitle, `ข้อที่ตอบผิดใน ${partLabel}`);
+  if (!selected.latest) {
+    els.individualWrongStats.innerHTML = `
+      <div><span>คะแนนล่าสุด</span><strong>-</strong></div>
+      <div><span>ผิด</span><strong>-</strong></div>
+      <div><span>สอบทั้งหมด</span><strong>0 ครั้ง</strong></div>
+    `;
+    els.individualWrongList.innerHTML = `<div class="individual-wrong-empty pending">พนักงานยังไม่ได้สอบ Part นี้</div>`;
+    return;
+  }
+
+  const latestReview = Array.isArray(selected.latest.review) ? selected.latest.review : [];
+  const latestWrongCount = latestReview.length
+    ? latestReview.filter((review) => !review.isCorrect).length
+    : Number(selected.latest.wrong_count || 0);
+  const wrongItems = buildIndividualWrongItems(selected.attempts);
+  els.individualWrongStats.innerHTML = `
+    <div><span>คะแนนล่าสุด</span><strong class="${selected.latest.passed ? "pass" : "fail"}">${Number(selected.latest.percent || 0)}%</strong></div>
+    <div><span>ผิด</span><strong class="fail">${latestWrongCount} ข้อ</strong></div>
+    <div><span>สอบทั้งหมด</span><strong>${selected.attempts.length} ครั้ง</strong></div>
+  `;
+
+  if (!wrongItems.length) {
+    els.individualWrongList.innerHTML = latestReview.length
+      ? `<div class="individual-wrong-empty pass">ผลสอบ Part นี้ไม่มีข้อที่ตอบผิด</div>`
+      : `<div class="individual-wrong-empty">ผลสอบเดิมยังไม่มีรายละเอียดคำตอบรายข้อ</div>`;
+    return;
+  }
+
+  els.individualWrongList.innerHTML = wrongItems.map((item, index) => `
+    <article class="individual-wrong-item">
+      <span class="individual-wrong-number">${index + 1}</span>
+      <div class="individual-wrong-copy">
+        <strong>ข้อ ${item.number}: ${escapeHtml(item.text)}</strong>
+        <div class="individual-answer-tags">
+          <span class="selected">เลือก ${escapeHtml(item.selected)}</span>
+          <span class="correct">คำตอบที่ถูก ${escapeHtml(item.correct)}</span>
+        </div>
+      </div>
+      <span class="individual-wrong-frequency">ผิด <strong>${item.count}</strong> จาก ${selected.attempts.length} ครั้ง</span>
+    </article>
+  `).join("");
+}
+
+function renderIndividualSummary() {
+  if (!els.individualSummaryView || state.user?.role !== "admin") return;
+  const { employee, model } = syncIndividualSelectors();
+  renderIndividualEmployee(employee);
+  const rows = employee && model ? buildIndividualPartRows(employee.employeeCode, model.modelCode) : [];
+  renderIndividualKpis(rows);
+  renderIndividualParts(rows);
+  renderIndividualWrongDetails(rows);
 }
 
 function getSkillBand(percent) {
@@ -2683,6 +2958,7 @@ async function loadEmployees() {
   const payload = await api("/api/admin/employees");
   state.employees = Array.isArray(payload.employees) ? payload.employees : [];
   renderDashboard();
+  renderIndividualSummary();
   renderSkillMatrix();
   renderEvaluationForm();
 }
@@ -4108,6 +4384,7 @@ function logout() {
   state.adminEditor.managedEmployees = [];
   state.adminEditor.employeeSaveStatus = { kind: "", message: "" };
   state.adminEditor.employeeSaving = false;
+  state.individualSummary = { employeeCode: "", modelCode: "", examId: "" };
   resetAdminEmployeeDraft();
   window.localStorage.removeItem(STORAGE_KEYS.authToken);
   window.localStorage.removeItem(STORAGE_KEYS.authUser);
@@ -4227,6 +4504,22 @@ function bindEvents() {
   if (els.dashboardExportBtn) {
     els.dashboardExportBtn.addEventListener("click", exportDashboardExcel);
   }
+  if (els.individualSearchBtn) {
+    els.individualSearchBtn.addEventListener("click", () => {
+      state.individualSummary.employeeCode = els.individualEmployeeSelect?.value || "";
+      state.individualSummary.modelCode = els.individualModelSelect?.value || "";
+      state.individualSummary.examId = "";
+      renderIndividualSummary();
+    });
+  }
+  if (els.individualPartsBody) {
+    els.individualPartsBody.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-individual-exam-id]");
+      if (!button) return;
+      state.individualSummary.examId = button.dataset.individualExamId || "";
+      renderIndividualSummary();
+    });
+  }
 
   els.evaluationModelSelect.addEventListener("change", renderEvaluationForm);
   els.evaluationPartSelect.addEventListener("change", () => syncEvaluationSelectors());
@@ -4328,6 +4621,7 @@ function applyStaticThaiText() {
 
   const navLabels = {
     dashboard: "Dashboard",
+    individualSummary: "สรุปรายบุคคล",
     exam: "ทำข้อสอบ",
     history: "ประวัติผลสอบ",
     profile: "ข้อมูลพนักงาน",
