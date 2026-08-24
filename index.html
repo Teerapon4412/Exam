@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20260724-practical-condition-title" />
+    <link rel="stylesheet" href="./styles.css?v=20260824-admin-dashboard" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -63,6 +63,7 @@
           <div class="side-block">
             <p class="side-label">เมนูหลัก</p>
             <nav class="side-nav">
+              <button class="nav-item admin-only hidden" data-view="dashboard" type="button">Dashboard</button>
               <button class="nav-item active" data-view="exam" type="button">ทำข้อสอบ</button>
               <button class="nav-item" data-view="history" type="button">ประวัติผลสอบ</button>
               <button class="nav-item" data-view="profile" type="button">ข้อมูลพนักงาน</button>
@@ -102,6 +103,83 @@
                 </div>
               </div>
             </header>
+
+          <section id="dashboardView" class="view-section hidden">
+            <div class="dashboard-toolbar">
+              <div>
+                <p class="card-label">Admin Dashboard</p>
+                <h3>ภาพรวมระบบข้อสอบ</h3>
+                <p class="section-intro">ติดตามการเข้าสอบ ผลสอบ และความพร้อมของพนักงานจากข้อมูลล่าสุดในระบบ</p>
+              </div>
+              <div class="dashboard-toolbar-actions">
+                <label class="dashboard-period-field">
+                  <span>ช่วงเวลา</span>
+                  <select id="dashboardPeriodFilter">
+                    <option value="7">7 วันที่ผ่านมา</option>
+                    <option value="30" selected>30 วันที่ผ่านมา</option>
+                    <option value="90">90 วันที่ผ่านมา</option>
+                    <option value="0">ทั้งหมด</option>
+                  </select>
+                </label>
+                <button id="dashboardExportBtn" class="primary-btn dashboard-export-btn" type="button">ส่งออก Excel</button>
+              </div>
+            </div>
+
+            <div id="dashboardKpis" class="dashboard-kpi-grid"></div>
+
+            <div class="dashboard-chart-grid">
+              <section class="panel dashboard-chart-card">
+                <div class="dashboard-card-head">
+                  <div>
+                    <p class="card-label">Weekly Results</p>
+                    <h3>ผลการสอบ 7 วันล่าสุด</h3>
+                  </div>
+                  <div class="dashboard-legend">
+                    <span><i class="legend-dot pass"></i>ผ่าน</span>
+                    <span><i class="legend-dot fail"></i>ไม่ผ่าน</span>
+                  </div>
+                </div>
+                <div id="dashboardWeeklyChart" class="dashboard-weekly-chart"></div>
+              </section>
+
+              <section class="panel dashboard-chart-card">
+                <div class="dashboard-card-head">
+                  <div>
+                    <p class="card-label">Department</p>
+                    <h3>ผลสอบแยกตามแผนก</h3>
+                  </div>
+                </div>
+                <div id="dashboardDepartmentChart" class="dashboard-department-chart"></div>
+              </section>
+            </div>
+
+            <section class="panel dashboard-recent-card">
+              <div class="dashboard-card-head">
+                <div>
+                  <p class="card-label">Recent Results</p>
+                  <h3>ผลการสอบล่าสุด</h3>
+                </div>
+                <span id="dashboardResultCount" class="dashboard-result-count">0 รายการ</span>
+              </div>
+              <div class="dashboard-table-wrap">
+                <table class="dashboard-results-table">
+                  <thead>
+                    <tr>
+                      <th>รหัส</th>
+                      <th>ชื่อพนักงาน</th>
+                      <th>แผนก</th>
+                      <th>ชุดข้อสอบ</th>
+                      <th>คะแนน</th>
+                      <th>สถานะ</th>
+                      <th>วันที่</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboardRecentBody"></tbody>
+                </table>
+                <div id="dashboardEmpty" class="empty-state hidden">ยังไม่มีผลสอบในช่วงเวลาที่เลือก</div>
+              </div>
+            </section>
+          </section>
 
           <section id="examView" class="view-section">
             <section class="exam-hero-shell">
@@ -679,6 +757,6 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20260724-practical-condition-labels"></script>
+    <script src="./script.js?v=20260824-admin-dashboard"></script>
   </body>
 </html>
