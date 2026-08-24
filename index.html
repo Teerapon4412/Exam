@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20260824-admin-dashboard" />
+    <link rel="stylesheet" href="./styles.css?v=20260824-individual-summary" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -64,6 +64,7 @@
             <p class="side-label">เมนูหลัก</p>
             <nav class="side-nav">
               <button class="nav-item admin-only hidden" data-view="dashboard" type="button">Dashboard</button>
+              <button class="nav-item admin-only hidden" data-view="individualSummary" type="button">สรุปรายบุคคล</button>
               <button class="nav-item active" data-view="exam" type="button">ทำข้อสอบ</button>
               <button class="nav-item" data-view="history" type="button">ประวัติผลสอบ</button>
               <button class="nav-item" data-view="profile" type="button">ข้อมูลพนักงาน</button>
@@ -179,6 +180,71 @@
                 <div id="dashboardEmpty" class="empty-state hidden">ยังไม่มีผลสอบในช่วงเวลาที่เลือก</div>
               </div>
             </section>
+          </section>
+
+          <section id="individualSummaryView" class="view-section hidden">
+            <section class="panel individual-filter-panel">
+              <div class="individual-page-head">
+                <div>
+                  <p class="card-label">Individual Exam Summary</p>
+                  <h3>สรุปผลสอบรายบุคคล</h3>
+                  <p class="section-intro">ตรวจสอบ Part ที่สอบแล้ว รายการที่ยังไม่สอบ และข้อที่ตอบผิด</p>
+                </div>
+              </div>
+              <div class="individual-filter-grid">
+                <label class="field">
+                  <span>พนักงาน</span>
+                  <select id="individualEmployeeSelect"></select>
+                </label>
+                <label class="field">
+                  <span>Model</span>
+                  <select id="individualModelSelect"></select>
+                </label>
+                <button id="individualSearchBtn" class="primary-btn" type="button">ค้นหา</button>
+              </div>
+            </section>
+
+            <section id="individualEmployeeCard" class="panel individual-employee-card"></section>
+            <div id="individualKpis" class="individual-kpi-grid"></div>
+
+            <div class="individual-workspace">
+              <section class="panel individual-parts-panel">
+                <div class="individual-card-head">
+                  <div>
+                    <p class="card-label">Part Status</p>
+                    <h3>สถานะการสอบแต่ละ Part</h3>
+                  </div>
+                  <span id="individualPartCount" class="dashboard-result-count">0 Part</span>
+                </div>
+                <div class="individual-table-wrap">
+                  <table class="individual-parts-table">
+                    <thead>
+                      <tr>
+                        <th>Part</th>
+                        <th>สถานะ</th>
+                        <th>คะแนนล่าสุด</th>
+                        <th>จำนวนครั้ง</th>
+                        <th>วันที่ล่าสุด</th>
+                        <th>รายละเอียด</th>
+                      </tr>
+                    </thead>
+                    <tbody id="individualPartsBody"></tbody>
+                  </table>
+                  <div id="individualPartsEmpty" class="empty-state hidden">ไม่พบ Part ใน Model ที่เลือก</div>
+                </div>
+              </section>
+
+              <section class="panel individual-wrong-panel">
+                <div class="individual-card-head">
+                  <div>
+                    <p class="card-label">Wrong Answers</p>
+                    <h3 id="individualWrongTitle">ข้อที่ตอบผิด</h3>
+                  </div>
+                </div>
+                <div id="individualWrongStats" class="individual-wrong-stats"></div>
+                <div id="individualWrongList" class="individual-wrong-list"></div>
+              </section>
+            </div>
           </section>
 
           <section id="examView" class="view-section">
@@ -757,6 +823,6 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20260824-admin-dashboard"></script>
+    <script src="./script.js?v=20260824-individual-summary"></script>
   </body>
 </html>
