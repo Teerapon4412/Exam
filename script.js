@@ -30,6 +30,15 @@ const els = {
   evaluationView: $("evaluationView"),
   practicalAssessmentView: $("practicalAssessmentView"),
   adminView: $("adminView"),
+  dashboardView: $("dashboardView"),
+  dashboardPeriodFilter: $("dashboardPeriodFilter"),
+  dashboardExportBtn: $("dashboardExportBtn"),
+  dashboardKpis: $("dashboardKpis"),
+  dashboardWeeklyChart: $("dashboardWeeklyChart"),
+  dashboardDepartmentChart: $("dashboardDepartmentChart"),
+  dashboardRecentBody: $("dashboardRecentBody"),
+  dashboardResultCount: $("dashboardResultCount"),
+  dashboardEmpty: $("dashboardEmpty"),
   pageHeading: $("pageHeading"),
   modelSelector: $("modelSelector"),
   examSelector: $("examSelector"),
@@ -166,6 +175,7 @@ const submitExamButtons = Array.from(document.querySelectorAll(".submit-exam-btn
 
 const TEXT = {
   titleByView: {
+    dashboard: "ภาพรวมระบบข้อสอบ",
     exam: "ทำข้อสอบออนไลน์",
     history: "ประวัติผลสอบ",
     trainingFocus: "Training Focus",
@@ -1020,6 +1030,7 @@ function resetExamSession() {
 function setView(view) {
   state.activeView = view;
   const views = {
+    dashboard: els.dashboardView,
     exam: els.examView,
     history: els.historyView,
     trainingFocus: els.trainingFocusView,
@@ -1044,7 +1055,9 @@ function setView(view) {
 
   setText(els.pageHeading, TEXT.titleByView[view] || "Factory Online Exam");
 
-  if (view === "history") {
+  if (view === "dashboard") {
+    renderDashboard();
+  } else if (view === "history") {
     renderHistory();
   } else if (view === "trainingFocus") {
     renderTrainingFocus();
@@ -1652,6 +1665,7 @@ async function loadResults() {
     renderHistory();
     renderProfile();
     if (state.user?.role === "admin") {
+      renderDashboard();
       renderSkillMatrix();
       syncEvaluationSelectors();
     }
@@ -1660,6 +1674,7 @@ async function loadResults() {
     renderHistory();
     renderProfile();
     if (state.user?.role === "admin") {
+      renderDashboard();
       renderSkillMatrix();
       syncEvaluationSelectors();
     }
@@ -1747,6 +1762,209 @@ function renderProfile() {
     els.profileLastScore,
     latest ? `${latest.score}/${latest.total_score} (${latest.percent}%)` : "-"
   );
+}
+
+function getDashboardDateKey(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+}
+
+function getDashboardFilteredResults() {
+  const days = Number(els.dashboardPeriodFilter?.value || 30);
+  const results = Array.isArray(state.results) ? [...state.results] : [];
+  if (!days) return results;
+
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - Math.max(days - 1, 0));
+  return results.filter((item) => {
+    const submittedAt = new Date(item.submitted_at || item.submittedAt || 0);
+    return !Number.isNaN(submittedAt.getTime()) && submittedAt >= start;
+  });
+}
+
+function getDashboardEmployeeCode(result) {
+  return String(result.employee_code || result.employeeCode || result.user_id || result.username || "").trim();
+}
+
+function getDashboardDepartment(result, employeeMap) {
+  const employeeCode = getDashboardEmployeeCode(result);
+  return String(result.department || employeeMap.get(employeeCode)?.department || "ไม่ระบุแผนก").trim() || "ไม่ระบุแผนก";
+}
+
+function renderDashboardKpis(results) {
+  if (!els.dashboardKpis) return;
+  const activeEmployees = (state.employees || []).filter((employee) => employee.isActive !== false);
+  const latestByEmployee = new Map();
+
+  [...results]
+    .sort((left, right) => new Date(right.submitted_at || 0) - new Date(left.submitted_at || 0))
+    .forEach((result) => {
+      const key = getDashboardEmployeeCode(result);
+      if (key && !latestByEmployee.has(key)) latestByEmployee.set(key, result);
+    });
+
+  const participated = latestByEmployee.size;
+  const passed = Array.from(latestByEmployee.values()).filter((result) => result.passed).length;
+  const waiting = Math.max(activeEmployees.length - participated, 0);
+  const passRate = participated ? Math.round((passed / participated) * 1000) / 10 : 0;
+  const kpis = [
+    { label: "พนักงานทั้งหมด", value: activeEmployees.length, suffix: "คน", icon: "คน", tone: "blue", note: "พนักงานที่เปิดใช้งาน" },
+    { label: "เข้าสอบแล้ว", value: participated, suffix: "คน", icon: "สอบ", tone: "indigo", note: "ในช่วงเวลาที่เลือก" },
+    { label: "สอบผ่าน", value: passed, suffix: "คน", icon: "ผ่าน", tone: "green", note: "ยึดผลสอบล่าสุดของแต่ละคน" },
+    { label: "ยังไม่เข้าสอบ", value: waiting, suffix: "คน", icon: "รอ", tone: "orange", note: "เทียบกับพนักงานทั้งหมด" },
+    { label: "อัตราการผ่าน", value: passRate, suffix: "%", icon: "%", tone: "cyan", note: "จากผู้เข้าสอบในช่วงเวลา" }
+  ];
+
+  els.dashboardKpis.innerHTML = kpis.map((item) => `
+    <article class="dashboard-kpi-card">
+      <div class="dashboard-kpi-icon ${item.tone}">${item.icon}</div>
+      <div>
+        <span>${item.label}</span>
+        <strong>${item.value}<small>${item.suffix}</small></strong>
+        <p>${item.note}</p>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderDashboardWeeklyChart(results) {
+  if (!els.dashboardWeeklyChart) return;
+  const days = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let offset = 6; offset >= 0; offset -= 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - offset);
+    days.push({
+      key: getDashboardDateKey(date),
+      label: date.toLocaleDateString("th-TH", { weekday: "short", timeZone: "Asia/Bangkok" }),
+      dateLabel: date.toLocaleDateString("th-TH", { day: "numeric", month: "short", timeZone: "Asia/Bangkok" }),
+      passed: 0,
+      failed: 0
+    });
+  }
+
+  const dayMap = new Map(days.map((day) => [day.key, day]));
+  results.forEach((result) => {
+    const day = dayMap.get(getDashboardDateKey(result.submitted_at || result.submittedAt));
+    if (!day) return;
+    if (result.passed) day.passed += 1;
+    else day.failed += 1;
+  });
+
+  const maxValue = Math.max(1, ...days.flatMap((day) => [day.passed, day.failed]));
+  els.dashboardWeeklyChart.innerHTML = days.map((day) => {
+    const passHeight = day.passed ? Math.max(8, Math.round((day.passed / maxValue) * 100)) : 0;
+    const failHeight = day.failed ? Math.max(8, Math.round((day.failed / maxValue) * 100)) : 0;
+    return `
+      <div class="dashboard-day-column" title="${day.dateLabel}: ผ่าน ${day.passed}, ไม่ผ่าน ${day.failed}">
+        <div class="dashboard-bar-area">
+          <div class="dashboard-bar pass" style="height:${passHeight}%"><span>${day.passed || ""}</span></div>
+          <div class="dashboard-bar fail" style="height:${failHeight}%"><span>${day.failed || ""}</span></div>
+        </div>
+        <strong>${day.label}</strong>
+        <small>${day.dateLabel}</small>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderDashboardDepartmentChart(results) {
+  if (!els.dashboardDepartmentChart) return;
+  const employeeMap = new Map((state.employees || []).map((employee) => [employee.employeeCode, employee]));
+  const totals = new Map();
+  results.forEach((result) => {
+    const department = getDashboardDepartment(result, employeeMap);
+    totals.set(department, (totals.get(department) || 0) + 1);
+  });
+
+  const rows = Array.from(totals.entries())
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 6);
+  if (!rows.length) {
+    els.dashboardDepartmentChart.innerHTML = `<div class="dashboard-chart-empty">ยังไม่มีข้อมูลแผนกในช่วงเวลาที่เลือก</div>`;
+    return;
+  }
+
+  const maxValue = Math.max(...rows.map((row) => row[1]), 1);
+  els.dashboardDepartmentChart.innerHTML = rows.map(([department, count]) => `
+    <div class="dashboard-department-row">
+      <span title="${escapeHtml(department)}">${escapeHtml(department)}</span>
+      <div class="dashboard-department-track">
+        <div class="dashboard-department-fill" style="width:${Math.max(5, Math.round((count / maxValue) * 100))}%"></div>
+      </div>
+      <strong>${count}</strong>
+    </div>
+  `).join("");
+}
+
+function renderDashboardRecentResults(results) {
+  if (!els.dashboardRecentBody) return;
+  const employeeMap = new Map((state.employees || []).map((employee) => [employee.employeeCode, employee]));
+  const sorted = [...results].sort(
+    (left, right) => new Date(right.submitted_at || 0) - new Date(left.submitted_at || 0)
+  );
+  const recent = sorted.slice(0, 10);
+
+  setText(els.dashboardResultCount, `${results.length} รายการ`);
+  els.dashboardEmpty?.classList.toggle("hidden", recent.length > 0);
+  els.dashboardRecentBody.innerHTML = recent.map((result) => {
+    const employeeCode = getDashboardEmployeeCode(result) || "-";
+    const employee = employeeMap.get(employeeCode);
+    const fullName = result.full_name || result.fullName || employee?.fullName || result.username || "-";
+    const examTitle = result.exam_title || result.part_code || result.exam_id || "-";
+    return `
+      <tr>
+        <td><strong>${escapeHtml(employeeCode)}</strong></td>
+        <td>${escapeHtml(fullName)}</td>
+        <td>${escapeHtml(getDashboardDepartment(result, employeeMap))}</td>
+        <td><span class="dashboard-exam-title">${escapeHtml(examTitle)}</span></td>
+        <td><strong>${Number(result.score || 0)}/${Number(result.total_score || 0)}</strong><small>${Number(result.percent || 0)}%</small></td>
+        <td><span class="dashboard-status ${result.passed ? "pass" : "fail"}">${result.passed ? "ผ่าน" : "ไม่ผ่าน"}</span></td>
+        <td>${formatDateTime(result.submitted_at)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderDashboard() {
+  if (!els.dashboardView || state.user?.role !== "admin") return;
+  const results = getDashboardFilteredResults();
+  renderDashboardKpis(results);
+  renderDashboardWeeklyChart(results);
+  renderDashboardDepartmentChart(results);
+  renderDashboardRecentResults(results);
+}
+
+function exportDashboardExcel() {
+  const results = getDashboardFilteredResults();
+  const employeeMap = new Map((state.employees || []).map((employee) => [employee.employeeCode, employee]));
+  const rows = results.map((result) => {
+    const employeeCode = getDashboardEmployeeCode(result);
+    const employee = employeeMap.get(employeeCode);
+    return [
+      employeeCode,
+      result.full_name || employee?.fullName || result.username || "",
+      getDashboardDepartment(result, employeeMap),
+      result.model_name || result.model_code || "",
+      result.exam_title || result.part_code || "",
+      Number(result.score || 0),
+      Number(result.total_score || 0),
+      `${Number(result.percent || 0)}%`,
+      result.passed ? "ผ่าน" : "ไม่ผ่าน",
+      formatDateTime(result.submitted_at)
+    ];
+  });
+  const headers = ["รหัสพนักงาน", "ชื่อพนักงาน", "แผนก", "Model", "ชุดข้อสอบ", "คะแนน", "คะแนนเต็ม", "เปอร์เซ็นต์", "สถานะ", "วันที่"];
+  const table = [headers, ...rows]
+    .map((row, index) => `<tr>${row.map((cell) => `<td${index === 0 ? " style=\"font-weight:700;background:#eaf3ff\"" : ""}>${escapeHtml(String(cell ?? ""))}</td>`).join("")}</tr>`)
+    .join("");
+  const html = `<!doctype html><html lang="th"><head><meta charset="utf-8"><style>table{border-collapse:collapse;font-family:Tahoma,sans-serif}td{border:1px solid #cbd5e1;padding:8px;mso-number-format:"\\@"}</style></head><body><h2>Factory Online Exam - Dashboard</h2><table>${table}</table></body></html>`;
+  const timestamp = new Date().toISOString().slice(0, 10);
+  downloadTextFile(`Factory_Exam_Dashboard_${timestamp}.xls`, `\ufeff${html}`, "application/vnd.ms-excel;charset=utf-8");
 }
 
 function getSkillBand(percent) {
@@ -2464,6 +2682,7 @@ async function loadEmployees() {
   if (state.user?.role !== "admin") return;
   const payload = await api("/api/admin/employees");
   state.employees = Array.isArray(payload.employees) ? payload.employees : [];
+  renderDashboard();
   renderSkillMatrix();
   renderEvaluationForm();
 }
@@ -3874,7 +4093,7 @@ async function handleLogin(event) {
       await loadManagedEmployees();
       await loadEvaluations();
     }
-    setView("exam");
+    setView(state.user.role === "admin" ? "dashboard" : "exam");
   } catch (error) {
     showMessage(els.loginMessage, error.message, true);
   }
@@ -4002,6 +4221,12 @@ function bindEvents() {
   navItems.forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.view));
   });
+  if (els.dashboardPeriodFilter) {
+    els.dashboardPeriodFilter.addEventListener("change", renderDashboard);
+  }
+  if (els.dashboardExportBtn) {
+    els.dashboardExportBtn.addEventListener("click", exportDashboardExcel);
+  }
 
   els.evaluationModelSelect.addEventListener("change", renderEvaluationForm);
   els.evaluationPartSelect.addEventListener("change", () => syncEvaluationSelectors());
@@ -4102,6 +4327,7 @@ function applyStaticThaiText() {
   }
 
   const navLabels = {
+    dashboard: "Dashboard",
     exam: "ทำข้อสอบ",
     history: "ประวัติผลสอบ",
     profile: "ข้อมูลพนักงาน",
@@ -4198,7 +4424,7 @@ function init() {
         await loadManagedEmployees();
         await loadEvaluations();
       }
-      setView("exam");
+      setView(state.user.role === "admin" ? "dashboard" : "exam");
     })
     .catch(() => {
       logout();
