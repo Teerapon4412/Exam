@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20260824-individual-summary" />
+    <link rel="stylesheet" href="./styles.css?v=20260825-admin-management" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -70,6 +70,7 @@
               <button class="nav-item" data-view="profile" type="button">ข้อมูลพนักงาน</button>
               <button class="nav-item admin-only hidden" data-view="evaluation" type="button">ประเมินหน้างาน</button>
               <button class="nav-item admin-only hidden" data-view="skillMatrix" type="button">Skill Matrix</button>
+              <button class="nav-item admin-only hidden" data-view="management" type="button">จัดการข้อมูล</button>
               <button class="nav-item admin-only hidden" data-view="admin" type="button">จัดการคลังข้อสอบ</button>
             </nav>
           </div>
@@ -724,6 +725,92 @@
             </div>
           </section>
 
+          <section id="managementView" class="view-section hidden">
+            <div class="management-toolbar">
+              <div>
+                <p class="card-label">Admin Management</p>
+                <h3>จัดการผลสอบและข้อมูลพนักงาน</h3>
+                <p class="section-intro">แก้ไขข้อมูลที่บันทึกผิด ปิดใช้งานสมาชิก และลบรายการเมื่อจำเป็น</p>
+              </div>
+              <div class="management-safety-note">การแก้ไขและการลบทุกครั้งจะถูกบันทึกใน Audit Log</div>
+            </div>
+
+            <div id="managementKpis" class="management-kpi-grid"></div>
+
+            <section class="panel management-workspace">
+              <div class="management-tabs" role="tablist" aria-label="ประเภทข้อมูลที่ต้องการจัดการ">
+                <button id="managementResultsTab" class="management-tab active" data-management-tab="results" type="button" role="tab">ผลสอบ</button>
+                <button id="managementEmployeesTab" class="management-tab" data-management-tab="employees" type="button" role="tab">ข้อมูลพนักงาน</button>
+              </div>
+
+              <div id="managementResultsPanel" class="management-panel">
+                <div class="management-filter-grid">
+                  <label class="field management-search-field">
+                    <span>ค้นหาผลสอบ</span>
+                    <input id="managementResultSearch" type="search" placeholder="ชื่อ รหัสพนักงาน Model หรือ Part" />
+                  </label>
+                  <label class="field">
+                    <span>Model</span>
+                    <select id="managementModelFilter"><option value="">ทุก Model</option></select>
+                  </label>
+                  <label class="field">
+                    <span>Part</span>
+                    <select id="managementPartFilter"><option value="">ทุก Part</option></select>
+                  </label>
+                </div>
+                <div class="management-table-wrap">
+                  <table class="management-table">
+                    <thead>
+                      <tr>
+                        <th>พนักงาน</th>
+                        <th>Model / Part</th>
+                        <th>คะแนน</th>
+                        <th>สถานะ</th>
+                        <th>วันที่สอบ</th>
+                        <th>จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody id="managementResultsBody"></tbody>
+                  </table>
+                  <div id="managementResultsEmpty" class="empty-state hidden">ไม่พบผลสอบตามตัวกรอง</div>
+                </div>
+              </div>
+
+              <div id="managementEmployeesPanel" class="management-panel hidden">
+                <div class="management-filter-grid management-employee-filters">
+                  <label class="field management-search-field">
+                    <span>ค้นหาพนักงาน</span>
+                    <input id="managementEmployeeSearch" type="search" placeholder="ชื่อ รหัสพนักงาน แผนก หรือตำแหน่ง" />
+                  </label>
+                  <label class="field">
+                    <span>สถานะ</span>
+                    <select id="managementEmployeeStatusFilter">
+                      <option value="">ทั้งหมด</option>
+                      <option value="active">ใช้งาน</option>
+                      <option value="inactive">ปิดใช้งาน</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="management-table-wrap">
+                  <table class="management-table management-employee-table">
+                    <thead>
+                      <tr>
+                        <th>รหัสพนักงาน</th>
+                        <th>ชื่อ-นามสกุล</th>
+                        <th>แผนก</th>
+                        <th>ตำแหน่ง</th>
+                        <th>สถานะ</th>
+                        <th>จัดการ</th>
+                      </tr>
+                    </thead>
+                    <tbody id="managementEmployeesBody"></tbody>
+                  </table>
+                  <div id="managementEmployeesEmpty" class="empty-state hidden">ไม่พบข้อมูลพนักงานตามตัวกรอง</div>
+                </div>
+              </div>
+            </section>
+          </section>
+
           <section id="adminView" class="view-section hidden">
             <section class="panel admin-only hidden" id="adminPanel">
               <div class="panel-head">
@@ -810,6 +897,86 @@
       </div>
     </div>
 
+    <div id="managementEditor" class="management-modal hidden" role="dialog" aria-modal="true" aria-labelledby="managementEditorTitle">
+      <form id="managementEditorForm" class="management-modal-card">
+        <div class="management-modal-head">
+          <div>
+            <p class="card-label">Admin Action</p>
+            <h3 id="managementEditorTitle">แก้ไขข้อมูล</h3>
+          </div>
+          <button id="managementEditorClose" class="management-close-btn" type="button" aria-label="ปิดหน้าต่าง">×</button>
+        </div>
+
+        <div id="managementResultFields" class="management-form-grid hidden">
+          <div id="managementResultIdentity" class="management-identity-card"></div>
+          <label class="field">
+            <span>คะแนนที่ได้</span>
+            <input id="managementResultScore" type="number" min="0" step="1" />
+          </label>
+          <label class="field">
+            <span>คะแนนเต็ม</span>
+            <input id="managementResultTotal" type="number" min="1" step="1" />
+          </label>
+          <label class="field management-form-wide">
+            <span>สถานะผลสอบ</span>
+            <select id="managementResultPassed">
+              <option value="true">ผ่าน</option>
+              <option value="false">ไม่ผ่าน</option>
+            </select>
+          </label>
+          <p class="management-form-note management-form-wide">การแก้ไขคะแนนรวมจะไม่เปลี่ยนรายละเอียดคำตอบรายข้อเดิม</p>
+        </div>
+
+        <div id="managementEmployeeFields" class="management-form-grid hidden">
+          <label class="field">
+            <span>รหัสพนักงาน</span>
+            <input id="managementEmployeeCode" type="text" />
+          </label>
+          <label class="field">
+            <span>ชื่อ-นามสกุล</span>
+            <input id="managementEmployeeName" type="text" />
+          </label>
+          <label class="field">
+            <span>แผนก</span>
+            <input id="managementEmployeeDepartment" type="text" />
+          </label>
+          <label class="field">
+            <span>ตำแหน่ง</span>
+            <input id="managementEmployeePosition" type="text" />
+          </label>
+          <label class="field management-form-wide">
+            <span>URL รูปพนักงาน</span>
+            <input id="managementEmployeePhoto" type="url" />
+          </label>
+          <label class="field management-form-wide">
+            <span>สถานะบัญชี</span>
+            <select id="managementEmployeeActive">
+              <option value="true">ใช้งาน</option>
+              <option value="false">ปิดใช้งาน</option>
+            </select>
+          </label>
+        </div>
+
+        <p id="managementEditorMessage" class="inline-message hidden"></p>
+        <div class="management-modal-actions">
+          <button id="managementEditorCancel" class="secondary-btn" type="button">ยกเลิก</button>
+          <button id="managementEditorSave" class="primary-btn" type="submit">บันทึกการแก้ไข</button>
+        </div>
+      </form>
+    </div>
+
+    <div id="managementDeleteConfirm" class="management-modal hidden" role="alertdialog" aria-modal="true" aria-labelledby="managementDeleteTitle">
+      <div class="management-confirm-card">
+        <div class="management-danger-icon">!</div>
+        <h3 id="managementDeleteTitle">ยืนยันการลบข้อมูล?</h3>
+        <p id="managementDeleteMessage">รายการที่ลบแล้วไม่สามารถกู้คืนได้</p>
+        <div class="management-modal-actions">
+          <button id="managementDeleteCancel" class="secondary-btn" type="button">ยกเลิก</button>
+          <button id="managementDeleteSubmit" class="primary-btn danger" type="button">ลบข้อมูล</button>
+        </div>
+      </div>
+    </div>
+
     <div id="imageViewer" class="image-viewer hidden" role="dialog" aria-modal="true" aria-label="ดูรูปคำถามขนาดใหญ่">
       <div class="image-viewer-toolbar">
         <button id="imageZoomOutBtn" class="image-viewer-btn" type="button" aria-label="ซูมออก" title="ซูมออก">−</button>
@@ -823,6 +990,6 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20260824-individual-summary"></script>
+    <script src="./script.js?v=20260825-admin-management"></script>
   </body>
 </html>

@@ -51,6 +51,45 @@ const els = {
   individualWrongTitle: $("individualWrongTitle"),
   individualWrongStats: $("individualWrongStats"),
   individualWrongList: $("individualWrongList"),
+  managementView: $("managementView"),
+  managementKpis: $("managementKpis"),
+  managementResultsTab: $("managementResultsTab"),
+  managementEmployeesTab: $("managementEmployeesTab"),
+  managementResultsPanel: $("managementResultsPanel"),
+  managementEmployeesPanel: $("managementEmployeesPanel"),
+  managementResultSearch: $("managementResultSearch"),
+  managementModelFilter: $("managementModelFilter"),
+  managementPartFilter: $("managementPartFilter"),
+  managementResultsBody: $("managementResultsBody"),
+  managementResultsEmpty: $("managementResultsEmpty"),
+  managementEmployeeSearch: $("managementEmployeeSearch"),
+  managementEmployeeStatusFilter: $("managementEmployeeStatusFilter"),
+  managementEmployeesBody: $("managementEmployeesBody"),
+  managementEmployeesEmpty: $("managementEmployeesEmpty"),
+  managementEditor: $("managementEditor"),
+  managementEditorForm: $("managementEditorForm"),
+  managementEditorTitle: $("managementEditorTitle"),
+  managementEditorClose: $("managementEditorClose"),
+  managementEditorCancel: $("managementEditorCancel"),
+  managementEditorSave: $("managementEditorSave"),
+  managementEditorMessage: $("managementEditorMessage"),
+  managementResultFields: $("managementResultFields"),
+  managementResultIdentity: $("managementResultIdentity"),
+  managementResultScore: $("managementResultScore"),
+  managementResultTotal: $("managementResultTotal"),
+  managementResultPassed: $("managementResultPassed"),
+  managementEmployeeFields: $("managementEmployeeFields"),
+  managementEmployeeCode: $("managementEmployeeCode"),
+  managementEmployeeName: $("managementEmployeeName"),
+  managementEmployeeDepartment: $("managementEmployeeDepartment"),
+  managementEmployeePosition: $("managementEmployeePosition"),
+  managementEmployeePhoto: $("managementEmployeePhoto"),
+  managementEmployeeActive: $("managementEmployeeActive"),
+  managementDeleteConfirm: $("managementDeleteConfirm"),
+  managementDeleteTitle: $("managementDeleteTitle"),
+  managementDeleteMessage: $("managementDeleteMessage"),
+  managementDeleteCancel: $("managementDeleteCancel"),
+  managementDeleteSubmit: $("managementDeleteSubmit"),
   pageHeading: $("pageHeading"),
   modelSelector: $("modelSelector"),
   examSelector: $("examSelector"),
@@ -194,6 +233,7 @@ const TEXT = {
     trainingFocus: "Training Focus",
     profile: "ข้อมูลพนักงาน",
     evaluation: "ประเมินผลหน้างาน",
+    management: "จัดการผลสอบและพนักงาน",
     admin: "จัดการคลังข้อสอบ"
   },
   evaluators: [
@@ -330,6 +370,13 @@ const state = {
     employeeCode: "",
     modelCode: "",
     examId: ""
+  },
+  adminManagement: {
+    activeTab: "results",
+    editorType: "",
+    editingId: "",
+    pendingDelete: null,
+    saving: false
   },
   adminEditor: {
     draft: null,
@@ -1057,6 +1104,7 @@ function setView(view) {
     skillMatrix: els.skillMatrixView,
     evaluation: els.evaluationView,
     practicalAssessment: els.practicalAssessmentView,
+    management: els.managementView,
     admin: els.adminView
   };
 
@@ -1091,6 +1139,8 @@ function setView(view) {
     renderEvaluationHistory();
   } else if (view === "practicalAssessment") {
     renderPracticalAssessment();
+  } else if (view === "management") {
+    renderManagement();
   } else if (view === "admin") {
     renderAdminInfo();
   }
@@ -1690,6 +1740,7 @@ async function loadResults() {
       renderDashboard();
       renderIndividualSummary();
       renderSkillMatrix();
+      renderManagement();
       syncEvaluationSelectors();
     }
   } catch (error) {
@@ -1700,6 +1751,7 @@ async function loadResults() {
       renderDashboard();
       renderIndividualSummary();
       renderSkillMatrix();
+      renderManagement();
       syncEvaluationSelectors();
     }
     showMessage(els.loadStatus, `โหลดประวัติผลสอบไม่สำเร็จ: ${error.message}`, true);
@@ -1961,6 +2013,330 @@ function renderDashboard() {
   renderDashboardWeeklyChart(results);
   renderDashboardDepartmentChart(results);
   renderDashboardRecentResults(results);
+}
+
+function setManagementTab(tab = "results") {
+  const safeTab = tab === "employees" ? "employees" : "results";
+  state.adminManagement.activeTab = safeTab;
+  els.managementResultsTab?.classList.toggle("active", safeTab === "results");
+  els.managementEmployeesTab?.classList.toggle("active", safeTab === "employees");
+  els.managementResultsPanel?.classList.toggle("hidden", safeTab !== "results");
+  els.managementEmployeesPanel?.classList.toggle("hidden", safeTab !== "employees");
+}
+
+function renderManagementKpis() {
+  if (!els.managementKpis) return;
+  const results = Array.isArray(state.results) ? state.results : [];
+  const employees = (state.adminEditor.managedEmployees || []).filter((employee) => employee.role !== "admin");
+  const passed = results.filter((result) => result.passed).length;
+  const active = employees.filter((employee) => employee.isActive).length;
+  const items = [
+    { label: "ผลสอบทั้งหมด", value: results.length, tone: "blue" },
+    { label: "ผ่าน", value: passed, tone: "green" },
+    { label: "ไม่ผ่าน", value: Math.max(results.length - passed, 0), tone: "red" },
+    { label: "พนักงานที่ใช้งาน", value: active, tone: "orange" }
+  ];
+  els.managementKpis.innerHTML = items.map((item) => `
+    <article class="management-kpi-card ${item.tone}">
+      <span>${item.label}</span>
+      <strong>${item.value}</strong>
+    </article>
+  `).join("");
+}
+
+function refreshManagementResultFilters() {
+  if (!els.managementModelFilter || !els.managementPartFilter) return;
+  const currentModel = els.managementModelFilter.value;
+  const currentPart = els.managementPartFilter.value;
+  const results = Array.isArray(state.results) ? state.results : [];
+  const models = Array.from(new Map(results.map((result) => {
+    const code = String(result.model_code || result.model_name || "").trim();
+    return [code, String(result.model_name || code).trim()];
+  }).filter(([code]) => code)).entries()).sort((left, right) => left[1].localeCompare(right[1]));
+
+  els.managementModelFilter.innerHTML = `<option value="">ทุก Model</option>${models.map(([code, name]) => `
+    <option value="${escapeHtml(code)}">${escapeHtml(name)}</option>
+  `).join("")}`;
+  els.managementModelFilter.value = models.some(([code]) => code === currentModel) ? currentModel : "";
+
+  const selectedModel = els.managementModelFilter.value;
+  const parts = Array.from(new Set(results
+    .filter((result) => !selectedModel || String(result.model_code || result.model_name || "") === selectedModel)
+    .map((result) => String(result.part_code || result.exam_title || "").trim())
+    .filter(Boolean))).sort((left, right) => left.localeCompare(right));
+  els.managementPartFilter.innerHTML = `<option value="">ทุก Part</option>${parts.map((part) => `
+    <option value="${escapeHtml(part)}">${escapeHtml(part)}</option>
+  `).join("")}`;
+  els.managementPartFilter.value = parts.includes(currentPart) ? currentPart : "";
+}
+
+function getFilteredManagementResults() {
+  const query = String(els.managementResultSearch?.value || "").trim().toLocaleLowerCase("th");
+  const modelCode = String(els.managementModelFilter?.value || "");
+  const partCode = String(els.managementPartFilter?.value || "");
+  return (state.results || []).filter((result) => {
+    if (modelCode && String(result.model_code || result.model_name || "") !== modelCode) return false;
+    if (partCode && String(result.part_code || result.exam_title || "") !== partCode) return false;
+    if (!query) return true;
+    return [
+      result.employee_code,
+      result.full_name,
+      result.username,
+      result.model_code,
+      result.model_name,
+      result.part_code,
+      result.exam_title
+    ].some((value) => String(value || "").toLocaleLowerCase("th").includes(query));
+  });
+}
+
+function renderManagementResults() {
+  if (!els.managementResultsBody) return;
+  refreshManagementResultFilters();
+  const results = getFilteredManagementResults();
+  els.managementResultsEmpty?.classList.toggle("hidden", results.length > 0);
+  els.managementResultsBody.innerHTML = results.slice(0, 250).map((result) => `
+    <tr>
+      <td><strong>${escapeHtml(result.full_name || result.username || "-")}</strong><small>${escapeHtml(result.employee_code || "-")}</small></td>
+      <td><strong>${escapeHtml(result.model_name || result.model_code || "-")}</strong><small>${escapeHtml(result.part_code || result.exam_title || "-")}</small></td>
+      <td><strong>${Number(result.score || 0)} / ${Number(result.total_score || 0)}</strong><small>${Number(result.percent || 0)}%</small></td>
+      <td><span class="dashboard-status ${result.passed ? "pass" : "fail"}">${result.passed ? "ผ่าน" : "ไม่ผ่าน"}</span></td>
+      <td>${formatDateTime(result.submitted_at)}</td>
+      <td>
+        <div class="management-row-actions">
+          <button class="management-action-btn edit" data-management-action="edit-result" data-result-id="${Number(result.id)}" type="button">แก้ไข</button>
+          <button class="management-action-btn delete" data-management-action="delete-result" data-result-id="${Number(result.id)}" type="button">ลบ</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function getFilteredManagementEmployees() {
+  const query = String(els.managementEmployeeSearch?.value || "").trim().toLocaleLowerCase("th");
+  const status = String(els.managementEmployeeStatusFilter?.value || "");
+  return (state.adminEditor.managedEmployees || []).filter((employee) => {
+    if (status === "active" && !employee.isActive) return false;
+    if (status === "inactive" && employee.isActive) return false;
+    if (!query) return true;
+    return [employee.employeeCode, employee.fullName, employee.department, employee.position]
+      .some((value) => String(value || "").toLocaleLowerCase("th").includes(query));
+  });
+}
+
+function renderManagementEmployees() {
+  if (!els.managementEmployeesBody) return;
+  const employees = getFilteredManagementEmployees();
+  els.managementEmployeesEmpty?.classList.toggle("hidden", employees.length > 0);
+  els.managementEmployeesBody.innerHTML = employees.map((employee) => {
+    const isAdmin = employee.role === "admin";
+    return `
+      <tr>
+        <td><strong>${escapeHtml(employee.employeeCode || "-")}</strong></td>
+        <td>${escapeHtml(employee.fullName || "-")}${isAdmin ? `<small>ผู้ดูแลระบบ</small>` : ""}</td>
+        <td>${escapeHtml(employee.department || "-")}</td>
+        <td>${escapeHtml(employee.position || "-")}</td>
+        <td><span class="management-account-status ${employee.isActive ? "active" : "inactive"}">${employee.isActive ? "ใช้งาน" : "ปิดใช้งาน"}</span></td>
+        <td>
+          <div class="management-row-actions">
+            <button class="management-action-btn edit" data-management-action="edit-employee" data-employee-id="${escapeHtml(employee.id)}" type="button" ${isAdmin ? "disabled" : ""}>แก้ไข</button>
+            <button class="management-action-btn status" data-management-action="toggle-employee" data-employee-id="${escapeHtml(employee.id)}" type="button" ${isAdmin ? "disabled" : ""}>${employee.isActive ? "ปิดใช้งาน" : "เปิดใช้งาน"}</button>
+            <button class="management-action-btn delete" data-management-action="delete-employee" data-employee-id="${escapeHtml(employee.id)}" type="button" ${isAdmin ? "disabled" : ""}>ลบ</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderManagement() {
+  if (!els.managementView || state.user?.role !== "admin") return;
+  setManagementTab(state.adminManagement.activeTab);
+  renderManagementKpis();
+  renderManagementResults();
+  renderManagementEmployees();
+}
+
+function openManagementResultEditor(resultId) {
+  const result = (state.results || []).find((item) => Number(item.id) === Number(resultId));
+  if (!result) return;
+  state.adminManagement.editorType = "result";
+  state.adminManagement.editingId = String(result.id);
+  setText(els.managementEditorTitle, "แก้ไขผลสอบ");
+  els.managementResultFields?.classList.remove("hidden");
+  els.managementEmployeeFields?.classList.add("hidden");
+  if (els.managementResultIdentity) {
+    els.managementResultIdentity.innerHTML = `
+      <strong>${escapeHtml(result.full_name || result.username || "-")}</strong>
+      <span>${escapeHtml(result.employee_code || "-")} · ${escapeHtml(result.model_name || result.model_code || "-")} / ${escapeHtml(result.part_code || result.exam_title || "-")}</span>
+    `;
+  }
+  els.managementResultScore.value = Number(result.score || 0);
+  els.managementResultTotal.value = Number(result.total_score || 0);
+  els.managementResultPassed.value = result.passed ? "true" : "false";
+  showMessage(els.managementEditorMessage, "");
+  els.managementEditor?.classList.remove("hidden");
+  els.managementResultScore?.focus();
+}
+
+function openManagementEmployeeEditor(employeeId) {
+  const employee = (state.adminEditor.managedEmployees || []).find((item) => item.id === employeeId);
+  if (!employee || employee.role === "admin") return;
+  state.adminManagement.editorType = "employee";
+  state.adminManagement.editingId = employee.id;
+  setText(els.managementEditorTitle, "แก้ไขข้อมูลพนักงาน");
+  els.managementResultFields?.classList.add("hidden");
+  els.managementEmployeeFields?.classList.remove("hidden");
+  els.managementEmployeeCode.value = employee.employeeCode || "";
+  els.managementEmployeeName.value = employee.fullName || "";
+  els.managementEmployeeDepartment.value = employee.department || "";
+  els.managementEmployeePosition.value = employee.position || "";
+  els.managementEmployeePhoto.value = employee.photoUrl || "";
+  els.managementEmployeeActive.value = employee.isActive ? "true" : "false";
+  showMessage(els.managementEditorMessage, "");
+  els.managementEditor?.classList.remove("hidden");
+  els.managementEmployeeCode?.focus();
+}
+
+function closeManagementEditor() {
+  if (state.adminManagement.saving) return;
+  state.adminManagement.editorType = "";
+  state.adminManagement.editingId = "";
+  els.managementEditor?.classList.add("hidden");
+  showMessage(els.managementEditorMessage, "");
+}
+
+async function saveManagementEditor(event) {
+  event.preventDefault();
+  if (state.adminManagement.saving) return;
+  const type = state.adminManagement.editorType;
+  const id = state.adminManagement.editingId;
+  if (!type || !id) return;
+
+  let url = "";
+  let body = {};
+  if (type === "result") {
+    const score = Number(els.managementResultScore.value);
+    const totalScore = Number(els.managementResultTotal.value);
+    if (!Number.isInteger(score) || !Number.isInteger(totalScore) || totalScore <= 0 || score < 0 || score > totalScore) {
+      showMessage(els.managementEditorMessage, "กรุณาตรวจสอบคะแนน โดยคะแนนที่ได้ต้องไม่เกินคะแนนเต็ม", true);
+      return;
+    }
+    url = `/api/admin/results/${encodeURIComponent(id)}`;
+    body = { score, totalScore, passed: els.managementResultPassed.value === "true" };
+  } else {
+    const employeeCode = String(els.managementEmployeeCode.value || "").trim().toUpperCase();
+    const fullName = String(els.managementEmployeeName.value || "").trim();
+    if (!employeeCode || !fullName) {
+      showMessage(els.managementEditorMessage, "กรุณากรอกรหัสพนักงานและชื่อ-นามสกุล", true);
+      return;
+    }
+    url = `/api/admin/employees/${encodeURIComponent(id)}`;
+    body = {
+      employeeCode,
+      fullName,
+      department: String(els.managementEmployeeDepartment.value || "").trim(),
+      position: String(els.managementEmployeePosition.value || "").trim(),
+      photoUrl: String(els.managementEmployeePhoto.value || "").trim(),
+      isActive: els.managementEmployeeActive.value === "true"
+    };
+  }
+
+  try {
+    state.adminManagement.saving = true;
+    els.managementEditorSave.disabled = true;
+    els.managementEditorSave.textContent = "กำลังบันทึก...";
+    await api(url, { method: "PATCH", body: JSON.stringify(body) });
+    state.adminManagement.saving = false;
+    els.managementEditorSave.disabled = false;
+    els.managementEditorSave.textContent = "บันทึกการแก้ไข";
+    closeManagementEditor();
+    if (type === "result") {
+      await loadResults();
+      showToast("แก้ไขผลสอบเรียบร้อยแล้ว", "success");
+    } else {
+      await Promise.all([loadEmployees(), loadManagedEmployees()]);
+      showToast("แก้ไขข้อมูลพนักงานเรียบร้อยแล้ว", "success");
+    }
+  } catch (error) {
+    state.adminManagement.saving = false;
+    els.managementEditorSave.disabled = false;
+    els.managementEditorSave.textContent = "บันทึกการแก้ไข";
+    showMessage(els.managementEditorMessage, `บันทึกไม่สำเร็จ: ${error.message}`, true);
+  }
+}
+
+function openManagementDeleteConfirm(type, id) {
+  if (type === "result") {
+    const result = (state.results || []).find((item) => Number(item.id) === Number(id));
+    if (!result) return;
+    state.adminManagement.pendingDelete = { type, id: String(result.id) };
+    setText(els.managementDeleteTitle, "ยืนยันการลบผลสอบ?");
+    setText(els.managementDeleteMessage, `${result.full_name || result.employee_code || "รายการนี้"} · ${result.model_name || result.model_code || "-"} / ${result.part_code || "-"} รายการที่ลบแล้วไม่สามารถกู้คืนได้`);
+    setText(els.managementDeleteSubmit, "ลบผลสอบ");
+  } else {
+    const employee = (state.adminEditor.managedEmployees || []).find((item) => item.id === id);
+    if (!employee || employee.role === "admin") return;
+    state.adminManagement.pendingDelete = { type, id: employee.id };
+    setText(els.managementDeleteTitle, "ยืนยันการลบพนักงาน?");
+    setText(els.managementDeleteMessage, `${employee.fullName || employee.employeeCode} จะไม่สามารถเข้าสู่ระบบได้ แต่ประวัติผลสอบและผลประเมินเดิมจะยังคงอยู่`);
+    setText(els.managementDeleteSubmit, "ลบพนักงาน");
+  }
+  els.managementDeleteConfirm?.classList.remove("hidden");
+}
+
+function closeManagementDeleteConfirm() {
+  if (state.adminManagement.saving) return;
+  state.adminManagement.pendingDelete = null;
+  els.managementDeleteConfirm?.classList.add("hidden");
+}
+
+async function confirmManagementDelete() {
+  const pending = state.adminManagement.pendingDelete;
+  if (!pending || state.adminManagement.saving) return;
+  const url = pending.type === "result"
+    ? `/api/admin/results/${encodeURIComponent(pending.id)}`
+    : `/api/admin/employees/${encodeURIComponent(pending.id)}`;
+  try {
+    state.adminManagement.saving = true;
+    els.managementDeleteSubmit.disabled = true;
+    els.managementDeleteSubmit.textContent = "กำลังลบ...";
+    await api(url, { method: "DELETE" });
+    state.adminManagement.saving = false;
+    els.managementDeleteSubmit.disabled = false;
+    els.managementDeleteConfirm?.classList.add("hidden");
+    state.adminManagement.pendingDelete = null;
+    if (pending.type === "result") {
+      await loadResults();
+      showToast("ลบผลสอบเรียบร้อยแล้ว", "success");
+    } else {
+      await Promise.all([loadEmployees(), loadManagedEmployees()]);
+      showToast("ลบข้อมูลพนักงานเรียบร้อยแล้ว โดยเก็บประวัติผลสอบเดิมไว้", "success", 4200);
+    }
+  } catch (error) {
+    state.adminManagement.saving = false;
+    els.managementDeleteSubmit.disabled = false;
+    els.managementDeleteSubmit.textContent = pending.type === "result" ? "ลบผลสอบ" : "ลบพนักงาน";
+    showToast(`ลบข้อมูลไม่สำเร็จ: ${error.message}`, "error", 4200);
+  }
+}
+
+async function toggleManagementEmployee(employeeId) {
+  const employee = (state.adminEditor.managedEmployees || []).find((item) => item.id === employeeId);
+  if (!employee || employee.role === "admin" || state.adminManagement.saving) return;
+  try {
+    state.adminManagement.saving = true;
+    await api(`/api/admin/employees/${encodeURIComponent(employee.id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ isActive: !employee.isActive })
+    });
+    state.adminManagement.saving = false;
+    await Promise.all([loadEmployees(), loadManagedEmployees()]);
+    showToast(employee.isActive ? "ปิดใช้งานพนักงานแล้ว" : "เปิดใช้งานพนักงานแล้ว", "success");
+  } catch (error) {
+    state.adminManagement.saving = false;
+    showToast(`เปลี่ยนสถานะไม่สำเร็จ: ${error.message}`, "error", 4200);
+  }
 }
 
 function exportDashboardExcel() {
@@ -2960,6 +3336,7 @@ async function loadEmployees() {
   renderDashboard();
   renderIndividualSummary();
   renderSkillMatrix();
+  renderManagement();
   renderEvaluationForm();
 }
 
@@ -2968,6 +3345,7 @@ async function loadManagedEmployees() {
   const payload = await api("/api/admin/employees/manage");
   state.adminEditor.managedEmployees = Array.isArray(payload.employees) ? payload.employees : [];
   renderAdminEditor();
+  renderManagement();
 }
 
 function resetAdminEmployeeDraft() {
@@ -4384,7 +4762,10 @@ function logout() {
   state.adminEditor.managedEmployees = [];
   state.adminEditor.employeeSaveStatus = { kind: "", message: "" };
   state.adminEditor.employeeSaving = false;
+  state.adminManagement = { activeTab: "results", editorType: "", editingId: "", pendingDelete: null, saving: false };
   state.individualSummary = { employeeCode: "", modelCode: "", examId: "" };
+  els.managementEditor?.classList.add("hidden");
+  els.managementDeleteConfirm?.classList.add("hidden");
   resetAdminEmployeeDraft();
   window.localStorage.removeItem(STORAGE_KEYS.authToken);
   window.localStorage.removeItem(STORAGE_KEYS.authUser);
@@ -4476,6 +4857,14 @@ function bindEvents() {
     setImageViewerScale(nextScale);
   });
   document.addEventListener("keydown", (event) => {
+    if (!els.managementDeleteConfirm?.classList.contains("hidden")) {
+      if (event.key === "Escape") closeManagementDeleteConfirm();
+      return;
+    }
+    if (!els.managementEditor?.classList.contains("hidden")) {
+      if (event.key === "Escape") closeManagementEditor();
+      return;
+    }
     if (!els.scorePopup.classList.contains("hidden")) {
       if (event.key === "Escape") closeScorePopup();
       return;
@@ -4497,6 +4886,46 @@ function bindEvents() {
 
   navItems.forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.view));
+  });
+  document.querySelectorAll("[data-management-tab]").forEach((button) => {
+    button.addEventListener("click", () => setManagementTab(button.dataset.managementTab));
+  });
+  els.managementResultSearch?.addEventListener("input", renderManagementResults);
+  els.managementModelFilter?.addEventListener("change", renderManagementResults);
+  els.managementPartFilter?.addEventListener("change", renderManagementResults);
+  els.managementEmployeeSearch?.addEventListener("input", renderManagementEmployees);
+  els.managementEmployeeStatusFilter?.addEventListener("change", renderManagementEmployees);
+  els.managementResultsBody?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-management-action]");
+    if (!button) return;
+    if (button.dataset.managementAction === "edit-result") {
+      openManagementResultEditor(button.dataset.resultId);
+    } else if (button.dataset.managementAction === "delete-result") {
+      openManagementDeleteConfirm("result", button.dataset.resultId);
+    }
+  });
+  els.managementEmployeesBody?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-management-action]");
+    if (!button || button.disabled) return;
+    const employeeId = button.dataset.employeeId || "";
+    if (button.dataset.managementAction === "edit-employee") {
+      openManagementEmployeeEditor(employeeId);
+    } else if (button.dataset.managementAction === "toggle-employee") {
+      toggleManagementEmployee(employeeId);
+    } else if (button.dataset.managementAction === "delete-employee") {
+      openManagementDeleteConfirm("employee", employeeId);
+    }
+  });
+  els.managementEditorForm?.addEventListener("submit", saveManagementEditor);
+  els.managementEditorClose?.addEventListener("click", closeManagementEditor);
+  els.managementEditorCancel?.addEventListener("click", closeManagementEditor);
+  els.managementEditor?.addEventListener("click", (event) => {
+    if (event.target === els.managementEditor) closeManagementEditor();
+  });
+  els.managementDeleteCancel?.addEventListener("click", closeManagementDeleteConfirm);
+  els.managementDeleteSubmit?.addEventListener("click", confirmManagementDelete);
+  els.managementDeleteConfirm?.addEventListener("click", (event) => {
+    if (event.target === els.managementDeleteConfirm) closeManagementDeleteConfirm();
   });
   if (els.dashboardPeriodFilter) {
     els.dashboardPeriodFilter.addEventListener("change", renderDashboard);
@@ -4627,6 +5056,7 @@ function applyStaticThaiText() {
     profile: "ข้อมูลพนักงาน",
     skillMatrix: "Skill Matrix",
     evaluation: "ประเมินผล",
+    management: "จัดการข้อมูล",
     admin: "จัดการข้อสอบ"
   };
   document.querySelectorAll(".nav-item").forEach((node) => {

@@ -86,6 +86,23 @@ db.exec(`
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS deleted_employees (
+    employee_code TEXT PRIMARY KEY,
+    deleted_at TEXT NOT NULL,
+    deleted_by TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS admin_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    admin_employee_code TEXT NOT NULL,
+    action TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    before_json TEXT,
+    after_json TEXT,
+    created_at TEXT NOT NULL
+  );
 `);
 
 function getColumnNames(tableName) {
@@ -203,6 +220,79 @@ const insertEmployee = db.prepare(`
   ) VALUES (
     @id, @username, @password, @password_hash, @employee_code, @full_name, @department,
     @position, @photo_url, @role, @is_active, @created_at, @updated_at
+  )
+`);
+
+const insertSeedEmployee = db.prepare(`
+  INSERT OR IGNORE INTO users (
+    id, username, password, password_hash, employee_code, full_name, department,
+    position, photo_url, role, is_active, created_at, updated_at
+  ) VALUES (
+    @id, @username, @password, @password_hash, @employee_code, @full_name, @department,
+    @position, @photo_url, @role, @is_active, @created_at, @updated_at
+  )
+`);
+
+const getUserById = db.prepare(`SELECT * FROM users WHERE id = ?`);
+const getResultById = db.prepare(`SELECT * FROM exam_results WHERE id = ?`);
+
+const updateResultById = db.prepare(`
+  UPDATE exam_results
+  SET score = @score,
+      total_score = @total_score,
+      percent = @percent,
+      passed = @passed
+  WHERE id = @id
+`);
+
+const deleteResultById = db.prepare(`DELETE FROM exam_results WHERE id = ?`);
+
+const updateEmployeeById = db.prepare(`
+  UPDATE users
+  SET username = @employee_code,
+      password = '[HASHED]',
+      password_hash = @password_hash,
+      employee_code = @employee_code,
+      full_name = @full_name,
+      department = @department,
+      position = @position,
+      photo_url = @photo_url,
+      is_active = @is_active,
+      updated_at = @updated_at
+  WHERE id = @id
+`);
+
+const updateResultEmployeeSnapshot = db.prepare(`
+  UPDATE exam_results
+  SET username = @employee_code,
+      employee_code = @employee_code,
+      full_name = @full_name
+  WHERE user_id = @id
+`);
+
+const updateEvaluationEmployeeSnapshot = db.prepare(`
+  UPDATE evaluations
+  SET employee_code = @employee_code,
+      employee_name = @full_name,
+      updated_at = @updated_at
+  WHERE employee_id = @id
+`);
+
+const deleteEmployeeById = db.prepare(`DELETE FROM users WHERE id = ?`);
+const getDeletedEmployee = db.prepare(`SELECT employee_code FROM deleted_employees WHERE employee_code = ?`);
+const deleteEmployeeTombstone = db.prepare(`DELETE FROM deleted_employees WHERE employee_code = ?`);
+const upsertEmployeeTombstone = db.prepare(`
+  INSERT INTO deleted_employees (employee_code, deleted_at, deleted_by)
+  VALUES (@employee_code, @deleted_at, @deleted_by)
+  ON CONFLICT(employee_code) DO UPDATE SET
+    deleted_at = excluded.deleted_at,
+    deleted_by = excluded.deleted_by
+`);
+const insertAuditLog = db.prepare(`
+  INSERT INTO admin_audit_log (
+    admin_employee_code, action, entity_type, entity_id, before_json, after_json, created_at
+  ) VALUES (
+    @admin_employee_code, @action, @entity_type, @entity_id, @before_json, @after_json, @created_at
   )
 `);
 
@@ -475,11 +565,27 @@ function seedEmployees() {
   const employees = normalizeEmployeeData(JSON.parse(raw));
 
   const transaction = db.transaction((rows) => {
-    rows.forEach((employee) => upsertEmployee.run(employee));
+    rows.forEach((employee) => {
+      if (!getDeletedEmployee.get(employee.employee_code)) {
+        insertSeedEmployee.run(employee);
+      }
+    });
   });
 
   transaction(employees);
   return employees.length;
+}
+
+function writeAdminAudit(req, action, entityType, entityId, beforeValue = null, afterValue = null) {
+  insertAuditLog.run({
+    admin_employee_code: String(req.user?.employee_code || ""),
+    action: String(action || ""),
+    entity_type: String(entityType || ""),
+    entity_id: String(entityId || ""),
+    before_json: beforeValue === null ? null : JSON.stringify(beforeValue),
+    after_json: afterValue === null ? null : JSON.stringify(afterValue),
+    created_at: new Date().toISOString()
+  });
 }
 
 function seedDefaults() {
@@ -760,7 +866,8 @@ app.post("/api/results", requireAuth, (req, res) => {
     submitted_at: submittedAt
   };
 
-  insertResult.run(record);
+  const insertInfo = insertResult.run(record);
+  record.id = Number(insertInfo.lastInsertRowid);
 
   res.json({ ok: true, result: { ...serializeResult(record), review } });
 });
@@ -768,6 +875,55 @@ app.post("/api/results", requireAuth, (req, res) => {
 app.get("/api/results", requireAuth, (req, res) => {
   const results = req.user.role === "admin" ? getAllResults.all() : getResultsByUser.all(req.user.id);
   return res.json({ results: results.map(serializeResult) });
+});
+
+app.patch("/api/admin/results/:id", requireAdmin, (req, res) => {
+  const resultId = Number(req.params.id);
+  const existing = Number.isInteger(resultId) ? getResultById.get(resultId) : null;
+  if (!existing) {
+    return res.status(404).json({ error: "Exam result not found" });
+  }
+
+  const score = Number(req.body?.score);
+  const totalScore = Number(req.body?.totalScore);
+  if (!Number.isInteger(score) || !Number.isInteger(totalScore) || totalScore <= 0 || score < 0 || score > totalScore) {
+    return res.status(400).json({ error: "Score must be an integer between 0 and totalScore" });
+  }
+
+  const percent = Math.round((score / totalScore) * 100);
+  const passed = typeof req.body?.passed === "boolean" ? req.body.passed : Boolean(existing.passed);
+  const update = {
+    id: resultId,
+    score,
+    total_score: totalScore,
+    percent,
+    passed: passed ? 1 : 0
+  };
+
+  const transaction = db.transaction(() => {
+    updateResultById.run(update);
+    const updated = getResultById.get(resultId);
+    writeAdminAudit(req, "update", "exam_result", resultId, serializeResult(existing), serializeResult(updated));
+    return updated;
+  });
+
+  return res.json({ result: serializeResult(transaction()) });
+});
+
+app.delete("/api/admin/results/:id", requireAdmin, (req, res) => {
+  const resultId = Number(req.params.id);
+  const existing = Number.isInteger(resultId) ? getResultById.get(resultId) : null;
+  if (!existing) {
+    return res.status(404).json({ error: "Exam result not found" });
+  }
+
+  const transaction = db.transaction(() => {
+    deleteResultById.run(resultId);
+    writeAdminAudit(req, "delete", "exam_result", resultId, serializeResult(existing), null);
+  });
+  transaction();
+
+  return res.json({ ok: true, deletedResultId: resultId });
 });
 
 app.get("/api/admin/employees", requireAdmin, (req, res) => {
@@ -820,8 +976,102 @@ app.post("/api/admin/employees", requireAdmin, (req, res) => {
     updated_at: now
   };
 
-  insertEmployee.run(record);
+  const transaction = db.transaction(() => {
+    deleteEmployeeTombstone.run(employeeCode);
+    insertEmployee.run(record);
+    writeAdminAudit(req, "create", "employee", record.id, null, serializeManagedEmployee(record));
+  });
+  transaction();
   return res.status(201).json({ employee: serializeManagedEmployee(record) });
+});
+
+app.patch("/api/admin/employees/:id", requireAdmin, (req, res) => {
+  const employeeId = String(req.params.id || "").trim();
+  const existing = getUserById.get(employeeId);
+  if (!existing) {
+    return res.status(404).json({ error: "Employee not found" });
+  }
+  if (existing.role === "admin") {
+    return res.status(403).json({ error: "Administrator accounts cannot be changed from this screen" });
+  }
+
+  const employeeCode = normalizeEmployeeCode(req.body?.employeeCode ?? existing.employee_code);
+  const fullName = String(req.body?.fullName ?? existing.full_name ?? "").trim();
+  const department = String(req.body?.department ?? existing.department ?? "").trim();
+  const position = String(req.body?.position ?? existing.position ?? "").trim();
+  const photoUrl = String(req.body?.photoUrl ?? existing.photo_url ?? "").trim();
+  const isActive = typeof req.body?.isActive === "boolean" ? req.body.isActive : Boolean(existing.is_active);
+
+  if (!employeeCode || !fullName) {
+    return res.status(400).json({ error: "employeeCode and fullName are required" });
+  }
+
+  const duplicate = getUserByEmployeeCode.get(employeeCode);
+  if (duplicate && duplicate.id !== employeeId) {
+    return res.status(409).json({ error: "Employee code already exists" });
+  }
+
+  const now = new Date().toISOString();
+  const record = {
+    id: employeeId,
+    employee_code: employeeCode,
+    full_name: fullName,
+    department,
+    position,
+    photo_url: photoUrl,
+    is_active: isActive ? 1 : 0,
+    password_hash: hashEmployeeCode(employeeCode),
+    updated_at: now
+  };
+
+  const transaction = db.transaction(() => {
+    if (employeeCode !== existing.employee_code) {
+      upsertEmployeeTombstone.run({
+        employee_code: existing.employee_code,
+        deleted_at: now,
+        deleted_by: req.user.employee_code
+      });
+    }
+    deleteEmployeeTombstone.run(employeeCode);
+    updateEmployeeById.run(record);
+    updateResultEmployeeSnapshot.run(record);
+    updateEvaluationEmployeeSnapshot.run(record);
+    const updated = getUserById.get(employeeId);
+    writeAdminAudit(req, "update", "employee", employeeId, serializeManagedEmployee(existing), serializeManagedEmployee(updated));
+    return updated;
+  });
+
+  return res.json({ employee: serializeManagedEmployee(transaction()) });
+});
+
+app.delete("/api/admin/employees/:id", requireAdmin, (req, res) => {
+  const employeeId = String(req.params.id || "").trim();
+  const existing = getUserById.get(employeeId);
+  if (!existing) {
+    return res.status(404).json({ error: "Employee not found" });
+  }
+  if (existing.role === "admin") {
+    return res.status(403).json({ error: "Administrator accounts cannot be deleted" });
+  }
+
+  const now = new Date().toISOString();
+  const transaction = db.transaction(() => {
+    upsertEmployeeTombstone.run({
+      employee_code: existing.employee_code,
+      deleted_at: now,
+      deleted_by: req.user.employee_code
+    });
+    deleteEmployeeById.run(employeeId);
+    writeAdminAudit(req, "delete", "employee", employeeId, serializeManagedEmployee(existing), null);
+  });
+  transaction();
+
+  return res.json({
+    ok: true,
+    deletedEmployeeId: employeeId,
+    preservedExamResults: true,
+    preservedEvaluations: true
+  });
 });
 
 app.get("/api/evaluations", requireAdmin, (req, res) => {
