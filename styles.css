@@ -414,6 +414,23 @@ body[data-preview-mode="tablet"] .exam-side-rail {
   box-shadow: 0 16px 30px rgba(255, 104, 105, 0.25);
 }
 
+.nav-badge,
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  margin-left: 6px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .side-card {
   display: grid;
   gap: 8px;
@@ -1843,6 +1860,30 @@ body.score-popup-open {
 .answer-review-correct-answer span,
 .answer-review-correct-answer strong {
   color: #167249;
+}
+
+.answer-report-btn {
+  margin-top: 12px;
+  padding: 8px 11px;
+  border: 1px solid #f7b267;
+  border-radius: 8px;
+  color: #9a4d00;
+  background: #fff7ed;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.answer-report-btn:hover,
+.answer-report-btn:focus-visible {
+  border-color: #f97316;
+  color: #9a3412;
+  background: #ffedd5;
+}
+
+.answer-report-btn:disabled {
+  cursor: default;
+  opacity: 0.72;
 }
 
 .answer-review-empty {
@@ -4588,7 +4629,7 @@ body {
 
 .management-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -4755,6 +4796,143 @@ body {
   cursor: not-allowed;
 }
 
+.question-report-list {
+  display: grid;
+  gap: 14px;
+}
+
+.question-report-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dbe6f2;
+  border-left: 5px solid #2d8cff;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.question-report-card.open {
+  border-left-color: #ef4444;
+  background: #fffafa;
+}
+
+.question-report-card.reviewing {
+  border-left-color: #f59e0b;
+}
+
+.question-report-card.resolved {
+  border-left-color: #16a34a;
+}
+
+.question-report-card.rejected {
+  border-left-color: #64748b;
+}
+
+.question-report-head,
+.question-report-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.question-report-head strong {
+  display: block;
+  color: #17233a;
+}
+
+.question-report-head span:not(.question-report-status) {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.question-report-status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  color: #1764c0;
+  background: var(--blue-soft);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.question-report-status.open {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.question-report-status.reviewing {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.question-report-status.resolved {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.question-report-status.rejected {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+.question-report-body p,
+.question-report-reason,
+.question-report-note {
+  margin: 0;
+  color: #33415f;
+  line-height: 1.55;
+}
+
+.question-report-answer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.question-report-answer-grid div,
+.question-report-reason,
+.question-report-note {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.question-report-answer-grid span,
+.question-report-reason span,
+.question-report-note span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.question-report-answer-grid strong,
+.question-report-reason strong,
+.question-report-note strong {
+  display: block;
+  margin-top: 4px;
+  color: #1d2f4a;
+}
+
+.question-report-actions select {
+  min-width: 190px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 800;
+}
+
+.question-report-card small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
 .management-account-status {
   display: inline-block;
   min-width: 78px;
@@ -4904,6 +5082,10 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 
+  .question-report-answer-grid {
+    grid-template-columns: 1fr;
+  }
+
   .management-search-field {
     grid-column: 1 / -1;
   }
@@ -4923,6 +5105,19 @@ body {
   .management-employee-filters,
   .management-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .management-tabs,
+  .question-report-head,
+  .question-report-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .management-tab,
+  .question-report-actions select,
+  .question-report-actions button {
+    width: 100%;
   }
 
   .management-search-field,

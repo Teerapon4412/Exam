@@ -70,7 +70,7 @@
               <button class="nav-item" data-view="profile" type="button">ข้อมูลพนักงาน</button>
               <button class="nav-item admin-only hidden" data-view="evaluation" type="button">ประเมินหน้างาน</button>
               <button class="nav-item admin-only hidden" data-view="skillMatrix" type="button">Skill Matrix</button>
-              <button class="nav-item admin-only hidden" data-view="management" type="button">จัดการข้อมูล</button>
+              <button class="nav-item admin-only hidden" data-view="management" type="button">จัดการข้อมูล <span id="questionReportNavBadge" class="nav-badge hidden">0</span></button>
               <button class="nav-item admin-only hidden" data-view="admin" type="button">จัดการคลังข้อสอบ</button>
             </nav>
           </div>
@@ -741,6 +741,7 @@
               <div class="management-tabs" role="tablist" aria-label="ประเภทข้อมูลที่ต้องการจัดการ">
                 <button id="managementResultsTab" class="management-tab active" data-management-tab="results" type="button" role="tab">ผลสอบ</button>
                 <button id="managementEmployeesTab" class="management-tab" data-management-tab="employees" type="button" role="tab">ข้อมูลพนักงาน</button>
+                <button id="managementReportsTab" class="management-tab" data-management-tab="reports" type="button" role="tab">ร้องเรียนข้อสอบ <span id="managementReportsBadge" class="tab-badge hidden">0</span></button>
               </div>
 
               <div id="managementResultsPanel" class="management-panel">
@@ -807,6 +808,27 @@
                   </table>
                   <div id="managementEmployeesEmpty" class="empty-state hidden">ไม่พบข้อมูลพนักงานตามตัวกรอง</div>
                 </div>
+              </div>
+
+              <div id="managementReportsPanel" class="management-panel hidden">
+                <div class="management-filter-grid">
+                  <label class="field management-search-field">
+                    <span>ค้นหารายงาน</span>
+                    <input id="managementReportSearch" type="search" placeholder="ชื่อ รหัส Model Part หรือข้อความคำถาม" />
+                  </label>
+                  <label class="field">
+                    <span>สถานะ</span>
+                    <select id="managementReportStatusFilter">
+                      <option value="">ทั้งหมด</option>
+                      <option value="open">รอ Admin ตรวจสอบ</option>
+                      <option value="reviewing">กำลังตรวจสอบ</option>
+                      <option value="resolved">แก้ไขแล้ว</option>
+                      <option value="rejected">ไม่พบปัญหา</option>
+                    </select>
+                  </label>
+                </div>
+                <div id="managementReportsList" class="question-report-list"></div>
+                <div id="managementReportsEmpty" class="empty-state hidden">ยังไม่มีการร้องเรียนข้อสอบ</div>
               </div>
             </section>
           </section>

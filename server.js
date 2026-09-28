@@ -103,6 +103,31 @@ db.exec(`
     after_json TEXT,
     created_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS question_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    result_id INTEGER NOT NULL,
+    user_id TEXT NOT NULL,
+    employee_code TEXT,
+    full_name TEXT,
+    exam_id TEXT NOT NULL,
+    exam_title TEXT NOT NULL,
+    model_code TEXT NOT NULL,
+    model_name TEXT NOT NULL,
+    part_code TEXT NOT NULL,
+    question_number INTEGER NOT NULL,
+    question_text TEXT NOT NULL,
+    selected_key TEXT,
+    selected_text TEXT,
+    correct_key TEXT,
+    correct_text TEXT,
+    reason TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'open',
+    admin_note TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(result_id) REFERENCES exam_results(id)
+  );
 `);
 
 function getColumnNames(tableName) {
@@ -136,6 +161,8 @@ db.exec(`
   CREATE UNIQUE INDEX IF NOT EXISTS idx_users_employee_code ON users(employee_code);
   CREATE INDEX IF NOT EXISTS idx_exam_results_user_id ON exam_results(user_id);
   CREATE INDEX IF NOT EXISTS idx_evaluations_employee_code ON evaluations(employee_code);
+  CREATE INDEX IF NOT EXISTS idx_question_reports_status ON question_reports(status, created_at);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_question_reports_unique_question ON question_reports(result_id, question_number);
 `);
 
 const getBank = db.prepare(`SELECT title, payload, source, updated_at FROM exam_bank WHERE id = 1`);
@@ -235,6 +262,40 @@ const insertSeedEmployee = db.prepare(`
 
 const getUserById = db.prepare(`SELECT * FROM users WHERE id = ?`);
 const getResultById = db.prepare(`SELECT * FROM exam_results WHERE id = ?`);
+
+const insertQuestionReport = db.prepare(`
+  INSERT INTO question_reports (
+    result_id, user_id, employee_code, full_name, exam_id, exam_title, model_code, model_name, part_code,
+    question_number, question_text, selected_key, selected_text, correct_key, correct_text,
+    reason, status, admin_note, created_at, updated_at
+  ) VALUES (
+    @result_id, @user_id, @employee_code, @full_name, @exam_id, @exam_title, @model_code, @model_name, @part_code,
+    @question_number, @question_text, @selected_key, @selected_text, @correct_key, @correct_text,
+    @reason, @status, @admin_note, @created_at, @updated_at
+  )
+`);
+
+const getQuestionReportById = db.prepare(`SELECT * FROM question_reports WHERE id = ?`);
+const getQuestionReportByResultQuestion = db.prepare(`
+  SELECT *
+  FROM question_reports
+  WHERE result_id = ? AND question_number = ?
+`);
+const getAllQuestionReports = db.prepare(`
+  SELECT *
+  FROM question_reports
+  ORDER BY
+    CASE status WHEN 'open' THEN 0 WHEN 'reviewing' THEN 1 WHEN 'resolved' THEN 2 ELSE 3 END,
+    created_at DESC
+`);
+
+const updateQuestionReportStatus = db.prepare(`
+  UPDATE question_reports
+  SET status = @status,
+      admin_note = @admin_note,
+      updated_at = @updated_at
+  WHERE id = @id
+`);
 
 const updateResultById = db.prepare(`
   UPDATE exam_results
@@ -674,6 +735,32 @@ function serializeResult(row) {
   };
 }
 
+function serializeQuestionReport(row) {
+  return {
+    id: Number(row.id),
+    resultId: Number(row.result_id),
+    userId: row.user_id,
+    employeeCode: row.employee_code || "",
+    fullName: row.full_name || "",
+    examId: row.exam_id,
+    examTitle: row.exam_title,
+    modelCode: row.model_code,
+    modelName: row.model_name,
+    partCode: row.part_code,
+    questionNumber: Number(row.question_number || 0),
+    questionText: row.question_text || "",
+    selectedKey: row.selected_key || "",
+    selectedText: row.selected_text || "",
+    correctKey: row.correct_key || "",
+    correctText: row.correct_text || "",
+    reason: row.reason || "",
+    status: row.status || "open",
+    adminNote: row.admin_note || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 function serializeEmployee(user) {
   return {
     id: user.id,
@@ -875,6 +962,103 @@ app.post("/api/results", requireAuth, (req, res) => {
 app.get("/api/results", requireAuth, (req, res) => {
   const results = req.user.role === "admin" ? getAllResults.all() : getResultsByUser.all(req.user.id);
   return res.json({ results: results.map(serializeResult) });
+});
+
+app.post("/api/question-reports", requireAuth, (req, res) => {
+  const resultId = Number(req.body?.resultId);
+  const questionNumber = Number(req.body?.questionNumber);
+  const reason = String(req.body?.reason || "").trim();
+
+  if (!Number.isInteger(resultId) || !Number.isInteger(questionNumber) || questionNumber <= 0) {
+    return res.status(400).json({ error: "resultId and questionNumber are required" });
+  }
+
+  if (!reason || reason.length < 5) {
+    return res.status(400).json({ error: "กรุณาระบุเหตุผลอย่างน้อย 5 ตัวอักษร" });
+  }
+
+  const result = getResultById.get(resultId);
+  if (!result) {
+    return res.status(404).json({ error: "Exam result not found" });
+  }
+
+  if (req.user.role !== "admin" && String(result.user_id) !== String(req.user.id)) {
+    return res.status(403).json({ error: "Cannot report another employee's result" });
+  }
+
+  const existing = getQuestionReportByResultQuestion.get(resultId, questionNumber);
+  if (existing) {
+    return res.status(409).json({ error: "ข้อสอบข้อนี้ถูกรายงานไปแล้ว", report: serializeQuestionReport(existing) });
+  }
+
+  const review = serializeResult(result).review;
+  const item = review.find((entry, index) => Number(entry.number || index + 1) === questionNumber);
+  if (!item) {
+    return res.status(404).json({ error: "Question review not found in this result" });
+  }
+
+  const now = new Date().toISOString();
+  const report = {
+    result_id: resultId,
+    user_id: String(result.user_id || req.user.id),
+    employee_code: String(result.employee_code || req.user.employee_code || ""),
+    full_name: String(result.full_name || req.user.full_name || ""),
+    exam_id: String(result.exam_id || ""),
+    exam_title: String(result.exam_title || ""),
+    model_code: String(result.model_code || ""),
+    model_name: String(result.model_name || ""),
+    part_code: String(result.part_code || ""),
+    question_number: Number(item.number || questionNumber),
+    question_text: String(item.text || ""),
+    selected_key: String(item.selectedKey || ""),
+    selected_text: String(item.selectedText || ""),
+    correct_key: String(item.correctKey || ""),
+    correct_text: String(item.correctText || ""),
+    reason: reason.slice(0, 1000),
+    status: "open",
+    admin_note: "",
+    created_at: now,
+    updated_at: now
+  };
+
+  const insertInfo = insertQuestionReport.run(report);
+  const saved = getQuestionReportById.get(Number(insertInfo.lastInsertRowid));
+  return res.status(201).json({ report: serializeQuestionReport(saved) });
+});
+
+app.get("/api/admin/question-reports", requireAdmin, (_req, res) => {
+  const reports = getAllQuestionReports.all().map(serializeQuestionReport);
+  return res.json({ reports });
+});
+
+app.patch("/api/admin/question-reports/:id", requireAdmin, (req, res) => {
+  const reportId = Number(req.params.id);
+  const existing = Number.isInteger(reportId) ? getQuestionReportById.get(reportId) : null;
+  if (!existing) {
+    return res.status(404).json({ error: "Question report not found" });
+  }
+
+  const allowedStatuses = new Set(["open", "reviewing", "resolved", "rejected"]);
+  const status = String(req.body?.status || existing.status || "open").trim();
+  if (!allowedStatuses.has(status)) {
+    return res.status(400).json({ error: "Invalid report status" });
+  }
+
+  const update = {
+    id: reportId,
+    status,
+    admin_note: String(req.body?.adminNote || "").trim().slice(0, 1000),
+    updated_at: new Date().toISOString()
+  };
+
+  const transaction = db.transaction(() => {
+    updateQuestionReportStatus.run(update);
+    const updated = getQuestionReportById.get(reportId);
+    writeAdminAudit(req, "update", "question_report", reportId, serializeQuestionReport(existing), serializeQuestionReport(updated));
+    return updated;
+  });
+
+  return res.json({ report: serializeQuestionReport(transaction()) });
 });
 
 app.patch("/api/admin/results/:id", requireAdmin, (req, res) => {

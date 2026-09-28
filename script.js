@@ -55,11 +55,19 @@ const els = {
   managementKpis: $("managementKpis"),
   managementResultsTab: $("managementResultsTab"),
   managementEmployeesTab: $("managementEmployeesTab"),
+  managementReportsTab: $("managementReportsTab"),
+  managementReportsBadge: $("managementReportsBadge"),
+  questionReportNavBadge: $("questionReportNavBadge"),
   managementResultsPanel: $("managementResultsPanel"),
   managementEmployeesPanel: $("managementEmployeesPanel"),
+  managementReportsPanel: $("managementReportsPanel"),
   managementResultSearch: $("managementResultSearch"),
   managementModelFilter: $("managementModelFilter"),
   managementPartFilter: $("managementPartFilter"),
+  managementReportSearch: $("managementReportSearch"),
+  managementReportStatusFilter: $("managementReportStatusFilter"),
+  managementReportsList: $("managementReportsList"),
+  managementReportsEmpty: $("managementReportsEmpty"),
   managementResultsBody: $("managementResultsBody"),
   managementResultsEmpty: $("managementResultsEmpty"),
   managementEmployeeSearch: $("managementEmployeeSearch"),
@@ -348,6 +356,13 @@ const SCORING_MODE_LABELS = {
   [SCORING_MODES.examEvaluation]: "ข้อสอบ 40% + ประเมิน 60%"
 };
 
+const QUESTION_REPORT_STATUS = {
+  open: "รอ Admin ตรวจสอบ",
+  reviewing: "กำลังตรวจสอบ",
+  resolved: "แก้ไขแล้ว",
+  rejected: "ไม่พบปัญหา"
+};
+
 const state = {
   user: null,
   authToken: "",
@@ -360,6 +375,7 @@ const state = {
   answers: [],
   submitted: false,
   results: [],
+  questionReports: [],
   employees: [],
   evaluations: [],
   activeView: "exam",
@@ -1141,6 +1157,7 @@ function setView(view) {
     renderPracticalAssessment();
   } else if (view === "management") {
     renderManagement();
+    if (state.user?.role === "admin") loadQuestionReports();
   } else if (view === "admin") {
     renderAdminInfo();
   }
@@ -1460,7 +1477,7 @@ function renderResult(result) {
   }
   showMessage(els.loadStatus, "ส่งข้อสอบเรียบร้อยแล้ว");
   updateExamStatus();
-  renderAnswerReview(els.answerReviewPanel, result.review, { compact: false });
+  renderAnswerReview(els.answerReviewPanel, result.review, { compact: false, resultId: result.id });
   openScorePopup(result);
 }
 
@@ -1476,6 +1493,7 @@ function buildAnswerReviewHtml(review = [], options = {}) {
   if (!items.length) return "";
 
   const visibleItems = options.compact ? items.filter((item) => !item.isCorrect) : items;
+  const canReport = Boolean(options.resultId) && state.user?.role !== "admin";
   if (!visibleItems.length) {
     return `
       <div class="answer-review-head">
@@ -1497,6 +1515,9 @@ function buildAnswerReviewHtml(review = [], options = {}) {
           ? "ยังไม่ได้ตอบ"
           : formatAnswerLabel(item.selectedKey, item.selectedText);
         const correctLabel = formatAnswerLabel(item.correctKey, item.correctText);
+        const reportButton = canReport
+          ? `<button class="answer-report-btn" data-report-result-id="${Number(options.resultId)}" data-report-question-number="${escapeHtml(item.number)}" type="button">รายงานข้อสอบผิด</button>`
+          : "";
         return `
           <article class="answer-review-item ${item.isCorrect ? "correct" : "wrong"}">
             <div class="answer-review-question">
@@ -1514,6 +1535,7 @@ function buildAnswerReviewHtml(review = [], options = {}) {
                 <strong>${escapeHtml(correctLabel)}</strong>
               </div>
             </div>
+            ${reportButton}
           </article>
         `;
       }).join("")}
@@ -1526,6 +1548,40 @@ function renderAnswerReview(container, review, options = {}) {
   const html = buildAnswerReviewHtml(review, options);
   container.classList.toggle("hidden", !html);
   container.innerHTML = html;
+}
+
+async function submitQuestionReport(button) {
+  if (!button || button.disabled) return;
+  const resultId = Number(button.dataset.reportResultId);
+  const questionNumber = Number(button.dataset.reportQuestionNumber);
+  if (!Number.isInteger(resultId) || !Number.isInteger(questionNumber)) return;
+
+  const reason = window.prompt(
+    `แจ้งเหตุผลที่คิดว่าข้อ ${questionNumber} หรือเฉลยของข้อนี้ผิด`,
+    "เฉลย/ตัวเลือกของข้อนี้อาจไม่ถูกต้อง"
+  );
+  if (reason === null) return;
+  const cleanReason = String(reason || "").trim();
+  if (cleanReason.length < 5) {
+    showToast("กรุณาระบุเหตุผลอย่างน้อย 5 ตัวอักษร", "error");
+    return;
+  }
+
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = "กำลังส่ง...";
+  try {
+    await api("/api/question-reports", {
+      method: "POST",
+      body: JSON.stringify({ resultId, questionNumber, reason: cleanReason })
+    });
+    button.textContent = "รายงานแล้ว";
+    showToast("ส่งเรื่องให้ Admin ตรวจสอบแล้ว", "success");
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = originalText;
+    showToast(error.message || "ส่งรายงานไม่สำเร็จ", "error");
+  }
 }
 
 function openScorePopup(result) {
@@ -1552,7 +1608,7 @@ function openScorePopup(result) {
       ? `ทำ ${nextExam.partCode || "Part ถัดไป"}`
       : "ยังไม่มี Part ถัดไป";
   }
-  renderAnswerReview(els.scorePopupReview, result.review, { compact: true });
+  renderAnswerReview(els.scorePopupReview, result.review, { compact: true, resultId: result.id });
   els.scorePopup.classList.remove("hidden");
   document.body.classList.add("score-popup-open");
   els.scorePopupOkBtn?.focus();
@@ -1756,6 +1812,22 @@ async function loadResults() {
     }
     showMessage(els.loadStatus, `โหลดประวัติผลสอบไม่สำเร็จ: ${error.message}`, true);
   }
+}
+
+async function loadQuestionReports() {
+  if (state.user?.role !== "admin") {
+    state.questionReports = [];
+    updateQuestionReportBadges();
+    return;
+  }
+
+  try {
+    const payload = await api("/api/admin/question-reports");
+    state.questionReports = Array.isArray(payload.reports) ? payload.reports : [];
+  } catch (_error) {
+    state.questionReports = [];
+  }
+  renderManagement();
 }
 
 function renderHistory() {
@@ -2016,24 +2088,28 @@ function renderDashboard() {
 }
 
 function setManagementTab(tab = "results") {
-  const safeTab = tab === "employees" ? "employees" : "results";
+  const safeTab = ["results", "employees", "reports"].includes(tab) ? tab : "results";
   state.adminManagement.activeTab = safeTab;
   els.managementResultsTab?.classList.toggle("active", safeTab === "results");
   els.managementEmployeesTab?.classList.toggle("active", safeTab === "employees");
+  els.managementReportsTab?.classList.toggle("active", safeTab === "reports");
   els.managementResultsPanel?.classList.toggle("hidden", safeTab !== "results");
   els.managementEmployeesPanel?.classList.toggle("hidden", safeTab !== "employees");
+  els.managementReportsPanel?.classList.toggle("hidden", safeTab !== "reports");
 }
 
 function renderManagementKpis() {
   if (!els.managementKpis) return;
   const results = Array.isArray(state.results) ? state.results : [];
   const employees = (state.adminEditor.managedEmployees || []).filter((employee) => employee.role !== "admin");
+  const openReports = (state.questionReports || []).filter((report) => report.status === "open").length;
   const passed = results.filter((result) => result.passed).length;
   const active = employees.filter((employee) => employee.isActive).length;
   const items = [
     { label: "ผลสอบทั้งหมด", value: results.length, tone: "blue" },
     { label: "ผ่าน", value: passed, tone: "green" },
     { label: "ไม่ผ่าน", value: Math.max(results.length - passed, 0), tone: "red" },
+    { label: "ร้องเรียนใหม่", value: openReports, tone: "red" },
     { label: "พนักงานที่ใช้งาน", value: active, tone: "orange" }
   ];
   els.managementKpis.innerHTML = items.map((item) => `
@@ -2149,12 +2225,110 @@ function renderManagementEmployees() {
   }).join("");
 }
 
+function updateQuestionReportBadges() {
+  const openReports = (state.questionReports || []).filter((report) => report.status === "open").length;
+  [els.managementReportsBadge, els.questionReportNavBadge].forEach((badge) => {
+    if (!badge) return;
+    badge.textContent = String(openReports);
+    badge.classList.toggle("hidden", openReports <= 0);
+  });
+}
+
+function getFilteredQuestionReports() {
+  const query = String(els.managementReportSearch?.value || "").trim().toLocaleLowerCase("th");
+  const status = String(els.managementReportStatusFilter?.value || "");
+  return (state.questionReports || []).filter((report) => {
+    if (status && report.status !== status) return false;
+    if (!query) return true;
+    return [
+      report.employeeCode,
+      report.fullName,
+      report.modelCode,
+      report.modelName,
+      report.partCode,
+      report.examTitle,
+      report.questionText,
+      report.reason
+    ].some((value) => String(value || "").toLocaleLowerCase("th").includes(query));
+  });
+}
+
+function renderManagementReports() {
+  if (!els.managementReportsList) return;
+  updateQuestionReportBadges();
+  const reports = getFilteredQuestionReports();
+  els.managementReportsEmpty?.classList.toggle("hidden", reports.length > 0);
+  els.managementReportsList.innerHTML = reports.map((report) => {
+    const statusLabel = QUESTION_REPORT_STATUS[report.status] || report.status || "-";
+    const selectedLabel = formatAnswerLabel(report.selectedKey, report.selectedText);
+    const correctLabel = formatAnswerLabel(report.correctKey, report.correctText);
+    return `
+      <article class="question-report-card ${escapeHtml(report.status || "open")}">
+        <div class="question-report-head">
+          <div>
+            <strong>${escapeHtml(report.fullName || report.employeeCode || "-")}</strong>
+            <span>${escapeHtml(report.employeeCode || "-")} · ${escapeHtml(report.modelName || report.modelCode || "-")} / ${escapeHtml(report.partCode || report.examTitle || "-")}</span>
+          </div>
+          <span class="question-report-status ${escapeHtml(report.status || "open")}">${escapeHtml(statusLabel)}</span>
+        </div>
+        <div class="question-report-body">
+          <p><strong>ข้อ ${Number(report.questionNumber || 0)}:</strong> ${escapeHtml(report.questionText || "-")}</p>
+          <div class="question-report-answer-grid">
+            <div><span>พนักงานตอบ</span><strong>${escapeHtml(selectedLabel || "-")}</strong></div>
+            <div><span>เฉลยปัจจุบันในผลสอบ</span><strong>${escapeHtml(correctLabel || "-")}</strong></div>
+          </div>
+          <div class="question-report-reason"><span>เหตุผลที่ร้องเรียน</span><strong>${escapeHtml(report.reason || "-")}</strong></div>
+          ${report.adminNote ? `<div class="question-report-note"><span>บันทึก Admin</span><strong>${escapeHtml(report.adminNote)}</strong></div>` : ""}
+        </div>
+        <div class="question-report-actions">
+          <select data-report-status="${Number(report.id)}" aria-label="สถานะรายงานข้อสอบ">
+            ${Object.entries(QUESTION_REPORT_STATUS).map(([value, label]) => `
+              <option value="${escapeHtml(value)}" ${report.status === value ? "selected" : ""}>${escapeHtml(label)}</option>
+            `).join("")}
+          </select>
+          <button class="management-action-btn edit" data-report-action="note" data-report-id="${Number(report.id)}" type="button">บันทึก Admin</button>
+        </div>
+        <small>แจ้งเมื่อ ${formatDateTime(report.createdAt)} · อัปเดต ${formatDateTime(report.updatedAt)}</small>
+      </article>
+    `;
+  }).join("");
+}
+
+async function updateQuestionReport(reportId, updates) {
+  const id = Number(reportId);
+  if (!Number.isInteger(id)) return;
+
+  try {
+    const response = await api(`/api/admin/question-reports/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates)
+    });
+    state.questionReports = (state.questionReports || []).map((report) =>
+      Number(report.id) === id ? response.report : report
+    );
+    renderManagement();
+    showToast("อัปเดตรายงานข้อสอบแล้ว", "success");
+  } catch (error) {
+    showToast(error.message || "อัปเดตรายงานไม่สำเร็จ", "error");
+    await loadQuestionReports();
+  }
+}
+
+function promptQuestionReportNote(reportId) {
+  const report = (state.questionReports || []).find((item) => Number(item.id) === Number(reportId));
+  if (!report) return;
+  const note = window.prompt("บันทึก Admin สำหรับรายงานนี้", report.adminNote || "");
+  if (note === null) return;
+  updateQuestionReport(report.id, { status: report.status || "open", adminNote: String(note || "").trim() });
+}
+
 function renderManagement() {
   if (!els.managementView || state.user?.role !== "admin") return;
   setManagementTab(state.adminManagement.activeTab);
   renderManagementKpis();
   renderManagementResults();
   renderManagementEmployees();
+  renderManagementReports();
 }
 
 function openManagementResultEditor(resultId) {
@@ -4746,6 +4920,7 @@ async function handleLogin(event) {
       await loadEmployees();
       await loadManagedEmployees();
       await loadEvaluations();
+      await loadQuestionReports();
     }
     setView(state.user.role === "admin" ? "dashboard" : "exam");
   } catch (error) {
@@ -4757,6 +4932,7 @@ function logout() {
   state.user = null;
   state.authToken = "";
   state.results = [];
+  state.questionReports = [];
   state.employees = [];
   state.evaluations = [];
   state.adminEditor.managedEmployees = [];
@@ -4875,6 +5051,10 @@ function bindEvents() {
     if (event.key === "-") setImageViewerScale(imageViewerState.scale / 1.25);
     if (event.key === "0") setImageViewerScale(1);
   });
+  document.addEventListener("click", (event) => {
+    const reportButton = event.target.closest("[data-report-result-id][data-report-question-number]");
+    if (reportButton) submitQuestionReport(reportButton);
+  });
   window.addEventListener("resize", () => {
     if (!els.imageViewer.classList.contains("hidden")) fitImageViewer();
   });
@@ -4895,6 +5075,8 @@ function bindEvents() {
   els.managementPartFilter?.addEventListener("change", renderManagementResults);
   els.managementEmployeeSearch?.addEventListener("input", renderManagementEmployees);
   els.managementEmployeeStatusFilter?.addEventListener("change", renderManagementEmployees);
+  els.managementReportSearch?.addEventListener("input", renderManagementReports);
+  els.managementReportStatusFilter?.addEventListener("change", renderManagementReports);
   els.managementResultsBody?.addEventListener("click", (event) => {
     const button = event.target.closest("[data-management-action]");
     if (!button) return;
@@ -4914,6 +5096,22 @@ function bindEvents() {
       toggleManagementEmployee(employeeId);
     } else if (button.dataset.managementAction === "delete-employee") {
       openManagementDeleteConfirm("employee", employeeId);
+    }
+  });
+  els.managementReportsList?.addEventListener("change", (event) => {
+    const select = event.target.closest("[data-report-status]");
+    if (!select) return;
+    const report = (state.questionReports || []).find((item) => Number(item.id) === Number(select.dataset.reportStatus));
+    updateQuestionReport(select.dataset.reportStatus, {
+      status: select.value,
+      adminNote: report?.adminNote || ""
+    });
+  });
+  els.managementReportsList?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-report-action]");
+    if (!button) return;
+    if (button.dataset.reportAction === "note") {
+      promptQuestionReportNote(button.dataset.reportId);
     }
   });
   els.managementEditorForm?.addEventListener("submit", saveManagementEditor);
