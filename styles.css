@@ -2438,6 +2438,12 @@ body.score-popup-open {
   background: #fbfdff;
 }
 
+.admin-question-card.is-report-target {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.16), 0 14px 34px rgba(185, 28, 28, 0.12);
+  background: #fffafa;
+}
+
 .admin-question-head {
   display: flex;
   justify-content: space-between;
@@ -4783,6 +4789,12 @@ body {
   border-color: #f7c86b;
   color: #9a6300;
   background: #fffaf0;
+}
+
+.management-action-btn.open-question {
+  border-color: #8bbcff;
+  color: #1764c0;
+  background: #eff7ff;
 }
 
 .management-action-btn.delete {

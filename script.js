@@ -2286,6 +2286,7 @@ function renderManagementReports() {
               <option value="${escapeHtml(value)}" ${report.status === value ? "selected" : ""}>${escapeHtml(label)}</option>
             `).join("")}
           </select>
+          <button class="management-action-btn open-question" data-report-action="open-question" data-report-id="${Number(report.id)}" type="button">เปิดไปแก้ข้อนี้</button>
           <button class="management-action-btn edit" data-report-action="note" data-report-id="${Number(report.id)}" type="button">บันทึก Admin</button>
         </div>
         <small>แจ้งเมื่อ ${formatDateTime(report.createdAt)} · อัปเดต ${formatDateTime(report.updatedAt)}</small>
@@ -2320,6 +2321,59 @@ function promptQuestionReportNote(reportId) {
   const note = window.prompt("บันทึก Admin สำหรับรายงานนี้", report.adminNote || "");
   if (note === null) return;
   updateQuestionReport(report.id, { status: report.status || "open", adminNote: String(note || "").trim() });
+}
+
+function openReportedQuestionInEditor(reportId) {
+  const report = (state.questionReports || []).find((item) => Number(item.id) === Number(reportId));
+  if (!report) {
+    showToast("ไม่พบรายการร้องเรียนนี้", "error");
+    return;
+  }
+
+  ensureAdminDraft();
+  const normalize = (value) => String(value || "").trim().toLocaleLowerCase("th");
+  const exams = state.adminEditor.draft?.examSets || [];
+  const exam = exams.find((item) => String(item.id || "") === String(report.examId || ""))
+    || exams.find((item) => (
+      normalize(item.modelCode || item.modelName) === normalize(report.modelCode || report.modelName)
+      && normalize(item.partCode || item.title) === normalize(report.partCode || report.examTitle)
+    ));
+
+  if (!exam) {
+    showToast("ไม่พบ Model หรือ Part ของข้อที่ถูกร้องเรียน อาจมีการเปลี่ยนแปลงคลังข้อสอบแล้ว", "error", 4200);
+    return;
+  }
+
+  const questions = Array.isArray(exam.questions) ? exam.questions : [];
+  const questionNumber = Number(report.questionNumber || 0);
+  const question = questions.find((item) => normalize(item.text) === normalize(report.questionText))
+    || questions.find((item) => Number(item.number) === questionNumber)
+    || questions[questionNumber - 1]
+    || null;
+
+  if (!question) {
+    showToast(`พบ Part ${exam.partCode || ""} แต่ไม่พบข้อ ${questionNumber || "ที่ร้องเรียน"}`, "error", 4200);
+    return;
+  }
+
+  state.adminEditor.selectedModelCode = String(exam.modelCode || "");
+  state.adminEditor.selectedExamId = exam.id;
+  state.adminEditor.newModelName = String(exam.modelName || exam.modelCode || "");
+  setView("admin");
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const card = Array.from(document.querySelectorAll("[data-question-card]"))
+        .find((item) => item.dataset.questionCard === String(question.id));
+      if (!card) return;
+      card.classList.add("is-report-target");
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      card.querySelector('[data-admin-field="question-text"]')?.focus({ preventScroll: true });
+      window.setTimeout(() => card.classList.remove("is-report-target"), 5000);
+    });
+  });
+
+  showToast(`เปิด ${exam.modelName || exam.modelCode || "Model"} / ${exam.partCode || exam.title || "Part"} ข้อ ${questionNumber || question.number || ""} แล้ว`, "success", 3600);
 }
 
 function renderManagement() {
@@ -4279,7 +4333,7 @@ function deleteAdminQuestion(examId, questionId) {
 
 function buildAdminQuestionCard(question, index) {
   return `
-    <article class="admin-question-card" data-question-card="${question.id}">
+    <article class="admin-question-card" data-question-card="${question.id}" data-question-number="${index + 1}" tabindex="-1">
       <div class="admin-question-head">
         <div>
           <span class="card-label">ข้อที่ ${index + 1}</span>
@@ -5112,6 +5166,8 @@ function bindEvents() {
     if (!button) return;
     if (button.dataset.reportAction === "note") {
       promptQuestionReportNote(button.dataset.reportId);
+    } else if (button.dataset.reportAction === "open-question") {
+      openReportedQuestionInEditor(button.dataset.reportId);
     }
   });
   els.managementEditorForm?.addEventListener("submit", saveManagementEditor);
