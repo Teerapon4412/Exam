@@ -5156,3 +5156,13 @@ body {
 .progress-table-wrap { overflow-x: auto; }
 .progress-table { width: 100%; border-collapse: collapse; }
 .progress-table th, .progress-table td { padding: 12px; text-align: left; border-bottom: 1px solid #dce3ed; }
+.progress-model-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; margin: 20px 0; }
+.progress-model-card { padding: 20px; border: 1px solid #dce3ed; border-radius: 16px; background: #f8fafc; color: #243247; }
+.progress-model-card.is-complete { border-color: #86bfa8; background: #f0faf5; }
+.progress-model-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.progress-model-heading h4 { margin: 0; font-size: 20px; overflow-wrap: anywhere; }
+.progress-model-heading span { font-size: 12px; }
+.progress-model-percent { display: block; font-size: 36px; color: #17605a; }
+.progress-model-card p { margin: 10px 0; }
+.progress-model-card progress { display: block; width: 100%; height: 12px; accent-color: #198576; }
+.progress-model-detail { font-size: 13px; }

@@ -17,6 +17,7 @@ async function loadExamProgress() {
   const token = state.authToken;
   $('progressBody').innerHTML = '';
   $('progressSummary').textContent = '';
+  $('progressModelCards').innerHTML = '';
   $('progressMessage').textContent = 'กำลังโหลดข้อมูล…';
   try {
     const data = await api('/api/exam-progress' + (selected ? '?employeeCode=' + encodeURIComponent(selected) : ''));
@@ -37,7 +38,31 @@ async function loadExamProgress() {
     $('progressMessage').textContent = 'โหลดสถานะไม่สำเร็จ: ' + error.message + ' — กดอัปเดตข้อมูลเพื่อลองใหม่';
   }
 }
+function renderModelProgressCards() {
+  const models = new Map();
+  progressParts.forEach((part) => {
+    if (!models.has(part.modelCode)) models.set(part.modelCode, { name: part.modelName, total: 0, taken: 0, passed: 0 });
+    const model = models.get(part.modelCode);
+    model.total++;
+    if (part.attempts > 0) model.taken++;
+    if (part.status === 'passed') model.passed++;
+  });
+  const selectedModel = $('progressModel').value;
+  $('progressModelCards').innerHTML = [...models].filter(([code]) => !selectedModel || code === selectedModel).map(([code, model]) => {
+    const percent = Math.round(model.taken / model.total * 100);
+    const label = model.taken === model.total ? 'สอบครบแล้ว' : model.taken ? 'กำลังดำเนินการ' : 'ยังไม่เริ่มสอบ';
+    return `<article class="progress-model-card ${model.taken === model.total ? 'is-complete' : ''}">
+      <div class="progress-model-heading"><h4>${escapeHtml(code)}</h4><span>${label}</span></div>
+      <p>${escapeHtml(model.name)}</p>
+      <strong class="progress-model-percent">${percent}%</strong>
+      <p>สอบแล้ว ${model.taken} จาก ${model.total} Part</p>
+      <progress max="${model.total}" value="${model.taken}" aria-label="${escapeHtml(code)} สอบแล้ว ${model.taken} จาก ${model.total} Part"></progress>
+      <p class="progress-model-detail">เคยผ่าน ${model.passed} · ยังไม่ผ่าน ${model.taken - model.passed} · ยังไม่สอบ ${model.total - model.taken}</p>
+    </article>`;
+  }).join('') || '<p>ยังไม่มี Model ในคลังข้อสอบ</p>';
+}
 function renderExamProgress() {
+  renderModelProgressCards();
   const rows = progressParts.filter((part) => !$('progressModel').value || part.modelCode === $('progressModel').value);
   const visible = rows.filter((part) => !$('progressStatus').value || part.status === $('progressStatus').value);
   const count = (status) => rows.filter((part) => part.status === status).length;

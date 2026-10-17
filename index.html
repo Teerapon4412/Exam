@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20261017-exam-progress" />
+    <link rel="stylesheet" href="./styles.css?v=20261017-model-progress" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -104,6 +104,8 @@
                 <button id="progressRefresh" type="button" class="secondary-btn">อัปเดตข้อมูล</button>
               </div>
               <p id="progressMessage" role="status" aria-live="polite"></p>
+              <p>เปอร์เซ็นต์ความคืบหน้า = จำนวน Part ที่เคยสอบ ÷ Part ทั้งหมดใน Model โดยสอบซ้ำไม่นับเพิ่ม</p>
+              <div id="progressModelCards" class="progress-model-cards" aria-label="ความคืบหน้าการสอบแต่ละ Model" aria-live="polite"></div>
               <p id="progressSummary"></p>
               <p>สถานะเคยสอบผ่านหมายถึงผ่านอย่างน้อยหนึ่งครั้ง คะแนนและผลล่าสุดอาจต่างจากสถานะนี้</p>
               <div class="progress-table-wrap"><table class="progress-table"><thead><tr><th>Model</th><th>Part</th><th>สถานะ</th><th>จำนวนครั้ง</th><th>คะแนนล่าสุด</th><th>ผลล่าสุด</th><th>วันที่สอบล่าสุด</th></tr></thead><tbody id="progressBody"></tbody></table></div>
@@ -1030,7 +1032,7 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20261017-exam-progress"></script>
-    <script src="./progress-ui.js?v=20261017-exam-progress"></script>
+    <script src="./script.js?v=20261017-model-progress"></script>
+    <script src="./progress-ui.js?v=20261017-model-progress"></script>
   </body>
 </html>
