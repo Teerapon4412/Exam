@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20260825-admin-management" />
+    <link rel="stylesheet" href="./styles.css?v=20261017-exam-progress" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -66,6 +66,7 @@
               <button class="nav-item admin-only hidden" data-view="dashboard" type="button">Dashboard</button>
               <button class="nav-item admin-only hidden" data-view="individualSummary" type="button">สรุปรายบุคคล</button>
               <button class="nav-item active" data-view="exam" type="button">ทำข้อสอบ</button>
+              <button class="nav-item" data-view="examProgress" type="button">สถานะการสอบราย Part</button>
               <button class="nav-item" data-view="history" type="button">ประวัติผลสอบ</button>
               <button class="nav-item" data-view="profile" type="button">ข้อมูลพนักงาน</button>
               <button class="nav-item admin-only hidden" data-view="evaluation" type="button">ประเมินหน้างาน</button>
@@ -92,6 +93,22 @@
         </aside>
 
         <main class="content">
+          <section id="examProgressView" class="hidden">
+            <article class="card">
+              <h3>สถานะการสอบราย Part</h3>
+              <p>ดู Part ที่เคยสอบแล้ว พร้อมคะแนนและวันที่สอบล่าสุด</p>
+              <div class="progress-filters">
+                <label class="field hidden" id="progressEmployeeField"><span>พนักงาน</span><select id="progressEmployee"></select></label>
+                <label class="field"><span>Model</span><select id="progressModel"><option value="">ทุก Model</option></select></label>
+                <label class="field"><span>สถานะ</span><select id="progressStatus"><option value="">ทุกสถานะ</option><option value="passed">เคยสอบผ่าน</option><option value="failed">สอบแล้ว ยังไม่ผ่าน</option><option value="not_taken">ยังไม่เคยสอบ</option></select></label>
+                <button id="progressRefresh" type="button" class="secondary-btn">อัปเดตข้อมูล</button>
+              </div>
+              <p id="progressMessage" role="status" aria-live="polite"></p>
+              <p id="progressSummary"></p>
+              <p>สถานะเคยสอบผ่านหมายถึงผ่านอย่างน้อยหนึ่งครั้ง คะแนนและผลล่าสุดอาจต่างจากสถานะนี้</p>
+              <div class="progress-table-wrap"><table class="progress-table"><thead><tr><th>Model</th><th>Part</th><th>สถานะ</th><th>จำนวนครั้ง</th><th>คะแนนล่าสุด</th><th>ผลล่าสุด</th><th>วันที่สอบล่าสุด</th></tr></thead><tbody id="progressBody"></tbody></table></div>
+            </article>
+          </section>
           <header class="topbar">
             <div class="topbar-title">
               <p class="eyebrow">Factory Capability Platform</p>
@@ -965,6 +982,7 @@
           <label class="field">
             <span>ตำแหน่ง</span>
             <input id="managementEmployeePosition" type="text" />
+          </label><label class="field"><span>สิทธิ์การใช้งาน</span><select id="managementEmployeeRole"><option value="student">พนักงาน</option><option value="leader">Leader — ดูสถานะการสอบพนักงานทุกคน</option></select>
           </label>
           <label class="field management-form-wide">
             <span>URL รูปพนักงาน</span>
@@ -1012,6 +1030,7 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20260825-admin-management"></script>
+    <script src="./script.js?v=20261017-exam-progress"></script>
+    <script src="./progress-ui.js?v=20261017-exam-progress"></script>
   </body>
 </html>

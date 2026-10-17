@@ -1,3 +1,4 @@
+const { summarizeProgress } = require("./exam-progress");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
@@ -319,6 +320,7 @@ const updateEmployeeById = db.prepare(`
       position = @position,
       photo_url = @photo_url,
       is_active = @is_active,
+      role = @role,
       updated_at = @updated_at
   WHERE id = @id
 `);
@@ -411,7 +413,8 @@ function randomId(prefix) {
 }
 
 function normalizeRole(role) {
-  return String(role || "").trim().toUpperCase() === "ADMIN" ? "admin" : "student";
+  const value = String(role || "").trim().toUpperCase();
+  return value === "ADMIN" ? "admin" : value === "LEADER" ? "leader" : "student";
 }
 
 function normalizeEmployeeCode(value) {
@@ -878,6 +881,23 @@ app.get("/api/exams", (_req, res) => {
   res.json(getCurrentBankPayload());
 });
 
+app.get("/api/exam-progress", requireAuth, (req, res) => {
+  const canViewAll = ["admin", "leader"].includes(req.user.role);
+  const people = canViewAll ? getManageableEmployees.all() : [req.user];
+  const requested = normalizeEmployeeCode(req.query.employeeCode || req.user.employee_code);
+  if (!canViewAll && requested !== req.user.employee_code) {
+    return res.status(403).json({ error: "Access denied" });
+  }
+  const employee = people.find((person) => person.employee_code === requested);
+  if (!employee) return res.status(404).json({ error: "Employee not found" });
+  const results = getResultsByUser.all(employee.id);
+  return res.json({
+    employees: people.map((person) => ({ employeeCode: person.employee_code, fullName: person.full_name || person.employee_code })),
+    employeeCode: requested,
+    parts: summarizeProgress(getCurrentBankPayload().examSets || [], results, employee.id)
+  });
+});
+
 app.post("/api/results", requireAuth, (req, res) => {
   const payload = req.body || {};
   const examId = String(payload.examId || "").trim();
@@ -1133,7 +1153,7 @@ app.post("/api/admin/employees", requireAdmin, (req, res) => {
   const department = String(payload.department || "").trim();
   const position = String(payload.position || "").trim();
   const photoUrl = String(payload.photoUrl || "").trim();
-  const role = "student";
+  const role = normalizeRole(payload.role) === "leader" ? "leader" : "student";
 
   if (!employeeCode || !fullName) {
     return res.status(400).json({ error: "employeeCode and fullName are required" });
@@ -1198,6 +1218,7 @@ app.patch("/api/admin/employees/:id", requireAdmin, (req, res) => {
   const now = new Date().toISOString();
   const record = {
     id: employeeId,
+    role: req.body.role === undefined ? existing.role : normalizeRole(req.body.role) === "leader" ? "leader" : "student",
     employee_code: employeeCode,
     full_name: fullName,
     department,

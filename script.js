@@ -514,7 +514,7 @@ function applyPreviewMode(mode = "auto") {
 }
 
 function roleLabel(role) {
-  return role === "admin" ? "ผู้ดูแลระบบ" : "พนักงาน";
+  return role === "admin" ? "ผู้ดูแลระบบ" : role === "leader" ? "Leader" : "พนักงาน";
 }
 
 function formatDateTime(value) {
@@ -1114,6 +1114,7 @@ function setView(view) {
     dashboard: els.dashboardView,
     individualSummary: els.individualSummaryView,
     exam: els.examView,
+    examProgress: $("examProgressView"),
     history: els.historyView,
     trainingFocus: els.trainingFocusView,
     profile: els.profileView,
@@ -1142,6 +1143,9 @@ function setView(view) {
     renderDashboard();
   } else if (view === "individualSummary") {
     renderIndividualSummary();
+  } else if (view === "examProgress") {
+    setText(els.pageHeading, "สถานะการสอบราย Part");
+    loadExamProgress();
   } else if (view === "history") {
     renderHistory();
   } else if (view === "trainingFocus") {
@@ -2420,6 +2424,7 @@ function openManagementEmployeeEditor(employeeId) {
   els.managementEmployeeDepartment.value = employee.department || "";
   els.managementEmployeePosition.value = employee.position || "";
   els.managementEmployeePhoto.value = employee.photoUrl || "";
+  $("managementEmployeeRole").value = employee.role === "leader" ? "leader" : "student";
   els.managementEmployeeActive.value = employee.isActive ? "true" : "false";
   showMessage(els.managementEditorMessage, "");
   els.managementEditor?.classList.remove("hidden");
@@ -2466,6 +2471,7 @@ async function saveManagementEditor(event) {
       department: String(els.managementEmployeeDepartment.value || "").trim(),
       position: String(els.managementEmployeePosition.value || "").trim(),
       photoUrl: String(els.managementEmployeePhoto.value || "").trim(),
+      role: $("managementEmployeeRole").value,
       isActive: els.managementEmployeeActive.value === "true"
     };
   }
