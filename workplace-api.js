@@ -181,6 +181,15 @@ module.exports = function register({
       .prepare("SELECT * FROM users WHERE employee_code=? AND is_active=1")
       .get(String(body.employeeCode || "").toUpperCase());
     check(employee, "ไม่พบพนักงานที่ใช้งาน");
+    const manual = db
+      .prepare(
+        "SELECT * FROM workplace_manual_scores WHERE employee_id=? AND period=?",
+      )
+      .get(employee.id, String(body.period || ""));
+    check(
+      !manual,
+      "คะแนนข้อ 2–3 ในงวดนี้เป็นคะแนนดิบ ต้องกำหนดเกณฑ์แปลงเป็นระดับ 1–4 ก่อนสรุปผลประเมิน",
+    );
     const inputs = {};
     const attempts = {};
     for (const kind of ["preparation", "response"]) {

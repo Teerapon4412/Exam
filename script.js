@@ -1110,6 +1110,7 @@ function resetExamSession() {
 
 function setView(view) {
   state.activeView = view;
+  document.body.classList.toggle("score-entry-preview-open", view === "workplaceScorePreview");
   const views = {
     dashboard: els.dashboardView,
     individualSummary: els.individualSummaryView,
@@ -1120,6 +1121,7 @@ function setView(view) {
     profile: els.profileView,
     skillMatrix: els.skillMatrixView,
     workplace: $("workplaceView"),
+    workplaceScorePreview: $("workplaceScorePreviewView"),
     workplaceSettings: $("workplaceSettingsView"),
     evaluation: els.evaluationView,
     practicalAssessment: els.practicalAssessmentView,
@@ -1147,6 +1149,9 @@ function setView(view) {
   } else if (view === "workplaceSettings") {
     setText(els.pageHeading, "ตั้งค่าข้อสอบและเกณฑ์คะแนน");
     workplaceOpen("settings");
+  } else if (view === "workplaceScorePreview") {
+    setText(els.pageHeading, "กรอกคะแนนปริมาณงานและคุณภาพงาน");
+    openWorkplaceScorePreview();
   } else if (view === "dashboard") {
     renderDashboard();
   } else if (view === "individualSummary") {
@@ -5002,6 +5007,7 @@ async function handleLogin(event) {
 }
 
 function logout() {
+  if (typeof clearWorkplaceManualScoreCache === "function") clearWorkplaceManualScoreCache();
   state.user = null;
   state.authToken = "";
   state.results = [];

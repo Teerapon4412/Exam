@@ -335,6 +335,111 @@ test(
       const incomplete = await req("/api/workplace/preview", admin.token, base);
       assert.equal(incomplete.status, 400);
       assert.match((await incomplete.json()).error, /ปริมาณงานและคุณภาพงาน/);
+      await json(
+        await req("/api/admin/employees", admin.token, {
+          employeeCode: "WP-LEADER",
+          fullName: "Leader",
+          role: "leader",
+        }),
+        201,
+      );
+      const leader = await json(
+        await req("/api/login", null, { employeeCode: "WP-LEADER" }),
+      );
+      const manualBody = {
+        period: "2026-10",
+        assessor: "Admin assessor",
+        entries: [
+          {
+            employeeCode: "WP-TEST",
+            quantity: 0,
+            quality: 95,
+            scale: "raw",
+            revision: 0,
+          },
+        ],
+      };
+      assert.equal(
+        (await req("/api/workplace/manual-scores?period=2026-10")).status,
+        401,
+      );
+      for (const account of [worker, leader]) {
+        assert.equal(
+          (
+            await req(
+              "/api/workplace/manual-scores?period=2026-10",
+              account.token,
+            )
+          ).status,
+          403,
+        );
+        assert.equal(
+          (await req("/api/workplace/manual-scores", account.token, manualBody))
+            .status,
+          403,
+        );
+      }
+      const savedManual = await json(
+        await req("/api/workplace/manual-scores", admin.token, manualBody),
+      );
+      assert.equal(savedManual.entries[0].quantity, 0);
+      assert.equal(savedManual.entries[0].revision, 1);
+      const readManual = await json(
+        await req("/api/workplace/manual-scores?period=2026-10", admin.token),
+      );
+      assert.equal(readManual.entries[0].quality, 95);
+      assert.equal(
+        (
+          await json(
+            await req(
+              "/api/workplace/manual-scores?period=2026-11",
+              admin.token,
+            ),
+          )
+        ).entries.length,
+        0,
+      );
+      assert.equal(
+        (await req("/api/workplace/manual-scores", admin.token, manualBody))
+          .status,
+        409,
+      );
+      assert.equal(
+        (
+          await req("/api/workplace/manual-scores", admin.token, {
+            ...manualBody,
+            entries: [{ ...manualBody.entries[0], quantity: -1, revision: 1 }],
+          })
+        ).status,
+        400,
+      );
+      const atomic = await req("/api/workplace/manual-scores", admin.token, {
+        ...manualBody,
+        entries: [
+          { ...manualBody.entries[0], quantity: 88, revision: 1 },
+          { employeeCode: "UNKNOWN", quantity: 10, quality: 20, revision: 0 },
+        ],
+      });
+      assert.equal(atomic.status, 400);
+      assert.equal(
+        (
+          await json(
+            await req(
+              "/api/workplace/manual-scores?period=2026-10",
+              admin.token,
+            ),
+          )
+        ).entries[0].quantity,
+        0,
+      );
+      const storedManual = storage
+        .prepare("SELECT * FROM workplace_manual_scores WHERE employee_id=?")
+        .get(worker.user.id);
+      assert.equal(storedManual.saved_by, "ADMIN1234");
+      assert.equal(storedManual.revision, 1);
+      const rawBlocked = await req("/api/workplace/preview", admin.token, base);
+      assert.equal(rawBlocked.status, 400);
+      assert.match((await rawBlocked.json()).error, /คะแนนดิบ/);
       storage.close();
     } finally {
       child.kill();

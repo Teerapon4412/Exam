@@ -1414,6 +1414,7 @@ app.post("/api/admin/reset-exam-bank", requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+require('./workplace-entry-api')({app,db,requireAdmin,writeAdminAudit});
 require('./workplace-api')({app,db,requireAuth,requireAdmin,getCurrentBankPayload,writeAdminAudit});
 
 app.get("*", (_req, res) => {

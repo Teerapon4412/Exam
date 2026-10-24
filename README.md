@@ -63,3 +63,11 @@ Workplace quizzes use the Part exam interaction: one question at a time, previou
 The workplace question editor follows the Part question cards: question text, score per question, correct answer A–D, image URL or local image upload with preview/removal, four answer choices, duplicate and delete. Numbering is derived from the question order. Local images support PNG/JPEG/GIF/WebP up to 5 MB. Quiz percentages use earned points / available points; the correct-question count remains a separate result. Existing questions without an explicit score retain one point each.
 
 The Admin quiz criteria page now edits only **1. Preparation** and **4. Problem response**. Quantity and quality criteria are not displayed or required to save quiz settings. Existing quantity/quality criteria are retained when editing an older complete configuration. Fresh configurations can save the two quiz headings and quizzes alone; until the separate quantity/quality input method is defined, they cannot produce a complete four-heading evaluation or a partial score presented as the full 60% component.
+
+## Admin entry of quantity and quality scores
+
+**กรอกคะแนนข้อ 2–3** is now a real Admin-only entry page. Admin chooses the assessment month, enters raw quantity and quality scores against employee names/codes, reviews the completed rows, then confirms saving. Zero is a valid score; blank is unentered. Only changed, complete rows are saved. Persisted scores reload by employee and month, with a saved status; unsaved edits are retained while filtering or switching months in the same session.
+
+Both `GET` and `POST /api/workplace/manual-scores` require Admin authentication. USER and LEADER roles cannot read or modify this endpoint. SQLite stores the scores, assessor, authenticated Admin identity, timestamp and per-row revision. Batch saves are atomic, reject stale revisions, and write an admin audit record. The reload button can restore current server values after a conflict. Local scoring drafts are cleared at logout.
+
+The evaluation screen displays these raw scores for the selected employee/month. They are deliberately not converted to levels 1–4 or included as the complete evaluation component until the conversion criteria are defined. An assessment for a month with raw scores rejects attempts to calculate a total using the old quantity/quality input method.
