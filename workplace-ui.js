@@ -1,10 +1,7 @@
 "use strict";
-const workplaceTitles = [
-  "การเตรียมตัวก่อนปฏิบัติงาน",
-  "ปริมาณงาน",
-  "คุณภาพงาน",
-  "การตอบสนองต่อปัญหา",
-];
+const workplaceTitles = ["preparation", "quantity", "quality", "response"].map(
+  (key) => WorkplaceScoring.TOPIC_TITLES[key],
+);
 const workplaceKinds = {
   preparation: "ข้อสอบเตรียมตัวก่อนปฏิบัติงาน",
   response: "ข้อสอบการติดตามปัญหา",
@@ -654,7 +651,7 @@ async function workplaceHistory() {
             `<article><h4>${escapeHtml(record.updatedAt)} — ${record.totalScore}/${record.maxScore}</h4><p>ผู้ประเมิน: ${escapeHtml(record.evaluator)} · ${record.scope === "legacy" ? "ผลเดิมราย Model/Part: " + escapeHtml(record.modelName) + " / " + escapeHtml(record.partCode) + " · " : "ประเมินรวม · "}${record.evidence ? "รอบ " + escapeHtml(record.evidence.period) : "ผลประเมินเดิม"}</p><ul>${record.rows
               .map(
                 (row) =>
-                  `<li>${escapeHtml(row.title || row.item || "หัวข้อ")}: ${escapeHtml(row.score)} × ${escapeHtml(row.weight)}${
+                  `<li>${escapeHtml(WorkplaceScoring.TOPIC_TITLES[row.key] || row.title || row.item || "หัวข้อ")}: ${escapeHtml(row.score)} × ${escapeHtml(row.weight)}${
                     row.evidence
                       ? " — " +
                         escapeHtml(

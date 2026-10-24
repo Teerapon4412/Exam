@@ -1,5 +1,12 @@
 (function () {
   "use strict";
+  const TOPIC_TITLES = {
+    preparation:
+      "การเตรียมตัวก่อนปฏิบัติงานการเตรียมงานและเอกสารการแขวนคูมือปฏิบัติงาน",
+    quantity: "ปริมาณงานปริมาณผลงานที่ทำได้ตามเป้าหมายของหน่วยงาน",
+    quality: "คุณภาพงานความถูกต้องของผลงานที่ทำได้",
+    response: "การตอบสนองต่อปัญหาและการติดตามปัญหาที่เกิดขึ้น",
+  };
   const STANDARD_WEIGHTS = {
     preparation: 4,
     quantity: 3,
@@ -9,18 +16,22 @@
   const GROUPS = [
     {
       key: "preparation",
-      title: "การเตรียมตัวก่อนปฏิบัติงาน",
+      title: TOPIC_TITLES.preparation,
       metrics: ["preparationPercent"],
     },
     {
       key: "quantity",
-      title: "ปริมาณงาน",
+      title: TOPIC_TITLES.quantity,
       metrics: ["outputPercent", "overCut", "undercut"],
     },
-    { key: "quality", title: "คุณภาพงาน", metrics: ["outFlow", "nc", "car"] },
+    {
+      key: "quality",
+      title: TOPIC_TITLES.quality,
+      metrics: ["outFlow", "nc", "car"],
+    },
     {
       key: "response",
-      title: "การตอบสนองต่อปัญหา",
+      title: TOPIC_TITLES.response,
       metrics: ["responsePercent"],
     },
   ];
@@ -185,7 +196,7 @@
         return level;
       });
       return {
-        title: group.title,
+        title: TOPIC_TITLES[group.key] || group.title,
         key: group.key,
         method: "อัตโนมัติตามเกณฑ์ Admin",
         maxScore: 4,
@@ -205,7 +216,7 @@
       groups: ["quantity", "quality"].map((key) => {
         const source = value.groups.find((group) => group.key === key),
           metric = key + "Raw",
-          title = key === "quantity" ? "ปริมาณงาน" : "คุณภาพงาน";
+          title = TOPIC_TITLES[key];
         check(
           source &&
             finite(source.weight) &&
@@ -241,6 +252,7 @@
     };
   }
   const scoring = {
+    TOPIC_TITLES,
     STANDARD_WEIGHTS,
     GROUPS,
     METRICS,
