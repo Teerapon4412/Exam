@@ -51,7 +51,7 @@ No Model/Part selection is required. Workplace evaluation contributes 60% to eve
 
 Admin sets all thresholds and weights; no production criteria are invented or seeded. Each metric has thresholds for levels 2, 3 and 4; values that do not reach level 2 receive level 1. Raw-score rules can use ascending minimum thresholds (higher is better) or descending maximum thresholds (lower is better). The final workplace percentage is `sum(level * weight) / sum(4 * weight) * 100`.
 
-Changing quiz settings creates a quiz revision and requires new quiz attempts. Changing raw-score conversion rules does not require quiz retakes. Saved results retain snapshots; an updated input or rule is marked as needing recalculation rather than silently altering saved results. Results are stored independently per employee/month; saving October cannot overwrite November.
+Saving quiz settings creates a configuration revision. Editing only thresholds or weights reuses the existing result for the same employee/month when the question content is unchanged. Changing question text, choices, correct answers, points or images requires a new attempt only for the affected quiz. Changing raw-score conversion rules does not require quiz retakes. Saved results retain snapshots; an updated input or rule is marked as needing recalculation rather than silently altering saved results. Results are stored independently per employee/month; saving October cannot overwrite November.
 
 The question editor supports scores, A–D answers, duplicate/delete, image URL or PNG/JPEG/GIF/WebP upload up to 5 MB. All questions must be answered before submission. Failed requests preserve selected answers, and successful attempts are locked until explicitly restarted.
 
@@ -66,3 +66,7 @@ Run tests with:
 ```bash
 node --test tests/*.test.js
 ```
+
+Admin can edit Weight (B) directly in the assessment sheet. A local override is validated on the server and saved with that employee/month result; it does not change the global rules or force a quiz retake. “ใช้น้ำหนักตามเกณฑ์” clears local overrides.
+
+Quiz results are matched by a canonical question fingerprint, not by scoring-criteria revision. Existing fingerprints are recovered only from saved configuration snapshots/audit evidence. Unknown historical versions and results without a recorded month are not silently matched; diagnostics name the employee/month and distinguish changed questions from a period mismatch.

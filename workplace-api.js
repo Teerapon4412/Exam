@@ -1,5 +1,6 @@
 "use strict";
 const crypto = require("node:crypto");
+const { quizIdentity } = require("./workplace-quiz-identity");
 const {
   GROUPS,
   METRICS,
@@ -89,6 +90,121 @@ module.exports = function register({
       .get(id);
     return row ? { ...JSON.parse(row.payload), revision: row.revision } : null;
   };
+  // Criteria revisions and question content are different: only changed questions require retakes.
+  if (
+    !db
+      .pragma("table_info(workplace_attempts)")
+      .some((column) => column.name === "quiz_hash")
+  )
+    db.exec(
+      "ALTER TABLE workplace_attempts ADD COLUMN quiz_hash TEXT NOT NULL DEFAULT ''",
+    );
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS workplace_quiz_versions (revision INTEGER PRIMARY KEY,payload TEXT NOT NULL); CREATE INDEX IF NOT EXISTS workplace_compatible_quiz_lookup ON workplace_attempts(user_id,exam_id,kind,period,quiz_hash,created_at)",
+  );
+  function rememberVersion(config) {
+    if (config && Number.isInteger(config.revision) && config.quizzes)
+      db.prepare(
+        "INSERT OR IGNORE INTO workplace_quiz_versions VALUES (?,?)",
+      ).run(config.revision, JSON.stringify(config));
+  }
+  for (const log of db
+    .prepare(
+      "SELECT before_json,after_json FROM admin_audit_log WHERE entity_type='workplace_config' AND entity_id=? ORDER BY id",
+    )
+    .all(GLOBAL_ID))
+    for (const value of [log.before_json, log.after_json]) {
+      try {
+        rememberVersion(JSON.parse(value));
+      } catch {}
+    }
+  rememberVersion(getConfig(GLOBAL_ID));
+  for (const row of db.prepare("SELECT * FROM workplace_quiz_versions").all()) {
+    const saved = JSON.parse(row.payload);
+    for (const kind of ["preparation", "response"])
+      if (saved.quizzes?.[kind])
+        db.prepare(
+          "UPDATE workplace_attempts SET quiz_hash=? WHERE exam_id=? AND revision=? AND kind=? AND quiz_hash=''",
+        ).run(quizIdentity(saved.quizzes[kind]), GLOBAL_ID, row.revision, kind);
+  }
+  const quizHashes = new Map();
+  function configQuizHash(config, kind) {
+    const key = config.revision + ":" + kind;
+    if (!quizHashes.has(key))
+      quizHashes.set(key, quizIdentity(config.quizzes[kind]));
+    return quizHashes.get(key);
+  }
+  function compatibleAttempt(userId, kind, period, config) {
+    // Recover only versions proven by saved configuration/audit evidence; never guess a period.
+    for (const row of db
+      .prepare(
+        "SELECT DISTINCT revision FROM workplace_attempts WHERE user_id=? AND exam_id=? AND kind=? AND period=? AND quiz_hash=''",
+      )
+      .all(userId, GLOBAL_ID, kind, period)) {
+      const version = db
+        .prepare("SELECT payload FROM workplace_quiz_versions WHERE revision=?")
+        .get(row.revision);
+      if (version) {
+        const saved = JSON.parse(version.payload);
+        if (saved.quizzes?.[kind])
+          db.prepare(
+            "UPDATE workplace_attempts SET quiz_hash=? WHERE user_id=? AND exam_id=? AND kind=? AND period=? AND revision=? AND quiz_hash=''",
+          ).run(
+            quizIdentity(saved.quizzes[kind]),
+            userId,
+            GLOBAL_ID,
+            kind,
+            period,
+            row.revision,
+          );
+      }
+    }
+    return db
+      .prepare(
+        "SELECT * FROM workplace_attempts WHERE user_id=? AND exam_id=? AND kind=? AND period=? AND quiz_hash=? ORDER BY created_at DESC,rowid DESC LIMIT 1",
+      )
+      .get(userId, GLOBAL_ID, kind, period, configQuizHash(config, kind));
+  }
+  function missingQuizMessage(employee, kind, period) {
+    const title =
+      kind === "preparation" ? "ข้อสอบเตรียมตัว" : "ข้อสอบติดตามปัญหา";
+    const latest = db
+      .prepare(
+        "SELECT * FROM workplace_attempts WHERE user_id=? AND exam_id=? AND kind=? ORDER BY created_at DESC,rowid DESC LIMIT 1",
+      )
+      .get(employee.id, GLOBAL_ID, kind);
+    const prefix = employee.employee_code + " · งวด " + period + ": ";
+    const samePeriod = db
+      .prepare(
+        "SELECT * FROM workplace_attempts WHERE user_id=? AND exam_id=? AND kind=? AND period=? ORDER BY created_at DESC,rowid DESC LIMIT 1",
+      )
+      .get(employee.id, GLOBAL_ID, kind, period);
+    if (samePeriod)
+      return (
+        prefix +
+        (samePeriod.quiz_hash
+          ? "พบผล" +
+            title +
+            "แล้ว แต่เนื้อหาหรือเฉลยของชุดนี้เปลี่ยน กรุณาทำชุดปัจจุบันใหม่"
+          : "พบผล" +
+            title +
+            "เก่า แต่ยังยืนยันชุดคำถามเดิมไม่ได้ กรุณาทำชุดปัจจุบันใหม่")
+      );
+    if (latest)
+      return (
+        prefix +
+        (latest.period
+          ? "ยังไม่มีผล" +
+            title +
+            "ในงวดนี้ พบผลล่าสุดงวด " +
+            latest.period +
+            " กรุณาเลือกงวดให้ตรงกัน"
+          : "พบผล" + title + "เดิมที่ไม่ระบุงวด กรุณาทำข้อสอบในงวดที่เลือก")
+      );
+    return (
+      prefix + "ยังไม่พบผล" + title + " กรุณาทำข้อสอบด้วยบัญชีของพนักงานคนนี้"
+    );
+  }
   const route = (fn) => (req, res) => {
     try {
       return fn(req, res);
@@ -141,6 +257,7 @@ module.exports = function register({
           JSON.stringify(config),
           new Date().toISOString(),
         );
+        rememberVersion({ ...config, revision });
         writeAdminAudit(req, "update", "workplace_config", examId, previous, {
           ...config,
           revision,
@@ -181,9 +298,14 @@ module.exports = function register({
       );
       const config = getConfig(examId);
       check(config, "ยังไม่มีข้อสอบ");
+      const started = db
+        .prepare("SELECT payload FROM workplace_quiz_versions WHERE revision=?")
+        .get(Number.isInteger(req.body.revision) ? req.body.revision : -1);
       check(
-        config.revision === req.body.revision,
-        "ข้อสอบมีการเปลี่ยนแปลง กรุณาโหลดใหม่",
+        started &&
+          quizIdentity(JSON.parse(started.payload).quizzes[kind]) ===
+            configQuizHash(config, kind),
+        "คำถามหรือเฉลยมีการเปลี่ยนแปลง กรุณาโหลดข้อสอบชุดปัจจุบันใหม่",
       );
       check(validPeriod(req.body.period), "กรุณาเลือกงวดประเมินก่อนทำข้อสอบ");
       const questions = config.quizzes[kind];
@@ -206,7 +328,7 @@ module.exports = function register({
       const percent = (score / totalScore) * 100;
       const id = crypto.randomUUID();
       db.prepare(
-        "INSERT INTO workplace_attempts (id,user_id,exam_id,kind,revision,percent,answers_json,created_at,period) VALUES (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO workplace_attempts (id,user_id,exam_id,kind,revision,percent,answers_json,created_at,period,quiz_hash) VALUES (?,?,?,?,?,?,?,?,?,?)",
       ).run(
         id,
         req.user.id,
@@ -217,6 +339,7 @@ module.exports = function register({
         JSON.stringify(answers),
         new Date().toISOString(),
         req.body.period,
+        configQuizHash(config, kind),
       );
       res.status(201).json({
         id,
@@ -254,17 +377,8 @@ module.exports = function register({
     const inputs = {};
     const attempts = {};
     for (const kind of ["preparation", "response"]) {
-      const attempt = db
-        .prepare(
-          "SELECT * FROM workplace_attempts WHERE user_id=? AND exam_id=? AND kind=? AND revision=? AND period=? ORDER BY created_at DESC,rowid DESC LIMIT 1",
-        )
-        .get(employee.id, examId, kind, config.revision, body.period);
-      check(
-        attempt,
-        "พนักงานยังไม่ได้ทำข้อสอบ" +
-          (kind === "preparation" ? "เตรียมตัว" : "ติดตามปัญหา") +
-          "ตามเกณฑ์ปัจจุบัน",
-      );
+      const attempt = compatibleAttempt(employee.id, kind, body.period, config);
+      check(attempt, missingQuizMessage(employee, kind, body.period));
       inputs[kind + "Percent"] = attempt.percent;
       attempts[kind] = attempt.id;
     }
@@ -276,9 +390,39 @@ module.exports = function register({
       manualRules.groups.find((group) => group.key === "quality"),
       config.groups.find((group) => group.key === "response"),
     ];
+    let weightOverrides = body.weights;
+    if (weightOverrides === undefined || weightOverrides === null) {
+      const stored = db
+        .prepare(
+          "SELECT w.evidence_json FROM evaluations e JOIN workplace_evidence w ON e.id=w.evaluation_id WHERE e.employee_id=? AND e.model_code=? AND e.period=? ORDER BY e.updated_at DESC LIMIT 1",
+        )
+        .get(employee.id, GLOBAL_ID, body.period);
+      weightOverrides = stored
+        ? JSON.parse(stored.evidence_json).evidence?.weightOverrides || {}
+        : {};
+    }
+    check(
+      weightOverrides &&
+        typeof weightOverrides === "object" &&
+        !Array.isArray(weightOverrides),
+      "น้ำหนักต้องเป็นข้อมูลรายหัวข้อ",
+    );
+    for (const [key, weight] of Object.entries(weightOverrides))
+      check(
+        ["preparation", "quantity", "quality", "response"].includes(key) &&
+          typeof weight === "number" &&
+          Number.isFinite(weight) &&
+          weight > 0 &&
+          weight <= 100,
+        "น้ำหนักรายหัวข้อต้องมากกว่า 0 และไม่เกิน 100",
+      );
+    const effectiveGroups = normalizedGroups.map((group) => ({
+      ...group,
+      weight: weightOverrides[group.key] ?? group.weight,
+    }));
     const combinedConfig = {
       ...config,
-      groups: normalizedGroups,
+      groups: effectiveGroups,
       manualRevision: manualRules.revision,
     };
     const evidence = {
@@ -286,6 +430,7 @@ module.exports = function register({
       qualityRaw: manual.quality,
       manualScoreRevision: manual.revision,
       manualRulesRevision: manualRules.revision,
+      weightOverrides,
     };
     const rows = scoreMetrics(combinedConfig, inputs);
     const totalScore = rows.reduce((s, r) => s + r.score * r.weight, 0);
@@ -300,6 +445,7 @@ module.exports = function register({
       percent: Math.round((totalScore / maxScore) * 10000) / 100,
       evidence,
       attempts,
+      weightOverrides,
     };
   }
   app.get(
@@ -322,12 +468,7 @@ module.exports = function register({
         const quiz = {};
         for (const kind of ["preparation", "response"])
           quiz[kind] = config
-            ? db
-                .prepare(
-                  "SELECT id,percent FROM workplace_attempts WHERE user_id=? AND exam_id=? AND kind=? AND revision=? AND period=? ORDER BY created_at DESC,rowid DESC LIMIT 1",
-                )
-                .get(employee.id, GLOBAL_ID, kind, config.revision, period) ||
-              null
+            ? compatibleAttempt(employee.id, kind, period, config) || null
             : null;
         const manual =
           db
@@ -430,6 +571,7 @@ module.exports = function register({
       const result = calculate(req);
       res.json({
         rows: result.rows,
+        weightOverrides: result.weightOverrides,
         totalScore: result.totalScore,
         maxScore: result.maxScore,
         percent: result.percent,
@@ -523,7 +665,14 @@ module.exports = function register({
       })();
       res
         .status(201)
-        .json({ id, rows, totalScore, maxScore, percent: result.percent });
+        .json({
+          id,
+          rows,
+          totalScore,
+          maxScore,
+          percent: result.percent,
+          weightOverrides: result.weightOverrides,
+        });
     }),
   );
 };

@@ -21,6 +21,8 @@ function workplaceField(label, id, type = "number", value = "") {
   return `<label class="field"><span>${escapeHtml(label)}</span><input id="${id}" type="${type}" ${type === "number" ? 'min="0" step="any"' : ""} value="${escapeHtml(value)}" required></label>`;
 }
 let workplaceMode = "quizzes";
+let workplaceWeightOverrides = null;
+let workplaceSheetRows = [];
 function workplaceOpen(mode = "quizzes") {
   if (mode !== "quizzes" && state.user?.role !== "admin") return;
   workplaceMode = mode;
@@ -45,7 +47,7 @@ function workplaceOpen(mode = "quizzes") {
         `<section><h4>${title}</h4><button class="secondary-btn" type="button" data-workplace-quiz="${kind}">ทำข้อสอบของฉัน</button><div id="workplaceQuiz-${kind}"></div></section>`,
     )
     .join("")}</div>`;
-  root.innerHTML = `<section class="panel"><p id="workplaceMessage" role="status" aria-live="polite"></p><button type="button" class="secondary-btn" id="workplaceReload">โหลดข้อมูลใหม่</button>${mode === "settings" ? `<section><h3>ตั้งค่าเกณฑ์ น้ำหนัก และข้อสอบ (Admin)</h3><p>ตั้งเฉพาะข้อ 1 การเตรียมตัวก่อนปฏิบัติงาน และข้อ 4 การตอบสนองต่อปัญหา โดยกำหนดเกณฑ์ระดับ 2, 3, 4 ส่วนค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 ข้อ 2 และข้อ 3 รับข้อมูลและตั้งเกณฑ์คะแนนดิบในเมนูกรอกคะแนนข้อ 2–3</p><p>บันทึกการตั้งค่าใหม่จะเริ่มเวอร์ชันใหม่ พนักงานต้องทำข้อสอบทั้งสองชุดใหม่ก่อนประเมิน ผลประเมินที่บันทึกแล้วไม่ถูกคำนวณย้อนหลัง</p><form id="workplaceConfigForm" novalidate><div id="workplaceRules"></div><div id="workplaceQuestionEditors"></div><p id="workplaceSaveStatus" role="status" aria-live="polite"></p><button type="submit" class="primary-btn">บันทึกเกณฑ์และข้อสอบ</button></form></section>` : mode === "evaluation" ? `<form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}</div><p>ระบบดึงผลข้อสอบและคะแนนดิบจากพนักงานและงวดที่เลือก คำนวณระดับ 1–4 และน้ำหนักให้อัตโนมัติ</p><div id="workplaceManualScores" role="status"></div><button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานคนนี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>` : quizzes}</section>`;
+  root.innerHTML = `<section class="panel"><p id="workplaceMessage" role="status" aria-live="polite"></p><button type="button" class="secondary-btn" id="workplaceReload">โหลดข้อมูลใหม่</button>${mode === "settings" ? `<section><h3>ตั้งค่าเกณฑ์ น้ำหนัก และข้อสอบ (Admin)</h3><p>ตั้งเฉพาะข้อ 1 การเตรียมตัวก่อนปฏิบัติงาน และข้อ 4 การตอบสนองต่อปัญหา โดยกำหนดเกณฑ์ระดับ 2, 3, 4 ส่วนค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 ข้อ 2 และข้อ 3 รับข้อมูลและตั้งเกณฑ์คะแนนดิบในเมนูกรอกคะแนนข้อ 2–3</p><p>การแก้เกณฑ์หรือน้ำหนักใช้ผลสอบเดิมในงวดเดียวกันได้ หากเปลี่ยนคำถาม เฉลย คะแนนรายข้อ หรือรูปประกอบ ต้องสอบใหม่เฉพาะชุดที่เปลี่ยน ผลประเมินที่บันทึกแล้วจะไม่เปลี่ยนย้อนหลัง</p><form id="workplaceConfigForm" novalidate><div id="workplaceRules"></div><div id="workplaceQuestionEditors"></div><p id="workplaceSaveStatus" role="status" aria-live="polite"></p><button type="submit" class="primary-btn">บันทึกเกณฑ์และข้อสอบ</button></form></section>` : mode === "evaluation" ? `<form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}</div><p>ระบบดึงผลข้อสอบและคะแนนดิบจากพนักงานและงวดที่เลือก คำนวณระดับ 1–4 และน้ำหนักให้อัตโนมัติ</p><div id="workplaceManualScores" role="status"></div><p>Admin แก้ค่าน้ำหนัก (B) ในตารางได้ น้ำหนักที่แก้จะใช้เฉพาะพนักงานและงวดนี้</p><button type="button" class="secondary-btn" id="workplaceResetWeights">ใช้น้ำหนักตามเกณฑ์</button> <button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานคนนี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>` : quizzes}</section>`;
   $("workplaceReload").onclick = workplaceLoad;
   root
     .querySelectorAll("[data-workplace-quiz]")
@@ -56,6 +58,10 @@ function workplaceOpen(mode = "quizzes") {
     $("workplaceConfigForm").onsubmit = workplaceSaveConfig;
   if (mode === "evaluation") {
     $("workplacePreview").onclick = () => workplaceEvaluate(false);
+    $("workplaceResetWeights").onclick = () => {
+      workplaceWeightOverrides = {};
+      workplaceEvaluate(false);
+    };
     $("workplaceEvaluationForm").onsubmit = (e) => {
       e.preventDefault();
       workplaceEvaluate(true);
@@ -83,6 +89,7 @@ function workplaceUpdateMeta() {
 }
 function workplaceRenderSheet(rows = []) {
   if (workplaceMode !== "evaluation") return;
+  workplaceSheetRows = structuredClone(rows);
   const groups = workplaceConfig?.groups || workplaceConfig?.schema || [];
   $("evaluationRows").innerHTML = workplaceTitles
     .map((title, index) => {
@@ -95,7 +102,7 @@ function workplaceRenderSheet(rows = []) {
               ["preparation", "quantity", "quality", "response"][index],
           )?.weight,
         score = row?.score;
-      return `<tr><td>${index + 1}</td><td>${escapeHtml(title)}</td>${[1, 2, 3, 4].map((level) => `<td class="evaluation-level-cell">${score === level ? "●" : "—"}</td>`).join("")}<td>คำนวณอัตโนมัติตามเกณฑ์ Admin</td><td>${score ?? "—"}</td><td>${weight ?? "—"}</td><td>${row ? score * weight : "—"}</td></tr>`;
+      return `<tr><td>${index + 1}</td><td>${escapeHtml(title)}</td>${[1, 2, 3, 4].map((level) => `<td class="evaluation-level-cell">${score === level ? "●" : "—"}</td>`).join("")}<td>คำนวณอัตโนมัติตามเกณฑ์ Admin</td><td>${score ?? "—"}</td><td>${state.user?.role === "admin" ? `<input type="number" class="evaluation-weight-input" data-workplace-weight="${["preparation", "quantity", "quality", "response"][index]}" value="${weight ?? ""}" min="0" max="100" step="any" ${row ? "" : "disabled"} aria-label="น้ำหนัก ${escapeHtml(title)}">` : (weight ?? "—")}</td><td>${row ? score * weight : "—"}</td></tr>`;
     })
     .join("");
   $("evaluationTotal").textContent = rows.length
@@ -107,9 +114,50 @@ function workplaceRenderSheet(rows = []) {
       : groups.length === 4 && groups.every((g) => g.weight)
         ? groups.reduce((n, g) => n + 4 * g.weight, 0)
         : "—";
+  $("evaluationRows")
+    .querySelectorAll("[data-workplace-weight]")
+    .forEach(
+      (input, index) =>
+        (input.oninput = () => {
+          const value = Number(input.value);
+          const valid =
+            input.value !== "" &&
+            Number.isFinite(value) &&
+            value > 0 &&
+            value <= 100;
+          input.setCustomValidity(
+            valid ? "" : "น้ำหนักต้องมากกว่า 0 และไม่เกิน 100",
+          );
+          if (!valid) {
+            workplaceMessage("น้ำหนักต้องมากกว่า 0 และไม่เกิน 100");
+            return;
+          }
+          workplaceWeightOverrides = {
+            ...(workplaceWeightOverrides || {}),
+            [input.dataset.workplaceWeight]: value,
+          };
+          workplaceSheetRows[index].weight = value;
+          input.closest("tr").children[9].textContent = String(
+            workplaceSheetRows[index].score * value,
+          );
+          const total = workplaceSheetRows.reduce(
+              (sum, row) => sum + row.score * row.weight,
+              0,
+            ),
+            max = workplaceSheetRows.reduce(
+              (sum, row) => sum + 4 * row.weight,
+              0,
+            );
+          $("evaluationTotal").textContent = String(total);
+          $("evaluationMax").textContent = String(max);
+          $("workplaceScore").textContent =
+            `ปรับน้ำหนักแล้ว (ยังไม่บันทึก): ${total}/${max} (${((total / max) * 100).toFixed(2)}%)`;
+        }),
+    );
   workplaceUpdateMeta();
 }
 function workplaceClearEvidence() {
+  workplaceWeightOverrides = null;
   for (const key of [
     "actual",
     "target",
@@ -455,7 +503,7 @@ function workplaceRenderQuiz(target, quiz, token, ticket) {
     <div class="exam-kpi-grid"><article class="exam-kpi-card"><p class="card-label">Answer Progress</p><h3>${answered} / ${total}</h3><p>จำนวนข้อที่ตอบแล้ว</p></article><article class="exam-kpi-card exam-progress-card"><h3>${Math.round((answered / total) * 100)}%</h3><div class="progress-track"><div class="progress-bar" style="width:${(answered / total) * 100}%"></div></div></article><article class="exam-kpi-card"><p class="card-label">Exam Status</p><h3>${quiz.result ? "ส่งข้อสอบแล้ว" : quiz.submitting ? "กำลังส่งข้อสอบ…" : "กำลังทำข้อสอบ"}</h3></article></div>
     <div class="workplace-quiz-layout"><article class="panel exam-question-panel"><div class="panel-head"><h3 tabindex="-1" data-quiz-heading>ข้อ ${quiz.index + 1} / ${total}</h3><span class="question-badge">${selected === null ? "ยังไม่ได้เลือกคำตอบ" : `เลือกข้อ ${["A", "B", "C", "D"][selected]} แล้ว`}</span></div><div class="question-card"><p class="question-text">${escapeHtml(question.text)}</p>${question.imageUrl ? `<img class="question-image" src="${escapeHtml(question.imageUrl)}" alt="รูปประกอบข้อ ${quiz.index + 1}">` : ""}<p>คะแนนข้อนี้: ${question.score ?? 1}</p><div class="choices-container">${question.choices.map((choice, index) => `<label class="choice-item ${selected === index ? "selected" : ""}"><input type="radio" name="wp-answer-${quiz.kind}" value="${index}" ${selected === index ? "checked" : ""} ${locked ? "disabled" : ""}><span>${["A", "B", "C", "D"][index]}. ${escapeHtml(choice)}</span></label>`).join("")}</div></div><div class="question-actions"><button type="button" class="secondary-btn" data-quiz-prev ${quiz.index === 0 || quiz.submitting ? "disabled" : ""}>ก่อนหน้า</button><button type="button" class="primary-btn" data-quiz-next ${quiz.index === total - 1 || quiz.submitting ? "disabled" : ""}>ถัดไป</button></div></article>
     <aside class="panel exam-side-rail"><h3>เลือกข้อสอบ</h3><div class="question-nav">${quiz.questions.map((q, index) => `<button type="button" class="nav-chip ${quiz.index === index ? "current" : ""} ${quiz.answers[index] !== null ? "answered" : ""}" data-quiz-index="${index}" aria-label="ข้อ ${index + 1}${quiz.answers[index] !== null ? " ตอบแล้ว" : " ยังไม่ตอบ"}" ${quiz.index === index ? 'aria-current="step"' : ""} ${quiz.submitting ? "disabled" : ""}>${index + 1}</button>`).join("")}</div><p data-quiz-message role="status" aria-live="polite">${escapeHtml(quiz.message)}</p><button type="submit" class="primary-btn danger wide" ${locked ? "disabled" : ""}>${quiz.submitting ? "กำลังส่ง…" : "ส่งข้อสอบ"}</button></aside></div>
-    ${quiz.result ? `<section class="panel result-panel"><h3>สรุปผลการสอบ</h3><p role="status">บันทึกผลแล้ว</p><div class="result-grid"><div class="result-box"><span>คะแนน</span><strong>${quiz.result.score ?? quiz.result.correct} / ${quiz.result.totalScore ?? quiz.result.total}</strong></div><div class="result-box"><span>เปอร์เซ็นต์</span><strong>${quiz.result.percent.toFixed(2)}%</strong></div><div class="result-box"><span>ตอบถูก</span><strong>${quiz.result.correct} ข้อ</strong></div><div class="result-box"><span>ตอบผิด</span><strong>${quiz.result.total - quiz.result.correct} ข้อ</strong></div></div><p>ผลนี้ใช้สำหรับประเมินหน้างาน แยกจากคะแนนข้อสอบ Part</p><button type="button" class="secondary-btn" data-quiz-restart>เริ่มทำใหม่</button></section>` : ""}
+    ${quiz.result ? `<section class="panel result-panel"><h3>สรุปผลการสอบ</h3><p role="status">บันทึกผลแล้ว</p><p>รหัสพนักงาน ${escapeHtml(state.user.employeeCode)} · งวด ${escapeHtml(quiz.period)}</p><div class="result-grid"><div class="result-box"><span>คะแนน</span><strong>${quiz.result.score ?? quiz.result.correct} / ${quiz.result.totalScore ?? quiz.result.total}</strong></div><div class="result-box"><span>เปอร์เซ็นต์</span><strong>${quiz.result.percent.toFixed(2)}%</strong></div><div class="result-box"><span>ตอบถูก</span><strong>${quiz.result.correct} ข้อ</strong></div><div class="result-box"><span>ตอบผิด</span><strong>${quiz.result.total - quiz.result.correct} ข้อ</strong></div></div><p>ผลนี้ใช้สำหรับประเมินหน้างาน แยกจากคะแนนข้อสอบ Part</p><button type="button" class="secondary-btn" data-quiz-restart>เริ่มทำใหม่</button></section>` : ""}
   </form>`;
   const draw = () => workplaceRenderQuiz(target, quiz, token, ticket);
   function move(index) {
@@ -525,12 +573,21 @@ function workplaceRenderQuiz(target, quiz, token, ticket) {
 }
 async function workplaceEvaluate(save) {
   const form = $("workplaceEvaluationForm");
+  const invalidWeight = $("evaluationRows").querySelector("input:invalid");
+  if (invalidWeight) {
+    invalidWeight.focus();
+    invalidWeight.reportValidity();
+    return;
+  }
   if (!form.reportValidity()) return;
   const body = {
     revision: workplaceRevision,
     employeeCode: $("workplaceEmployee").value,
     period: $("wp-period").value,
     evaluator: $("wp-evaluator").value,
+    ...(workplaceWeightOverrides === null
+      ? {}
+      : { weights: workplaceWeightOverrides }),
   };
   const ticket = workplaceRequest,
     employeeCode = body.employeeCode;
@@ -548,9 +605,14 @@ async function workplaceEvaluate(save) {
       employeeCode !== $("workplaceEmployee").value
     )
       return;
+    workplaceWeightOverrides = result.weightOverrides || {};
     workplaceRenderSheet(result.rows);
     $("workplaceScore").innerHTML =
       `<h4>${save ? "บันทึกแล้ว" : "ผลคำนวณ"}: ${result.totalScore}/${result.maxScore} (${result.percent}%)</h4><p>คิดเป็น ${(result.percent * 0.6).toFixed(2)} จาก 60 คะแนนของ Skill Matrix</p>${result.rows ? "<ul>" + result.rows.map((r) => `<li>${escapeHtml(r.title)}: ระดับ ${r.score} × น้ำหนัก ${r.weight} = ${r.score * r.weight}</li>`).join("") + "</ul>" : ""}`;
+    if (!save)
+      workplaceMessage(
+        "คำนวณคะแนนตามข้อมูลและน้ำหนักปัจจุบันแล้ว (ยังไม่บันทึก)",
+      );
     if (save) {
       await loadEvaluations();
       workplaceMessage("บันทึกผลประเมินเรียบร้อยแล้ว");
@@ -642,6 +704,10 @@ async function loadWorkplaceManualEvidence() {
           }),
         });
         if (ticket === manualEvidenceRequest && token === state.authToken) {
+          workplaceMessage(
+            "ข้อมูลครบสำหรับ " + employeeCode + " งวด " + period,
+          );
+          workplaceWeightOverrides = result.weightOverrides || {};
           workplaceRenderSheet(result.rows);
           $("workplaceScore").textContent =
             `พร้อมบันทึก: ${result.totalScore}/${result.maxScore} (${result.percent}%)`;

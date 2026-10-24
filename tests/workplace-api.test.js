@@ -236,6 +236,55 @@ test(
         await req("/api/workplace/evaluations", admin.token, base),
         201,
       );
+      const weightedPreview = await json(
+        await req("/api/workplace/preview", admin.token, {
+          ...base,
+          weights: { quality: 6 },
+        }),
+      );
+      assert.equal(weightedPreview.totalScore, 38);
+      assert.equal(weightedPreview.maxScore, 52);
+      await json(
+        await req("/api/workplace/evaluations", admin.token, {
+          ...base,
+          weights: { quality: 6 },
+        }),
+        201,
+      );
+      const restoredWeights = await json(
+        await req("/api/workplace/preview", admin.token, base),
+      );
+      assert.equal(restoredWeights.weightOverrides.quality, 6);
+      assert.equal(restoredWeights.totalScore, 38);
+      assert.equal(
+        (
+          await json(await req("/api/workplace/manual-rules", admin.token))
+        ).rules.groups.find((g) => g.key === "quality").weight,
+        3,
+      );
+      for (const weights of [
+        { quality: 0 },
+        { quality: -1 },
+        { quality: 101 },
+        { unknown: 2 },
+      ])
+        assert.equal(
+          (
+            await req("/api/workplace/preview", admin.token, {
+              ...base,
+              weights,
+            })
+          ).status,
+          400,
+        );
+      const resetWeights = await json(
+        await req("/api/workplace/evaluations", admin.token, {
+          ...base,
+          weights: {},
+        }),
+        201,
+      );
+      assert.equal(resetWeights.totalScore, 32);
       const history = await json(
         await req("/api/workplace/history?employeeCode=WP-TEST", admin.token),
       );
@@ -359,6 +408,7 @@ test(
           .get(worker.user.id, "2026-10").saved_by,
         "ADMIN1234",
       );
+      config.groups[0].weight = 2;
       await json(
         await req(
           "/api/workplace/config",
@@ -372,7 +422,7 @@ test(
       );
       assert.equal(
         overview.entries.find((e) => e.employeeCode === "WP-TEST").ready,
-        false,
+        true,
       );
       assert.equal(
         overview.entries.find((e) => e.employeeCode === "WP-TEST").saved
@@ -385,6 +435,44 @@ test(
           .get(novemberSave.id).total_score,
         40,
       );
+      // Criteria-only edits reuse old results; a quiz already open before the edit may still submit.
+      await json(
+        await req("/api/workplace/attempts", worker.token, {
+          kind: "preparation",
+          revision: 1,
+          period: "2026-11",
+          answers: [0],
+        }),
+        201,
+      );
+      const reused = await json(
+        await req("/api/workplace/preview", admin.token, {
+          ...base,
+          period: "2026-11",
+          revision: 2,
+        }),
+      );
+      assert.equal(reused.percent, 100);
+      // Rows from before quiz_hash existed are repaired only with a proven version snapshot.
+      storage
+        .prepare(
+          "UPDATE workplace_attempts SET quiz_hash='' WHERE kind='response' AND period='2026-11'",
+        )
+        .run();
+      assert.equal(
+        (
+          await json(
+            await req("/api/workplace/overview?period=2026-11", admin.token),
+          )
+        ).entries.find((e) => e.employeeCode === "WP-TEST").ready,
+        true,
+      );
+      const mismatch = await req("/api/workplace/preview", admin.token, {
+        ...base,
+        revision: 2,
+        period: "2026-12",
+      });
+      assert.equal(mismatch.status, 400);
       const weighted = fixture();
       weighted.groups = weighted.groups.filter((g) =>
         ["preparation", "response"].includes(g.key),
@@ -406,6 +494,40 @@ test(
           { config: weighted, revision: 2 },
           "PUT",
         ),
+      );
+      const changed = await json(
+        await req("/api/workplace/overview?period=2026-11", admin.token),
+      );
+      const changedEmployee = changed.entries.find(
+        (e) => e.employeeCode === "WP-TEST",
+      );
+      assert.equal(changedEmployee.quiz.preparation, null);
+      assert.ok(changedEmployee.quiz.response);
+      const changedError = await req("/api/workplace/preview", admin.token, {
+        ...base,
+        period: "2026-11",
+        revision: 3,
+      });
+      assert.match((await changedError.json()).error, /เนื้อหาหรือเฉลย/);
+      assert.equal(
+        (
+          await req("/api/workplace/attempts", worker.token, {
+            kind: "preparation",
+            revision: 1,
+            period: "2026-11",
+            answers: [0],
+          })
+        ).status,
+        400,
+      );
+      await json(
+        await req("/api/workplace/attempts", worker.token, {
+          kind: "response",
+          revision: 1,
+          period: "2026-11",
+          answers: [1],
+        }),
+        201,
       );
       const questions = await json(
         await req("/api/workplace/quizzes", worker.token),
