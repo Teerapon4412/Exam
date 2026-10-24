@@ -34,3 +34,22 @@ Exam questions are seeded from `exam-data.json` into SQLite on first run.
 - Persistent exam results for all users
 - Admin upload/reset of exam bank through API
 - Admin can view all submitted results
+
+## Automatic workplace evaluation
+
+The **ข้อสอบและประเมินหน้างาน** screen separates workplace quizzes from the ordinary Model/Part exams. Admins configure each Model/Part before it can be evaluated; no production scoring thresholds are seeded.
+
+1. Admin selects a Model/Part and sets four positive weights and the level 2, 3 and 4 thresholds for every metric. Below level 2 means level 1. Exam percentages and actual output / target use ascending minimum thresholds; defect counts use descending maximum thresholds. Each heading receives the lowest level among its metrics.
+2. Admin creates two separate multiple-choice quizzes: preparation and problem follow-up. Employees complete these under their own accounts. Answers and percentages are calculated on the server.
+3. Admin chooses an employee, assessment month and assessor, and enters actual output, target and defect counts from the same period. Zero must be explicitly entered when there are no defects. Preview and save use server-calculated scores and the latest attempts for the selected Part and current configuration revision.
+4. The workplace percentage is `sum(level * weight) / sum(4 * weight) * 100`. Existing Model scoring mode still determines whether Skill Matrix uses exam 40% + evaluation 60%, or exam-only 100%.
+
+Saving changed settings creates a new revision and requires both quizzes to be taken again. Saved evaluations retain their scoring rules, evidence and quiz attempt references. New saves replace the current employee/Model/Part evaluation, with changes recorded in the existing admin audit log. Prior legacy evaluations remain readable through the saved-results section and Skill Matrix. The separate Check Sheet Condition practical assessment keeps its existing scoring workflow.
+
+SQLite tables are created additively on startup. Continue using the existing persistent `DATA_DIR`; do not delete or reseed production data. No new credentials or dependencies are required.
+
+Run automated scoring, API and progress tests with:
+
+```bash
+node --test tests/*.test.js
+```

@@ -1109,6 +1109,7 @@ function resetExamSession() {
 }
 
 function setView(view) {
+  if (view === "evaluation") view = "workplace";
   state.activeView = view;
   const views = {
     dashboard: els.dashboardView,
@@ -1119,6 +1120,7 @@ function setView(view) {
     trainingFocus: els.trainingFocusView,
     profile: els.profileView,
     skillMatrix: els.skillMatrixView,
+    workplace: $("workplaceView"),
     evaluation: els.evaluationView,
     practicalAssessment: els.practicalAssessmentView,
     management: els.managementView,
@@ -1139,7 +1141,10 @@ function setView(view) {
 
   setText(els.pageHeading, TEXT.titleByView[view] || "Factory Online Exam");
 
-  if (view === "dashboard") {
+  if (view === "workplace") {
+    setText(els.pageHeading, "ข้อสอบและประเมินหน้างาน");
+    workplaceOpen();
+  } else if (view === "dashboard") {
     renderDashboard();
   } else if (view === "individualSummary") {
     renderIndividualSummary();
@@ -2891,7 +2896,7 @@ function buildSkillMatrixRows() {
   const modelMetaMap = getBankModelMetaMap();
 
   allResults.forEach((result) => {
-    const key = `${result.employee_code || result.employeeCode || ""}::${result.part_code || result.partCode || ""}`;
+    const key = `${result.employee_code || result.employeeCode || ""}::${result.model_code || result.modelCode || ""}::${result.part_code || result.partCode || ""}`;
     const current = latestResultMap.get(key);
     if (!current || new Date(result.submitted_at || 0).getTime() > new Date(current.submitted_at || 0).getTime()) {
       latestResultMap.set(key, result);
@@ -2899,7 +2904,7 @@ function buildSkillMatrixRows() {
   });
 
   evaluations.forEach((evaluation) => {
-    const key = `${evaluation.employeeCode || ""}::${evaluation.partCode || ""}`;
+    const key = `${evaluation.employeeCode || ""}::${evaluation.modelCode || ""}::${evaluation.partCode || ""}`;
     const current = latestEvaluationMap.get(key);
     if (!current || new Date(evaluation.updatedAt || 0).getTime() > new Date(current.updatedAt || 0).getTime()) {
       latestEvaluationMap.set(key, evaluation);
@@ -2910,7 +2915,7 @@ function buildSkillMatrixRows() {
   const rows = [];
 
   keys.forEach((key) => {
-    const [employeeCode, partCode] = key.split("::");
+    const [employeeCode, , partCode] = key.split("::");
     const result = latestResultMap.get(key) || null;
     const evaluation = latestEvaluationMap.get(key) || null;
     const employee = employees.find((item) => item.employeeCode === employeeCode);
@@ -3063,7 +3068,7 @@ function buildSkillMatrixRows() {
   });
 
   evaluations.forEach((evaluation) => {
-    const key = `${evaluation.employeeCode || ""}::${evaluation.partCode || ""}`;
+    const key = `${evaluation.employeeCode || ""}::${isPracticalAssessmentPart(evaluation.partCode) ? "" : evaluation.modelCode || ""}::${evaluation.partCode || ""}`;
     const current = latestEvaluationMap.get(key);
     if (!current || new Date(evaluation.updatedAt || 0).getTime() > new Date(current.updatedAt || 0).getTime()) {
       latestEvaluationMap.set(key, evaluation);
@@ -3113,12 +3118,12 @@ function buildSkillMatrixRows() {
         || latestResultMap.get(`${employee.employeeCode}::${column.partCode}`)
         || null;
       const evaluation = column.isPractical
-        ? (latestEvaluationMap.get(`${employee.employeeCode}::${PRACTICAL_ASSESSMENT.partCode}`)
+        ? (latestEvaluationMap.get(`${employee.employeeCode}::::${PRACTICAL_ASSESSMENT.partCode}`)
           || (PRACTICAL_ASSESSMENT.legacyPartCodes || [])
-            .map((partCode) => latestEvaluationMap.get(`${employee.employeeCode}::${partCode}`))
+            .map((partCode) => latestEvaluationMap.get(`${employee.employeeCode}::::${partCode}`))
             .find(Boolean)
           || null)
-        : latestEvaluationMap.get(`${employee.employeeCode}::${column.partCode}`) || null;
+        : latestEvaluationMap.get(`${employee.employeeCode}::${column.modelCode}::${column.partCode}`) || null;
       const examPercent = Number(result?.percent || 0);
       const evaluationPercent = evaluation
         ? Math.round((Number(evaluation.totalScore || 0) / Math.max(Number(evaluation.maxScore || 0), 1)) * 100)

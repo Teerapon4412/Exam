@@ -1284,6 +1284,9 @@ app.get("/api/evaluations", requireAdmin, (req, res) => {
 });
 
 app.post("/api/evaluations", requireAdmin, (req, res) => {
+  if (!["Check Sheet Condition", "MC16_PRACTICAL"].includes(String(req.body?.partCode || ""))) {
+    return res.status(400).json({ error: "กรุณาใช้หน้าประเมินหน้างานอัตโนมัติ" });
+  }
   const payload = req.body || {};
   const employeeId = String(payload.employeeId || "").trim();
   const employeeCode = normalizeEmployeeCode(payload.employeeCode || "");
@@ -1410,6 +1413,8 @@ app.post("/api/admin/reset-exam-bank", requireAdmin, (req, res) => {
 
   res.json({ ok: true });
 });
+
+require('./workplace-api')({app,db,requireAuth,requireAdmin,getCurrentBankPayload,writeAdminAudit});
 
 app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
