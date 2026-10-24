@@ -45,7 +45,9 @@ module.exports = function register({
     route((req, res) =>
       res.json({
         config: getConfig(GLOBAL_ID),
-        groups: GROUPS,
+        groups: GROUPS.filter((group) =>
+          ["preparation", "response"].includes(group.key),
+        ),
         metrics: METRICS,
       }),
     ),
@@ -55,8 +57,19 @@ module.exports = function register({
     requireAdmin,
     route((req, res) => {
       const examId = GLOBAL_ID;
-      const config = validateConfig(req.body.config);
       const previous = getConfig(examId);
+      const incoming = req.body.config;
+      const preserved = (previous?.groups || []).filter(
+        (group) =>
+          ["quantity", "quality"].includes(group.key) &&
+          !incoming?.groups?.some((candidate) => candidate.key === group.key),
+      );
+      const config = validateConfig({
+        ...incoming,
+        groups: Array.isArray(incoming?.groups)
+          ? [...incoming.groups, ...preserved]
+          : incoming?.groups,
+      });
       const revision = (previous?.revision || 0) + 1;
       check(
         (req.body.revision || 0) === (previous?.revision || 0),
@@ -144,16 +157,14 @@ module.exports = function register({
         JSON.stringify(answers),
         new Date().toISOString(),
       );
-      res
-        .status(201)
-        .json({
-          id,
-          percent,
-          correct,
-          total: questions.length,
-          score,
-          totalScore,
-        });
+      res.status(201).json({
+        id,
+        percent,
+        correct,
+        total: questions.length,
+        score,
+        totalScore,
+      });
     }),
   );
   function calculate(req) {
@@ -213,6 +224,12 @@ module.exports = function register({
     inputs.outputPercent = (evidence.actual / evidence.target) * 100;
     for (const key of ["overCut", "undercut", "outFlow", "nc", "car"])
       inputs[key] = evidence[key];
+    check(
+      ["preparation", "quantity", "quality", "response"].every((key) =>
+        config.groups.some((group) => group.key === key),
+      ),
+      "ยังสรุปคะแนนครบ 4 หัวข้อไม่ได้: รอกำหนดวิธีรับข้อมูลปริมาณงานและคุณภาพงาน",
+    );
     const rows = scoreMetrics(config, inputs);
     const totalScore = rows.reduce((s, r) => s + r.score * r.weight, 0);
     const maxScore = rows.reduce((s, r) => s + 4 * r.weight, 0);

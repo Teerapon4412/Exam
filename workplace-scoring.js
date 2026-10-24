@@ -36,10 +36,22 @@
   }
   function validateConfig(config) {
     check(
-      config && Array.isArray(config.groups) && config.groups.length === 4,
-      "ต้องกำหนดเกณฑ์ครบ 4 หัวข้อ",
+      config &&
+        Array.isArray(config.groups) &&
+        [2, 3, 4].includes(config.groups.length) &&
+        new Set(config.groups.map((g) => g.key)).size ===
+          config.groups.length &&
+        config.groups.every((g) =>
+          GROUPS.some((known) => known.key === g.key),
+        ) &&
+        ["preparation", "response"].every((key) =>
+          config.groups.some((g) => g.key === key),
+        ),
+      "ต้องกำหนดเกณฑ์การเตรียมตัวและการตอบสนองต่อปัญหา",
     );
-    const groups = GROUPS.map((group) => {
+    const groups = GROUPS.filter((group) =>
+      config.groups.some((source) => source.key === group.key),
+    ).map((group) => {
       const source = config.groups.find((g) => g.key === group.key);
       check(
         source &&

@@ -45,7 +45,7 @@ function workplaceOpen(mode = "quizzes") {
         `<section><h4>${title}</h4><button class="secondary-btn" type="button" data-workplace-quiz="${kind}">ทำข้อสอบของฉัน</button><div id="workplaceQuiz-${kind}"></div></section>`,
     )
     .join("")}</div>`;
-  root.innerHTML = `<section class="panel"><p id="workplaceMessage" role="status" aria-live="polite"></p><button type="button" class="secondary-btn" id="workplaceReload">โหลดข้อมูลใหม่</button>${mode === "settings" ? `<section><h3>ตั้งค่าเกณฑ์ น้ำหนัก และข้อสอบ (Admin)</h3><p>แต่ละตัวชี้วัดกำหนดเกณฑ์ระดับ 2, 3, 4 ส่วนค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 หัวข้อที่มีหลายตัวชี้วัดใช้ระดับต่ำสุด</p><p>บันทึกการตั้งค่าใหม่จะเริ่มเวอร์ชันใหม่ พนักงานต้องทำข้อสอบทั้งสองชุดใหม่ก่อนประเมิน ผลประเมินที่บันทึกแล้วไม่ถูกคำนวณย้อนหลัง</p><form id="workplaceConfigForm" novalidate><div id="workplaceRules"></div><div id="workplaceQuestionEditors"></div><p id="workplaceSaveStatus" role="status" aria-live="polite"></p><button type="submit" class="primary-btn">บันทึกเกณฑ์และข้อสอบ</button></form></section>` : mode === "evaluation" ? `<form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}${workplaceField("ยอดงานจริง", "wp-actual")}${workplaceField("เป้าหมายงาน", "wp-target")}${workplaceField("จำนวน Over cut", "wp-overCut")}${workplaceField("จำนวนตัดกินเนื้อ", "wp-undercut")}${workplaceField("จำนวน Out Flow", "wp-outFlow")}${workplaceField("จำนวน NC", "wp-nc")}${workplaceField("จำนวน CAR", "wp-car")}</div><p>กรอกจำนวนจากรอบประเมินเดียวกัน กรอก 0 เมื่อไม่มีเหตุการณ์ ระบบใช้ผลข้อสอบแยกครั้งล่าสุดในเวอร์ชันเกณฑ์ปัจจุบัน</p><button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานคนนี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>` : quizzes}</section>`;
+  root.innerHTML = `<section class="panel"><p id="workplaceMessage" role="status" aria-live="polite"></p><button type="button" class="secondary-btn" id="workplaceReload">โหลดข้อมูลใหม่</button>${mode === "settings" ? `<section><h3>ตั้งค่าเกณฑ์ น้ำหนัก และข้อสอบ (Admin)</h3><p>ตั้งเฉพาะข้อ 1 การเตรียมตัวก่อนปฏิบัติงาน และข้อ 4 การตอบสนองต่อปัญหา โดยกำหนดเกณฑ์ระดับ 2, 3, 4 ส่วนค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 ข้อ 2 และข้อ 3 จะรับข้อมูลด้วยวิธีอื่น</p><p>บันทึกการตั้งค่าใหม่จะเริ่มเวอร์ชันใหม่ พนักงานต้องทำข้อสอบทั้งสองชุดใหม่ก่อนประเมิน ผลประเมินที่บันทึกแล้วไม่ถูกคำนวณย้อนหลัง</p><form id="workplaceConfigForm" novalidate><div id="workplaceRules"></div><div id="workplaceQuestionEditors"></div><p id="workplaceSaveStatus" role="status" aria-live="polite"></p><button type="submit" class="primary-btn">บันทึกเกณฑ์และข้อสอบ</button></form></section>` : mode === "evaluation" ? `<form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}${workplaceField("ยอดงานจริง", "wp-actual")}${workplaceField("เป้าหมายงาน", "wp-target")}${workplaceField("จำนวน Over cut", "wp-overCut")}${workplaceField("จำนวนตัดกินเนื้อ", "wp-undercut")}${workplaceField("จำนวน Out Flow", "wp-outFlow")}${workplaceField("จำนวน NC", "wp-nc")}${workplaceField("จำนวน CAR", "wp-car")}</div><p>กรอกจำนวนจากรอบประเมินเดียวกัน กรอก 0 เมื่อไม่มีเหตุการณ์ ระบบใช้ผลข้อสอบแยกครั้งล่าสุดในเวอร์ชันเกณฑ์ปัจจุบัน</p><button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานคนนี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>` : quizzes}</section>`;
   $("workplaceReload").onclick = workplaceLoad;
   root
     .querySelectorAll("[data-workplace-quiz]")
@@ -80,7 +80,13 @@ function workplaceRenderSheet(rows = []) {
   $("evaluationRows").innerHTML = workplaceTitles
     .map((title, index) => {
       const row = rows[index],
-        weight = row?.weight ?? groups[index]?.weight,
+        weight =
+          row?.weight ??
+          groups.find(
+            (group) =>
+              group.key ===
+              ["preparation", "quantity", "quality", "response"][index],
+          )?.weight,
         score = row?.score;
       return `<tr><td>${index + 1}</td><td>${escapeHtml(title)}</td>${[1, 2, 3, 4].map((level) => `<td class="evaluation-level-cell">${score === level ? "●" : "—"}</td>`).join("")}<td>คำนวณอัตโนมัติตามเกณฑ์ Admin</td><td>${score ?? "—"}</td><td>${weight ?? "—"}</td><td>${row ? score * weight : "—"}</td></tr>`;
     })
@@ -89,7 +95,7 @@ function workplaceRenderSheet(rows = []) {
     ? rows.reduce((n, r) => n + r.score * r.weight, 0)
     : "—";
   $("evaluationMax").textContent =
-    groups.length && groups.every((g) => g.weight)
+    groups.length === 4 && groups.every((g) => g.weight)
       ? groups.reduce((n, g) => n + 4 * g.weight, 0)
       : "—";
   workplaceUpdateMeta();
@@ -152,7 +158,7 @@ async function workplaceLoad() {
       $("workplaceRules").innerHTML = data.groups
         .map((group, index) => {
           const saved = data.config?.groups.find((g) => g.key === group.key);
-          return `<fieldset><legend>${index + 1}. ${workplaceTitles[index]}</legend>${workplaceField("น้ำหนัก", "wp-weight-" + group.key, "number", saved?.weight ?? "")}${group.metrics.map((key) => `<div class="workplace-rule"><p>${escapeHtml(data.metrics[key][0])} — ${data.metrics[key][1] === "higher" ? "ค่าต้อง ≥ เกณฑ์ (ยิ่งสูงยิ่งดี)" : "ค่าต้อง ≤ เกณฑ์ (ยิ่งต่ำยิ่งดี)"}</p><div class="workplace-fields">${[2, 3, 4].map((level, i) => workplaceField("ระดับ " + level, "wp-threshold-" + key + "-" + i, "number", saved?.metrics[key]?.[i] ?? "")).join("")}</div></div>`).join("")}</fieldset>`;
+          return `<fieldset><legend>${group.key === "preparation" ? 1 : 4}. ${escapeHtml(group.title)}</legend>${workplaceField("น้ำหนัก", "wp-weight-" + group.key, "number", saved?.weight ?? "")}${group.metrics.map((key) => `<div class="workplace-rule"><p>${escapeHtml(data.metrics[key][0])} — ${data.metrics[key][1] === "higher" ? "ค่าต้อง ≥ เกณฑ์ (ยิ่งสูงยิ่งดี)" : "ค่าต้อง ≤ เกณฑ์ (ยิ่งต่ำยิ่งดี)"}</p><div class="workplace-fields">${[2, 3, 4].map((level, i) => workplaceField("ระดับ " + level, "wp-threshold-" + key + "-" + i, "number", saved?.metrics[key]?.[i] ?? "")).join("")}</div></div>`).join("")}</fieldset>`;
         })
         .join("");
     workplaceQuestions = structuredClone(
@@ -164,7 +170,7 @@ async function workplaceLoad() {
     workplaceMessage(
       workplaceRevision
         ? "ใช้เกณฑ์เวอร์ชัน " + workplaceRevision
-        : "ยังไม่มีเกณฑ์ กรุณาตั้งค่าครบทั้ง 4 หัวข้อและสร้างข้อสอบทั้งสองชุด",
+        : "ยังไม่มีเกณฑ์ กรุณาตั้งค่าข้อ 1 และข้อ 4 และสร้างข้อสอบทั้งสองชุด",
     );
     if ($("workplaceConfigForm"))
       $("workplaceConfigForm").querySelector("button[type=submit]").disabled =

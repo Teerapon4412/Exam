@@ -292,6 +292,49 @@ test(
       assert.equal(weightedResult.totalScore, 4);
       assert.equal(weightedResult.percent, 75);
       assert.equal(weightedResult.correct, 1);
+      const onlyQuizzes = fixture();
+      onlyQuizzes.groups = onlyQuizzes.groups.filter((group) =>
+        ["preparation", "response"].includes(group.key),
+      );
+      const edited = await json(
+        await req(
+          "/api/workplace/config",
+          admin.token,
+          { config: onlyQuizzes, revision: 3 },
+          "PUT",
+        ),
+      );
+      assert.equal(
+        edited.config.groups.find((g) => g.key === "quantity").weight,
+        2,
+      );
+      assert.equal(
+        edited.config.groups.find((g) => g.key === "quality").weight,
+        3,
+      );
+      const schema = await json(
+        await req("/api/workplace/config", admin.token),
+      );
+      assert.deepEqual(
+        schema.groups.map((g) => g.key),
+        ["preparation", "response"],
+      );
+      // Simulate a fresh installation without legacy criteria; saving must still work.
+      storage
+        .prepare("DELETE FROM workplace_configs WHERE exam_id=?")
+        .run("__WORKPLACE_ALL__");
+      const fresh = await json(
+        await req(
+          "/api/workplace/config",
+          admin.token,
+          { config: onlyQuizzes, revision: 0 },
+          "PUT",
+        ),
+      );
+      assert.equal(fresh.config.groups.length, 2);
+      const incomplete = await req("/api/workplace/preview", admin.token, base);
+      assert.equal(incomplete.status, 400);
+      assert.match((await incomplete.json()).error, /ปริมาณงานและคุณภาพงาน/);
       storage.close();
     } finally {
       child.kill();

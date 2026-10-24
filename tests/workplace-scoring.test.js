@@ -133,3 +133,16 @@ test("browser and server use identical validation rules", () => {
     /ข้อสอบเตรียมตัว/,
   );
 });
+test("only preparation and response are required when saving quiz criteria", () => {
+  const config = fixture();
+  config.groups = config.groups.filter((g) =>
+    ["preparation", "response"].includes(g.key),
+  );
+  const saved = validateConfig(config);
+  assert.deepEqual(
+    saved.groups.map((g) => g.key),
+    ["preparation", "response"],
+  );
+  config.groups.pop();
+  assert.throws(() => validateConfig(config), /การเตรียมตัวและการตอบสนอง/);
+});
