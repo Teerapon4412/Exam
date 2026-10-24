@@ -788,6 +788,7 @@ function serializeManagedEmployee(user) {
 function serializeEvaluation(row) {
   return {
     id: row.id,
+    period: row.period || "",
     employeeId: row.employee_id,
     employeeCode: row.employee_code,
     employeeName: row.employee_name,

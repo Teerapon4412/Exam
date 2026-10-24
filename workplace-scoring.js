@@ -19,6 +19,8 @@
     },
   ];
   const METRICS = {
+    quantityRaw: ["คะแนนดิบปริมาณงาน", "higher"],
+    qualityRaw: ["คะแนนดิบคุณภาพงาน", "higher"],
     preparationPercent: ["คะแนนข้อสอบเตรียมตัว (%)", "higher"],
     outputPercent: ["ยอดงานเทียบเป้าหมาย (%)", "higher"],
     overCut: ["จำนวน Over cut", "lower"],
@@ -162,13 +164,13 @@
           finite(value) && value >= 0,
           "ข้อมูลไม่ครบหรือไม่ถูกต้อง: " + METRICS[key][0],
         );
-        if (!key.endsWith("Percent"))
+        if (["overCut", "undercut", "outFlow", "nc", "car"].includes(key))
           check(Number.isInteger(value), "จำนวนเหตุการณ์ต้องเป็นจำนวนเต็ม");
         evidence[key] = value;
         let level = 1;
         thresholds.forEach((threshold, index) => {
           if (
-            METRICS[key][1] === "higher"
+            (group.direction || METRICS[key][1]) === "higher"
               ? value >= threshold
               : value <= threshold
           )
@@ -188,7 +190,58 @@
       };
     });
   }
-  const scoring = { GROUPS, METRICS, validateConfig, scoreMetrics, check };
+  function validateManualRules(value) {
+    check(
+      value && Array.isArray(value.groups) && value.groups.length === 2,
+      "กำหนดเกณฑ์คะแนนดิบทั้งปริมาณงานและคุณภาพงาน",
+    );
+    return {
+      groups: ["quantity", "quality"].map((key) => {
+        const source = value.groups.find((group) => group.key === key),
+          metric = key + "Raw",
+          title = key === "quantity" ? "ปริมาณงาน" : "คุณภาพงาน";
+        check(
+          source &&
+            finite(source.weight) &&
+            source.weight > 0 &&
+            source.weight <= 100,
+          title + ": น้ำหนักต้องมากกว่า 0 และไม่เกิน 100",
+        );
+        check(
+          ["higher", "lower"].includes(source.direction),
+          title + ": เลือกทิศทางเกณฑ์",
+        );
+        const thresholds = source.metrics?.[metric];
+        check(
+          Array.isArray(thresholds) &&
+            thresholds.length === 3 &&
+            thresholds.every((n) => finite(n) && n >= 0),
+          title + ": กรอกเกณฑ์ระดับ 2–4 ให้ครบ",
+        );
+        check(
+          source.direction === "higher"
+            ? thresholds[0] < thresholds[1] && thresholds[1] < thresholds[2]
+            : thresholds[0] > thresholds[1] && thresholds[1] > thresholds[2],
+          title + ": เกณฑ์ระดับ 2–4 ต้องเรียงตามทิศทางที่เลือก",
+        );
+        return {
+          key,
+          title,
+          weight: source.weight,
+          direction: source.direction,
+          metrics: { [metric]: thresholds },
+        };
+      }),
+    };
+  }
+  const scoring = {
+    GROUPS,
+    METRICS,
+    validateConfig,
+    scoreMetrics,
+    check,
+    validateManualRules,
+  };
   if (typeof module !== "undefined" && module.exports) module.exports = scoring;
   else globalThis.WorkplaceScoring = scoring;
 })();

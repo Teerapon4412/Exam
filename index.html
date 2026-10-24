@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20261024-manual-scores" />
+    <link rel="stylesheet" href="./styles.css?v=20261024-workplace-hub" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -65,14 +65,11 @@
             <nav class="side-nav">
               <button class="nav-item admin-only hidden" data-view="dashboard" type="button">Dashboard</button>
               <button class="nav-item admin-only hidden" data-view="individualSummary" type="button">สรุปรายบุคคล</button>
+              <button class="nav-item" data-view="workplaceHub" type="button">ประเมินหน้างาน</button>
               <button class="nav-item active" data-view="exam" type="button">ทำข้อสอบ</button>
-              <button class="nav-item" data-view="workplace" type="button">ข้อสอบประเมินหน้างาน</button>
               <button class="nav-item" data-view="examProgress" type="button">สถานะการสอบราย Part</button>
               <button class="nav-item" data-view="history" type="button">ประวัติผลสอบ</button>
               <button class="nav-item" data-view="profile" type="button">ข้อมูลพนักงาน</button>
-              <button class="nav-item admin-only hidden" data-view="workplaceScorePreview" type="button">กรอกคะแนนข้อ 2–3</button>
-              <button class="nav-item admin-only hidden" data-view="evaluation" type="button">ประเมินหน้างาน</button>
-              <button class="nav-item admin-only hidden" data-view="workplaceSettings" type="button">ตั้งค่าข้อสอบและเกณฑ์คะแนน</button>
               <button class="nav-item admin-only hidden" data-view="skillMatrix" type="button">Skill Matrix</button>
               <button class="nav-item admin-only hidden" data-view="management" type="button">จัดการข้อมูล <span id="questionReportNavBadge" class="nav-badge hidden">0</span></button>
               <button class="nav-item admin-only hidden" data-view="admin" type="button">จัดการคลังข้อสอบ</button>
@@ -525,6 +522,7 @@
             </section>
           </section>
 
+          <section id="workplaceHubView" class="view-section hidden"></section>
           <section id="workplaceScorePreviewView" class="view-section hidden"></section>
           <section id="workplaceSettingsView" class="view-section hidden"></section>
           <section id="workplaceView" class="view-section hidden"></section>
@@ -1039,10 +1037,11 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20261024-manual-scores"></script>
-    <script src="./workplace-scoring.js?v=20261024-manual-scores"></script>
-    <script src="./workplace-score-preview.js?v=20261024-manual-scores"></script>
-    <script src="./workplace-ui.js?v=20261024-manual-scores"></script>
-    <script src="./progress-ui.js?v=20261024-manual-scores"></script>
+    <script src="./script.js?v=20261024-workplace-hub"></script>
+    <script src="./workplace-scoring.js?v=20261024-workplace-hub"></script>
+    <script src="./workplace-score-preview.js?v=20261024-workplace-hub"></script>
+    <script src="./workplace-hub.js?v=20261024-workplace-hub"></script>
+    <script src="./workplace-ui.js?v=20261024-workplace-hub"></script>
+    <script src="./progress-ui.js?v=20261024-workplace-hub"></script>
   </body>
 </html>

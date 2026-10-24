@@ -1109,6 +1109,10 @@ function resetExamSession() {
 }
 
 function setView(view) {
+  const workplaceTabs={workplaceHub:'overview',workplace:'quizzes',workplaceScorePreview:'scores',workplaceSettings:'settings',evaluation:'evaluation'};
+  if(workplaceTabs[view]){openWorkplaceHub(workplaceTabs[view]);return;}
+  if(document.body.classList.contains('workplace-hub-open') && !canLeaveWorkplaceHub())return;
+  document.body.classList.remove('workplace-hub-open');
   state.activeView = view;
   document.body.classList.toggle("score-entry-preview-open", view === "workplaceScorePreview");
   const views = {
@@ -1120,6 +1124,7 @@ function setView(view) {
     trainingFocus: els.trainingFocusView,
     profile: els.profileView,
     skillMatrix: els.skillMatrixView,
+    workplaceHub: $("workplaceHubView"),
     workplace: $("workplaceView"),
     workplaceScorePreview: $("workplaceScorePreviewView"),
     workplaceSettings: $("workplaceSettingsView"),
@@ -3075,6 +3080,7 @@ function buildSkillMatrixRows() {
   });
 
   evaluations.forEach((evaluation) => {
+    if(evaluation.modelCode === "__WORKPLACE_ALL__" && evaluation.period && typeof workplaceHubPeriod === "function" && evaluation.period !== workplaceHubPeriod()) return;
     const key = `${evaluation.employeeCode || ""}::${isPracticalAssessmentPart(evaluation.partCode) ? "" : evaluation.modelCode || ""}::${evaluation.partCode || ""}`;
     const current = latestEvaluationMap.get(key);
     if (!current || new Date(evaluation.updatedAt || 0).getTime() > new Date(current.updatedAt || 0).getTime()) {
@@ -3278,6 +3284,7 @@ function renderSkillMatrix() {
       <span>Model เลือกได้: สอบ 100% หรือ 40/60</span>
       <span>Total ${SKILL_MATRIX_CONFIG.totalWeight}%</span>
       <span>พนักงานทั้งหมด ${matrix.employees.length} คน</span>
+      <span>งวดประเมิน ${typeof workplaceHubPeriod === "function" ? workplaceHubPeriod() : "ปัจจุบัน"}</span>
     `;
   }
 
@@ -3642,6 +3649,7 @@ function renderEvaluationHistory() {
   const evaluatorFilter = els.evaluationHistoryEvaluatorFilter.value || defaultEvaluatorLabel;
 
   const filtered = state.evaluations.filter((item) => {
+    if(item.period && typeof workplaceHubPeriod === "function" && item.period !== workplaceHubPeriod()) return false;
     const matchedKeyword = !keyword || [
       item.employeeCode,
       item.employeeName,
@@ -3659,7 +3667,7 @@ function renderEvaluationHistory() {
   els.evaluationHistoryBody.innerHTML = filtered
     .map((item) => `
       <tr>
-        <td>${formatDateTime(item.updatedAt || item.createdAt)}</td>
+        <td>${item.period ? `งวด ${item.period}<br>` : ""}${formatDateTime(item.updatedAt || item.createdAt)}</td>
         <td>${item.employeeName} (${item.employeeCode})</td>
         <td>${item.partCode === "__WORKPLACE_ALL__" ? "ประเมินรวมทุก Model/Part" : `${item.modelName || item.modelCode} / ${item.partCode}`}</td>
         <td>${item.totalScore}/${item.maxScore}</td>
@@ -5007,6 +5015,7 @@ async function handleLogin(event) {
 }
 
 function logout() {
+  if (typeof clearWorkplaceHub === "function") clearWorkplaceHub();
   if (typeof clearWorkplaceManualScoreCache === "function") clearWorkplaceManualScoreCache();
   state.user = null;
   state.authToken = "";

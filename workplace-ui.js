@@ -45,7 +45,7 @@ function workplaceOpen(mode = "quizzes") {
         `<section><h4>${title}</h4><button class="secondary-btn" type="button" data-workplace-quiz="${kind}">ทำข้อสอบของฉัน</button><div id="workplaceQuiz-${kind}"></div></section>`,
     )
     .join("")}</div>`;
-  root.innerHTML = `<section class="panel"><p id="workplaceMessage" role="status" aria-live="polite"></p><button type="button" class="secondary-btn" id="workplaceReload">โหลดข้อมูลใหม่</button>${mode === "settings" ? `<section><h3>ตั้งค่าเกณฑ์ น้ำหนัก และข้อสอบ (Admin)</h3><p>ตั้งเฉพาะข้อ 1 การเตรียมตัวก่อนปฏิบัติงาน และข้อ 4 การตอบสนองต่อปัญหา โดยกำหนดเกณฑ์ระดับ 2, 3, 4 ส่วนค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 ข้อ 2 และข้อ 3 จะรับข้อมูลด้วยวิธีอื่น</p><p>บันทึกการตั้งค่าใหม่จะเริ่มเวอร์ชันใหม่ พนักงานต้องทำข้อสอบทั้งสองชุดใหม่ก่อนประเมิน ผลประเมินที่บันทึกแล้วไม่ถูกคำนวณย้อนหลัง</p><form id="workplaceConfigForm" novalidate><div id="workplaceRules"></div><div id="workplaceQuestionEditors"></div><p id="workplaceSaveStatus" role="status" aria-live="polite"></p><button type="submit" class="primary-btn">บันทึกเกณฑ์และข้อสอบ</button></form></section>` : mode === "evaluation" ? `<form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}${workplaceField("ยอดงานจริง", "wp-actual")}${workplaceField("เป้าหมายงาน", "wp-target")}${workplaceField("จำนวน Over cut", "wp-overCut")}${workplaceField("จำนวนตัดกินเนื้อ", "wp-undercut")}${workplaceField("จำนวน Out Flow", "wp-outFlow")}${workplaceField("จำนวน NC", "wp-nc")}${workplaceField("จำนวน CAR", "wp-car")}</div><p>กรอกจำนวนจากรอบประเมินเดียวกัน กรอก 0 เมื่อไม่มีเหตุการณ์ ระบบใช้ผลข้อสอบแยกครั้งล่าสุดในเวอร์ชันเกณฑ์ปัจจุบัน</p><div id="workplaceManualScores" role="status"></div><button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานคนนี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>` : quizzes}</section>`;
+  root.innerHTML = `<section class="panel"><p id="workplaceMessage" role="status" aria-live="polite"></p><button type="button" class="secondary-btn" id="workplaceReload">โหลดข้อมูลใหม่</button>${mode === "settings" ? `<section><h3>ตั้งค่าเกณฑ์ น้ำหนัก และข้อสอบ (Admin)</h3><p>ตั้งเฉพาะข้อ 1 การเตรียมตัวก่อนปฏิบัติงาน และข้อ 4 การตอบสนองต่อปัญหา โดยกำหนดเกณฑ์ระดับ 2, 3, 4 ส่วนค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 ข้อ 2 และข้อ 3 รับข้อมูลและตั้งเกณฑ์คะแนนดิบในเมนูกรอกคะแนนข้อ 2–3</p><p>บันทึกการตั้งค่าใหม่จะเริ่มเวอร์ชันใหม่ พนักงานต้องทำข้อสอบทั้งสองชุดใหม่ก่อนประเมิน ผลประเมินที่บันทึกแล้วไม่ถูกคำนวณย้อนหลัง</p><form id="workplaceConfigForm" novalidate><div id="workplaceRules"></div><div id="workplaceQuestionEditors"></div><p id="workplaceSaveStatus" role="status" aria-live="polite"></p><button type="submit" class="primary-btn">บันทึกเกณฑ์และข้อสอบ</button></form></section>` : mode === "evaluation" ? `<form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}</div><p>ระบบดึงผลข้อสอบและคะแนนดิบจากพนักงานและงวดที่เลือก คำนวณระดับ 1–4 และน้ำหนักให้อัตโนมัติ</p><div id="workplaceManualScores" role="status"></div><button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานคนนี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>` : quizzes}</section>`;
   $("workplaceReload").onclick = workplaceLoad;
   root
     .querySelectorAll("[data-workplace-quiz]")
@@ -61,9 +61,12 @@ function workplaceOpen(mode = "quizzes") {
       workplaceEvaluate(true);
     };
     $("workplaceEmployee").onchange = () => {
+      workplaceHub.employeeCode = $("workplaceEmployee").value;
       workplaceClearEvidence();
       loadWorkplaceManualEvidence();
     };
+    $("wp-period").value = workplaceHubPeriod();
+    $("wp-period").closest("label").classList.add("hidden");
     $("wp-period").onchange = loadWorkplaceManualEvidence;
     $("workplaceHistoryButton").onclick = workplaceHistory;
     $("wp-evaluator").oninput = workplaceUpdateMeta;
@@ -99,9 +102,11 @@ function workplaceRenderSheet(rows = []) {
     ? rows.reduce((n, r) => n + r.score * r.weight, 0)
     : "—";
   $("evaluationMax").textContent =
-    groups.length === 4 && groups.every((g) => g.weight)
-      ? groups.reduce((n, g) => n + 4 * g.weight, 0)
-      : "—";
+    rows.length === 4
+      ? rows.reduce((n, row) => n + 4 * row.weight, 0)
+      : groups.length === 4 && groups.every((g) => g.weight)
+        ? groups.reduce((n, g) => n + 4 * g.weight, 0)
+        : "—";
   workplaceUpdateMeta();
 }
 function workplaceClearEvidence() {
@@ -186,6 +191,13 @@ async function workplaceLoad() {
         "button[type=submit]",
       ).disabled = !workplaceRevision;
     if (workplaceMode === "evaluation") {
+      if (
+        workplaceHub.employeeCode &&
+        [...$("workplaceEmployee").options].some(
+          (option) => option.value === workplaceHub.employeeCode,
+        )
+      )
+        $("workplaceEmployee").value = workplaceHub.employeeCode;
       workplaceRenderSheet();
       await loadEvaluations();
       loadWorkplaceManualEvidence();
@@ -386,6 +398,7 @@ async function workplaceSaveConfig(event) {
     workplaceRevision = saved.config.revision;
     workplaceConfig = { ...saved.config, schema: workplaceConfig.schema };
     workplaceQuestions = structuredClone(saved.config.quizzes);
+    workplaceHub.settingsDirty = false;
     workplaceRenderQuestionEditors();
     workplaceMessage(
       "บันทึกเกณฑ์และข้อสอบเรียบร้อยแล้ว เวอร์ชัน " + workplaceRevision,
@@ -414,6 +427,7 @@ async function workplaceTakeQuiz(kind) {
       kind,
       questions: data.quizzes[kind],
       revision: data.revision,
+      period: workplaceHubPeriod(),
       answers: data.quizzes[kind].map(() => null),
       index: 0,
       submitting: false,
@@ -487,6 +501,7 @@ function workplaceRenderQuiz(target, quiz, token, ticket) {
         method: "POST",
         body: JSON.stringify({
           kind: quiz.kind,
+          period: quiz.period,
           revision: quiz.revision,
           answers: quiz.answers,
         }),
@@ -516,11 +531,6 @@ async function workplaceEvaluate(save) {
     employeeCode: $("workplaceEmployee").value,
     period: $("wp-period").value,
     evaluator: $("wp-evaluator").value,
-    evidence: Object.fromEntries(
-      ["actual", "target", "overCut", "undercut", "outFlow", "nc", "car"].map(
-        (key) => [key, Number($("wp-" + key).value)],
-      ),
-    ),
   };
   const ticket = workplaceRequest,
     employeeCode = body.employeeCode;
@@ -619,8 +629,28 @@ async function loadWorkplaceManualEvidence() {
       return;
     const entry = data.entries.find((e) => e.employeeCode === employeeCode);
     target.textContent = entry
-      ? `คะแนนดิบงวด ${period}: ปริมาณงาน ${entry.quantity} · คุณภาพงาน ${entry.quality} (รอเกณฑ์แปลงเป็นระดับ 1–4)`
+      ? `คะแนนดิบงวด ${period}: ปริมาณงาน ${entry.quantity} · คุณภาพงาน ${entry.quality}`
       : "ยังไม่มีคะแนนดิบข้อ 2–3 สำหรับพนักงานในงวดนี้ ให้ Admin บันทึกที่หน้า “กรอกคะแนนข้อ 2–3”";
+    if (workplaceRevision) {
+      try {
+        const result = await api("/api/workplace/preview", {
+          method: "POST",
+          body: JSON.stringify({
+            employeeCode,
+            period,
+            revision: workplaceRevision,
+          }),
+        });
+        if (ticket === manualEvidenceRequest && token === state.authToken) {
+          workplaceRenderSheet(result.rows);
+          $("workplaceScore").textContent =
+            `พร้อมบันทึก: ${result.totalScore}/${result.maxScore} (${result.percent}%)`;
+        }
+      } catch (error) {
+        if (ticket === manualEvidenceRequest && token === state.authToken)
+          workplaceMessage(error.message);
+      }
+    }
   } catch (error) {
     if (
       ticket === manualEvidenceRequest &&

@@ -146,3 +146,32 @@ test("only preparation and response are required when saving quiz criteria", () 
   config.groups.pop();
   assert.throws(() => validateConfig(config), /การเตรียมตัวและการตอบสนอง/);
 });
+test("raw score criteria support weighted decimal scores and both directions", () => {
+  const { validateManualRules } = require("../workplace-scoring");
+  const rules = validateManualRules({
+    groups: [
+      {
+        key: "quantity",
+        weight: 2,
+        direction: "higher",
+        metrics: { quantityRaw: [50, 75, 90] },
+      },
+      {
+        key: "quality",
+        weight: 3,
+        direction: "lower",
+        metrics: { qualityRaw: [10, 5, 1] },
+      },
+    ],
+  });
+  assert.deepEqual(
+    scoreMetrics(rules, { quantityRaw: 75.5, qualityRaw: 1 }).map(
+      (r) => r.score,
+    ),
+    [3, 4],
+  );
+  assert.throws(
+    () => validateManualRules({ groups: [] }),
+    /ทั้งปริมาณงานและคุณภาพงาน/,
+  );
+});
