@@ -42,6 +42,10 @@ module.exports = function register({
   db.exec(
     "CREATE INDEX IF NOT EXISTS workplace_attempt_period_lookup ON workplace_attempts(user_id,exam_id,kind,revision,period,created_at); CREATE INDEX IF NOT EXISTS workplace_evaluation_period_lookup ON evaluations(employee_id,model_code,period)",
   );
+  require("./workplace-weight-policy").applyStandardWorkplaceWeights(
+    db,
+    writeAdminAudit,
+  );
   const validPeriod = (period) =>
     typeof period === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(period);
   const getManualRules = () => {
@@ -663,16 +667,14 @@ module.exports = function register({
           { record, config, evidence: { period, evidence, attempts } },
         );
       })();
-      res
-        .status(201)
-        .json({
-          id,
-          rows,
-          totalScore,
-          maxScore,
-          percent: result.percent,
-          weightOverrides: result.weightOverrides,
-        });
+      res.status(201).json({
+        id,
+        rows,
+        totalScore,
+        maxScore,
+        percent: result.percent,
+        weightOverrides: result.weightOverrides,
+      });
     }),
   );
 };

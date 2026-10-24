@@ -1,5 +1,11 @@
 (function () {
   "use strict";
+  const STANDARD_WEIGHTS = {
+    preparation: 4,
+    quantity: 3,
+    quality: 4,
+    response: 4,
+  };
   const GROUPS = [
     {
       key: "preparation",
@@ -235,6 +241,7 @@
     };
   }
   const scoring = {
+    STANDARD_WEIGHTS,
     GROUPS,
     METRICS,
     validateConfig,

@@ -70,3 +70,7 @@ node --test tests/*.test.js
 Admin can edit Weight (B) directly in the assessment sheet. A local override is validated on the server and saved with that employee/month result; it does not change the global rules or force a quiz retake. “ใช้น้ำหนักตามเกณฑ์” clears local overrides.
 
 Quiz results are matched by a canonical question fingerprint, not by scoring-criteria revision. Existing fingerprints are recovered only from saved configuration snapshots/audit evidence. Unknown historical versions and results without a recorded month are not silently matched; diagnostics name the employee/month and distinguish changed questions from a period mismatch.
+
+### Standard weights 4 / 3 / 4 / 4
+
+The standard topic weights are preparation 4, quantity 3, quality 4 and problem response 4 (maximum weighted score 60). A one-time, audited startup migration updates existing shared defaults and saved overall workplace evaluations, retaining their earned levels, source evidence and assessment periods while recalculating weighted totals. Prior per-person weight overrides are reset as part of this all-employee update. The migration runs transactionally once; subsequent Admin edits remain possible and are not reset on restart.

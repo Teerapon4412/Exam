@@ -158,7 +158,7 @@ async function renderManualRules() {
     ]
       .map((key, index) => {
         const rule = data.rules?.groups.find((g) => g.key === key);
-        return `<fieldset><legend>${index + 2}. ${key === "quantity" ? "ปริมาณงาน" : "คุณภาพงาน"}</legend><div class="workplace-fields">${workplaceField("น้ำหนัก", "manual-weight-" + key, "number", rule?.weight ?? "")}<label class="field"><span>ทิศทางคะแนน</span><select id="manual-direction-${key}"><option value="higher">ยิ่งสูงยิ่งดี (≥)</option><option value="lower" ${rule?.direction === "lower" ? "selected" : ""}>ยิ่งต่ำยิ่งดี (≤)</option></select></label>${[0, 1, 2].map((i) => workplaceField("เกณฑ์ระดับ " + (i + 2), "manual-threshold-" + key + "-" + i, "number", rule?.metrics[key + "Raw"][i] ?? "")).join("")}</div><div id="manual-ranges-${key}" class="manual-ranges" aria-live="polite"></div></fieldset>`;
+        return `<fieldset><legend>${index + 2}. ${key === "quantity" ? "ปริมาณงาน" : "คุณภาพงาน"}</legend><div class="workplace-fields">${workplaceField("น้ำหนัก", "manual-weight-" + key, "number", rule?.weight ?? WorkplaceScoring.STANDARD_WEIGHTS[key])}<label class="field"><span>ทิศทางคะแนน</span><select id="manual-direction-${key}"><option value="higher">ยิ่งสูงยิ่งดี (≥)</option><option value="lower" ${rule?.direction === "lower" ? "selected" : ""}>ยิ่งต่ำยิ่งดี (≤)</option></select></label>${[0, 1, 2].map((i) => workplaceField("เกณฑ์ระดับ " + (i + 2), "manual-threshold-" + key + "-" + i, "number", rule?.metrics[key + "Raw"][i] ?? "")).join("")}</div><div id="manual-ranges-${key}" class="manual-ranges" aria-live="polite"></div></fieldset>`;
       })
       .join(
         "",

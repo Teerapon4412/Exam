@@ -100,7 +100,10 @@ function workplaceRenderSheet(rows = []) {
             (group) =>
               group.key ===
               ["preparation", "quantity", "quality", "response"][index],
-          )?.weight,
+          )?.weight ??
+          WorkplaceScoring.STANDARD_WEIGHTS[
+            ["preparation", "quantity", "quality", "response"][index]
+          ],
         score = row?.score;
       return `<tr><td>${index + 1}</td><td>${escapeHtml(title)}</td>${[1, 2, 3, 4].map((level) => `<td class="evaluation-level-cell">${score === level ? "●" : "—"}</td>`).join("")}<td>คำนวณอัตโนมัติตามเกณฑ์ Admin</td><td>${score ?? "—"}</td><td>${state.user?.role === "admin" ? `<input type="number" class="evaluation-weight-input" data-workplace-weight="${["preparation", "quantity", "quality", "response"][index]}" value="${weight ?? ""}" min="0" max="100" step="any" ${row ? "" : "disabled"} aria-label="น้ำหนัก ${escapeHtml(title)}">` : (weight ?? "—")}</td><td>${row ? score * weight : "—"}</td></tr>`;
     })
@@ -111,9 +114,14 @@ function workplaceRenderSheet(rows = []) {
   $("evaluationMax").textContent =
     rows.length === 4
       ? rows.reduce((n, row) => n + 4 * row.weight, 0)
-      : groups.length === 4 && groups.every((g) => g.weight)
-        ? groups.reduce((n, g) => n + 4 * g.weight, 0)
-        : "—";
+      : ["preparation", "quantity", "quality", "response"].reduce(
+          (sum, key) =>
+            sum +
+            4 *
+              (groups.find((group) => group.key === key)?.weight ??
+                WorkplaceScoring.STANDARD_WEIGHTS[key]),
+          0,
+        );
   $("evaluationRows")
     .querySelectorAll("[data-workplace-weight]")
     .forEach(
@@ -215,7 +223,7 @@ async function workplaceLoad() {
       $("workplaceRules").innerHTML = data.groups
         .map((group, index) => {
           const saved = data.config?.groups.find((g) => g.key === group.key);
-          return `<fieldset><legend>${group.key === "preparation" ? 1 : 4}. ${escapeHtml(group.title)}</legend>${workplaceField("น้ำหนัก", "wp-weight-" + group.key, "number", saved?.weight ?? "")}${group.metrics.map((key) => `<div class="workplace-rule"><p>${escapeHtml(data.metrics[key][0])} — ${data.metrics[key][1] === "higher" ? "ค่าต้อง ≥ เกณฑ์ (ยิ่งสูงยิ่งดี)" : "ค่าต้อง ≤ เกณฑ์ (ยิ่งต่ำยิ่งดี)"}</p><div class="workplace-fields">${[2, 3, 4].map((level, i) => workplaceField("ระดับ " + level, "wp-threshold-" + key + "-" + i, "number", saved?.metrics[key]?.[i] ?? "")).join("")}</div></div>`).join("")}</fieldset>`;
+          return `<fieldset><legend>${group.key === "preparation" ? 1 : 4}. ${escapeHtml(group.title)}</legend>${workplaceField("น้ำหนัก", "wp-weight-" + group.key, "number", saved?.weight ?? WorkplaceScoring.STANDARD_WEIGHTS[group.key])}${group.metrics.map((key) => `<div class="workplace-rule"><p>${escapeHtml(data.metrics[key][0])} — ${data.metrics[key][1] === "higher" ? "ค่าต้อง ≥ เกณฑ์ (ยิ่งสูงยิ่งดี)" : "ค่าต้อง ≤ เกณฑ์ (ยิ่งต่ำยิ่งดี)"}</p><div class="workplace-fields">${[2, 3, 4].map((level, i) => workplaceField("ระดับ " + level, "wp-threshold-" + key + "-" + i, "number", saved?.metrics[key]?.[i] ?? "")).join("")}</div></div>`).join("")}</fieldset>`;
         })
         .join("");
     workplaceQuestions = structuredClone(
