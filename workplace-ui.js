@@ -14,7 +14,8 @@ let workplaceConfig = null,
   workplaceQuestions = {},
   workplaceRequest = 0;
 function workplaceMessage(text) {
-  $("workplaceMessage").textContent = text;
+  if ($("workplaceMessage")) $("workplaceMessage").textContent = text;
+  if ($("workplaceSaveStatus")) $("workplaceSaveStatus").textContent = text;
 }
 function workplaceField(label, id, type = "number", value = "") {
   return `<label class="field"><span>${escapeHtml(label)}</span><input id="${id}" type="${type}" ${type === "number" ? 'min="0" step="any"' : ""} value="${escapeHtml(value)}" required></label>`;
@@ -44,7 +45,7 @@ function workplaceOpen(mode = "quizzes") {
         `<section><h4>${title}</h4><button class="secondary-btn" type="button" data-workplace-quiz="${kind}">ทำข้อสอบของฉัน</button><div id="workplaceQuiz-${kind}"></div></section>`,
     )
     .join("")}</div>`;
-  root.innerHTML = `<section class="panel"><p id="workplaceMessage" role="status" aria-live="polite"></p><button type="button" class="secondary-btn" id="workplaceReload">โหลดข้อมูลใหม่</button>${mode === "settings" ? `<section><h3>ตั้งค่าเกณฑ์ น้ำหนัก และข้อสอบ (Admin)</h3><p>แต่ละตัวชี้วัดกำหนดเกณฑ์ระดับ 2, 3, 4 ส่วนค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 หัวข้อที่มีหลายตัวชี้วัดใช้ระดับต่ำสุด</p><p>บันทึกการตั้งค่าใหม่จะเริ่มเวอร์ชันใหม่ พนักงานต้องทำข้อสอบทั้งสองชุดใหม่ก่อนประเมิน ผลประเมินที่บันทึกแล้วไม่ถูกคำนวณย้อนหลัง</p><form id="workplaceConfigForm"><div id="workplaceRules"></div><div id="workplaceQuestionEditors"></div><button type="submit" class="primary-btn">บันทึกเกณฑ์และข้อสอบ</button></form></section>` : mode === "evaluation" ? `<form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}${workplaceField("ยอดงานจริง", "wp-actual")}${workplaceField("เป้าหมายงาน", "wp-target")}${workplaceField("จำนวน Over cut", "wp-overCut")}${workplaceField("จำนวนตัดกินเนื้อ", "wp-undercut")}${workplaceField("จำนวน Out Flow", "wp-outFlow")}${workplaceField("จำนวน NC", "wp-nc")}${workplaceField("จำนวน CAR", "wp-car")}</div><p>กรอกจำนวนจากรอบประเมินเดียวกัน กรอก 0 เมื่อไม่มีเหตุการณ์ ระบบใช้ผลข้อสอบแยกครั้งล่าสุดในเวอร์ชันเกณฑ์ปัจจุบัน</p><button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานคนนี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>` : quizzes}</section>`;
+  root.innerHTML = `<section class="panel"><p id="workplaceMessage" role="status" aria-live="polite"></p><button type="button" class="secondary-btn" id="workplaceReload">โหลดข้อมูลใหม่</button>${mode === "settings" ? `<section><h3>ตั้งค่าเกณฑ์ น้ำหนัก และข้อสอบ (Admin)</h3><p>แต่ละตัวชี้วัดกำหนดเกณฑ์ระดับ 2, 3, 4 ส่วนค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 หัวข้อที่มีหลายตัวชี้วัดใช้ระดับต่ำสุด</p><p>บันทึกการตั้งค่าใหม่จะเริ่มเวอร์ชันใหม่ พนักงานต้องทำข้อสอบทั้งสองชุดใหม่ก่อนประเมิน ผลประเมินที่บันทึกแล้วไม่ถูกคำนวณย้อนหลัง</p><form id="workplaceConfigForm" novalidate><div id="workplaceRules"></div><div id="workplaceQuestionEditors"></div><p id="workplaceSaveStatus" role="status" aria-live="polite"></p><button type="submit" class="primary-btn">บันทึกเกณฑ์และข้อสอบ</button></form></section>` : mode === "evaluation" ? `<form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}${workplaceField("ยอดงานจริง", "wp-actual")}${workplaceField("เป้าหมายงาน", "wp-target")}${workplaceField("จำนวน Over cut", "wp-overCut")}${workplaceField("จำนวนตัดกินเนื้อ", "wp-undercut")}${workplaceField("จำนวน Out Flow", "wp-outFlow")}${workplaceField("จำนวน NC", "wp-nc")}${workplaceField("จำนวน CAR", "wp-car")}</div><p>กรอกจำนวนจากรอบประเมินเดียวกัน กรอก 0 เมื่อไม่มีเหตุการณ์ ระบบใช้ผลข้อสอบแยกครั้งล่าสุดในเวอร์ชันเกณฑ์ปัจจุบัน</p><button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานคนนี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>` : quizzes}</section>`;
   $("workplaceReload").onclick = workplaceLoad;
   root
     .querySelectorAll("[data-workplace-quiz]")
@@ -315,38 +316,77 @@ function workplaceRenderQuestionEditors() {
 }
 async function workplaceSaveConfig(event) {
   event.preventDefault();
-  workplaceReadQuestions();
-  const config = {
-    groups: workplaceConfig.schema.map((g) => ({
-      key: g.key,
-      weight: Number($("wp-weight-" + g.key).value),
-      metrics: Object.fromEntries(
-        g.metrics.map((key) => [
-          key,
-          [0, 1, 2].map((i) =>
-            Number($("wp-threshold-" + key + "-" + i).value),
-          ),
-        ]),
-      ),
-    })),
-    quizzes: workplaceQuestions,
-  };
-  const button = event.submitter;
-  button.disabled = true;
+  const form = $("workplaceConfigForm");
+  const button = event.submitter || form.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  form
+    .querySelectorAll("[aria-invalid]")
+    .forEach((field) => field.removeAttribute("aria-invalid"));
+  const invalid = [...form.elements].find(
+    (field) => field.willValidate && !field.checkValidity(),
+  );
+  if (invalid) {
+    const section =
+      invalid.closest("fieldset")?.querySelector("legend")?.textContent || "";
+    const question =
+      invalid.closest("[data-question]")?.querySelector(".card-label")
+        ?.textContent || "";
+    const label =
+      invalid.closest("label")?.querySelector("span")?.textContent ||
+      "ช่องข้อมูล";
+    workplaceMessage(
+      `บันทึกไม่ได้: ${[section, question, label].filter(Boolean).join(" / ")} — ${invalid.validationMessage}`,
+    );
+    invalid.setAttribute("aria-invalid", "true");
+    invalid.focus();
+    invalid.reportValidity();
+    return;
+  }
+  const ticket = workplaceRequest,
+    token = state.authToken;
   try {
-    await api("/api/workplace/config", {
-      method: "PUT",
-      body: JSON.stringify({
-        revision: workplaceRevision,
-        config,
-      }),
-    });
-    await workplaceLoad();
-    workplaceMessage("บันทึกเกณฑ์แล้ว เวอร์ชัน " + workplaceRevision);
+    if (!workplaceConfig?.schema)
+      throw new Error("ยังโหลดข้อมูลไม่สำเร็จ กรุณากดโหลดข้อมูลใหม่");
+    workplaceReadQuestions();
+    const raw = {
+      groups: workplaceConfig.schema.map((group) => ({
+        key: group.key,
+        weight: Number($("wp-weight-" + group.key).value),
+        metrics: Object.fromEntries(
+          group.metrics.map((key) => [
+            key,
+            [0, 1, 2].map((index) =>
+              Number($("wp-threshold-" + key + "-" + index).value),
+            ),
+          ]),
+        ),
+      })),
+      quizzes: workplaceQuestions,
+    };
+    const config = WorkplaceScoring.validateConfig(raw);
+    const body = JSON.stringify({ revision: workplaceRevision, config });
+    if (new TextEncoder().encode(body).length > 29 * 1024 * 1024)
+      throw new Error("รูปประกอบรวมมีขนาดใหญ่เกินไป กรุณาลดขนาดรูปก่อนบันทึก");
+    button.disabled = true;
+    button.textContent = "กำลังบันทึก…";
+    workplaceMessage("กำลังบันทึกเกณฑ์และข้อสอบ…");
+    const saved = await api("/api/workplace/config", { method: "PUT", body });
+    if (ticket !== workplaceRequest || token !== state.authToken) return;
+    workplaceRevision = saved.config.revision;
+    workplaceConfig = { ...saved.config, schema: workplaceConfig.schema };
+    workplaceQuestions = structuredClone(saved.config.quizzes);
+    workplaceRenderQuestionEditors();
+    workplaceMessage(
+      "บันทึกเกณฑ์และข้อสอบเรียบร้อยแล้ว เวอร์ชัน " + workplaceRevision,
+    );
   } catch (error) {
-    workplaceMessage(error.message);
+    if (ticket === workplaceRequest && token === state.authToken) {
+      workplaceMessage("บันทึกไม่ได้: " + error.message);
+      $("workplaceSaveStatus")?.scrollIntoView({ block: "center" });
+    }
   } finally {
     button.disabled = false;
+    button.textContent = "บันทึกเกณฑ์และข้อสอบ";
   }
 }
 async function workplaceTakeQuiz(kind) {

@@ -103,3 +103,33 @@ test("question builder accepts scores and images and keeps old questions compati
     assert.throws(() => validateConfig(bad));
   }
 });
+test("validation identifies the exact criterion or quiz that prevents saving", () => {
+  const f = fixture();
+  f.groups[2].metrics.nc = [0, 2, 5];
+  assert.throws(() => validateConfig(f), /คุณภาพงาน.*NC/);
+  const noQuiz = fixture();
+  noQuiz.quizzes.response = [];
+  assert.throws(() => validateConfig(noQuiz), /ข้อสอบการติดตามปัญหา/);
+});
+test("browser and server use identical validation rules", () => {
+  const vm = require("node:vm");
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const sandbox = { URL };
+  vm.runInNewContext(
+    fs.readFileSync(path.join(__dirname, "../workplace-scoring.js"), "utf8"),
+    sandbox,
+  );
+  assert.equal(typeof sandbox.WorkplaceScoring.validateConfig, "function");
+  const browser = sandbox.WorkplaceScoring.validateConfig(fixture());
+  assert.equal(
+    JSON.stringify(browser),
+    JSON.stringify(validateConfig(fixture())),
+  );
+  const bad = fixture();
+  bad.quizzes.preparation = [];
+  assert.throws(
+    () => sandbox.WorkplaceScoring.validateConfig(bad),
+    /ข้อสอบเตรียมตัว/,
+  );
+});
