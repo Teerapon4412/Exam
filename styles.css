@@ -5175,3 +5175,8 @@ body {
 .workplace-choice input { width: auto; }
 .workplace-question { padding: 16px; margin: 12px 0; background: #f8fafc; border-radius: 12px; }
 #workplaceMessage { white-space: pre-wrap; color: #8a3c17; }
+
+.workplace-quiz-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 20px; margin: 20px 0; }
+.workplace-quiz-runner .question-text { white-space: pre-wrap; }
+.workplace-quiz-runner .choice-item span { overflow-wrap: anywhere; }
+@media (max-width: 800px) { .workplace-quiz-layout { grid-template-columns: minmax(0, 1fr); } }

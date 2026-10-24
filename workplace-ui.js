@@ -266,45 +266,112 @@ async function workplaceSaveConfig(event) {
   }
 }
 async function workplaceTakeQuiz(kind) {
-  const token = state.authToken;
-  const ticket = workplaceRequest;
+  const token = state.authToken,
+    ticket = workplaceRequest;
   const target = $("workplaceQuiz-" + kind);
+  const startButton = document.querySelector(`[data-workplace-quiz="${kind}"]`);
+  startButton.disabled = true;
   target.textContent = "กำลังโหลดข้อสอบ…";
   try {
     const data = await api("/api/workplace/quizzes");
     if (ticket !== workplaceRequest || token !== state.authToken) return;
-    target.innerHTML = `<form>${data.quizzes[kind].map((q, index) => `<fieldset><legend>${index + 1}. ${escapeHtml(q.text)}</legend>${q.choices.map((choice, i) => `<label class="workplace-choice"><input type="radio" name="wp-answer-${kind}-${index}" value="${i}" required> ${escapeHtml(choice)}</label>`).join("")}</fieldset>`).join("")}<button type="submit" class="primary-btn">ส่งคำตอบ</button></form>`;
-    target.querySelector("form").onsubmit = async (event) => {
-      event.preventDefault();
-      const button = event.submitter;
-      button.disabled = true;
-      try {
-        const answers = data.quizzes[kind].map((q, index) =>
-          Number(
-            target.querySelector(
-              `input[name="wp-answer-${kind}-${index}"]:checked`,
-            ).value,
-          ),
-        );
-        const result = await api("/api/workplace/attempts", {
-          method: "POST",
-          body: JSON.stringify({
-            kind,
-            revision: data.revision,
-            answers,
-          }),
-        });
-        if (ticket === workplaceRequest && token === state.authToken)
-          target.textContent = `บันทึกผลแล้ว ${result.correct}/${result.total} ข้อ (${result.percent.toFixed(2)}%)`;
-      } catch (error) {
-        workplaceMessage(error.message);
-        button.disabled = false;
-      }
+    const session = {
+      kind,
+      questions: data.quizzes[kind],
+      revision: data.revision,
+      answers: data.quizzes[kind].map(() => null),
+      index: 0,
+      submitting: false,
+      result: null,
+      message: "",
     };
+    workplaceRenderQuiz(target, session, token, ticket);
+    startButton.textContent = "กำลังทำข้อสอบ";
   } catch (error) {
     if (ticket === workplaceRequest && token === state.authToken)
       target.textContent = error.message;
+  } finally {
+    if (ticket === workplaceRequest)
+      startButton.disabled = !!target.querySelector("form");
   }
+}
+function workplaceRenderQuiz(target, quiz, token, ticket) {
+  if (ticket !== workplaceRequest || token !== state.authToken) return;
+  const total = quiz.questions.length,
+    answered = quiz.answers.filter((a) => a !== null).length;
+  const question = quiz.questions[quiz.index],
+    selected = quiz.answers[quiz.index];
+  const locked = quiz.submitting || !!quiz.result;
+  target.innerHTML = `<form class="workplace-quiz-runner">
+    <div class="exam-kpi-grid"><article class="exam-kpi-card"><p class="card-label">Answer Progress</p><h3>${answered} / ${total}</h3><p>จำนวนข้อที่ตอบแล้ว</p></article><article class="exam-kpi-card exam-progress-card"><h3>${Math.round((answered / total) * 100)}%</h3><div class="progress-track"><div class="progress-bar" style="width:${(answered / total) * 100}%"></div></div></article><article class="exam-kpi-card"><p class="card-label">Exam Status</p><h3>${quiz.result ? "ส่งข้อสอบแล้ว" : quiz.submitting ? "กำลังส่งข้อสอบ…" : "กำลังทำข้อสอบ"}</h3></article></div>
+    <div class="workplace-quiz-layout"><article class="panel exam-question-panel"><div class="panel-head"><h3 tabindex="-1" data-quiz-heading>ข้อ ${quiz.index + 1} / ${total}</h3><span class="question-badge">${selected === null ? "ยังไม่ได้เลือกคำตอบ" : `เลือกข้อ ${selected + 1} แล้ว`}</span></div><div class="question-card"><p class="question-text">${escapeHtml(question.text)}</p><div class="choices-container">${question.choices.map((choice, index) => `<label class="choice-item ${selected === index ? "selected" : ""}"><input type="radio" name="wp-answer-${quiz.kind}" value="${index}" ${selected === index ? "checked" : ""} ${locked ? "disabled" : ""}><span>${index + 1}. ${escapeHtml(choice)}</span></label>`).join("")}</div></div><div class="question-actions"><button type="button" class="secondary-btn" data-quiz-prev ${quiz.index === 0 || quiz.submitting ? "disabled" : ""}>ก่อนหน้า</button><button type="button" class="primary-btn" data-quiz-next ${quiz.index === total - 1 || quiz.submitting ? "disabled" : ""}>ถัดไป</button></div></article>
+    <aside class="panel exam-side-rail"><h3>เลือกข้อสอบ</h3><div class="question-nav">${quiz.questions.map((q, index) => `<button type="button" class="nav-chip ${quiz.index === index ? "current" : ""} ${quiz.answers[index] !== null ? "answered" : ""}" data-quiz-index="${index}" aria-label="ข้อ ${index + 1}${quiz.answers[index] !== null ? " ตอบแล้ว" : " ยังไม่ตอบ"}" ${quiz.index === index ? 'aria-current="step"' : ""} ${quiz.submitting ? "disabled" : ""}>${index + 1}</button>`).join("")}</div><p data-quiz-message role="status" aria-live="polite">${escapeHtml(quiz.message)}</p><button type="submit" class="primary-btn danger wide" ${locked ? "disabled" : ""}>${quiz.submitting ? "กำลังส่ง…" : "ส่งข้อสอบ"}</button></aside></div>
+    ${quiz.result ? `<section class="panel result-panel"><h3>สรุปผลการสอบ</h3><p role="status">บันทึกผลแล้ว</p><div class="result-grid"><div class="result-box"><span>คะแนน</span><strong>${quiz.result.correct} / ${quiz.result.total}</strong></div><div class="result-box"><span>เปอร์เซ็นต์</span><strong>${quiz.result.percent.toFixed(2)}%</strong></div><div class="result-box"><span>ตอบถูก</span><strong>${quiz.result.correct} ข้อ</strong></div><div class="result-box"><span>ตอบผิด</span><strong>${quiz.result.total - quiz.result.correct} ข้อ</strong></div></div><p>ผลนี้ใช้สำหรับประเมินหน้างาน แยกจากคะแนนข้อสอบ Part</p><button type="button" class="secondary-btn" data-quiz-restart>เริ่มทำใหม่</button></section>` : ""}
+  </form>`;
+  const draw = () => workplaceRenderQuiz(target, quiz, token, ticket);
+  function move(index) {
+    quiz.index = index;
+    draw();
+    target.querySelector("[data-quiz-heading]").focus();
+  }
+  target.querySelectorAll("input[type=radio]").forEach(
+    (input) =>
+      (input.onchange = () => {
+        if (locked) return;
+        quiz.answers[quiz.index] = Number(input.value);
+        quiz.message = "";
+        draw();
+      }),
+  );
+  target.querySelector("[data-quiz-prev]").onclick = () =>
+    move(Math.max(0, quiz.index - 1));
+  target.querySelector("[data-quiz-next]").onclick = () =>
+    move(Math.min(total - 1, quiz.index + 1));
+  target
+    .querySelectorAll("[data-quiz-index]")
+    .forEach(
+      (button) =>
+        (button.onclick = () => move(Number(button.dataset.quizIndex))),
+    );
+  if (quiz.result)
+    target.querySelector("[data-quiz-restart]").onclick = () =>
+      workplaceTakeQuiz(quiz.kind);
+  target.querySelector("form").onsubmit = async (event) => {
+    event.preventDefault();
+    if (quiz.submitting || quiz.result) return;
+    if (answered < total) {
+      quiz.message = `ยังไม่ได้ตอบ ${total - answered} ข้อ กรุณาตอบให้ครบก่อนส่ง`;
+      move(quiz.answers.indexOf(null));
+      return;
+    }
+    quiz.submitting = true;
+    quiz.message = "";
+    draw();
+    try {
+      const result = await api("/api/workplace/attempts", {
+        method: "POST",
+        body: JSON.stringify({
+          kind: quiz.kind,
+          revision: quiz.revision,
+          answers: quiz.answers,
+        }),
+      });
+      if (ticket !== workplaceRequest || token !== state.authToken) return;
+      quiz.result = result;
+      const startButton = document.querySelector(
+        `[data-workplace-quiz="${quiz.kind}"]`,
+      );
+      if (startButton) {
+        startButton.disabled = false;
+        startButton.textContent = "ทำข้อสอบอีกครั้ง";
+      }
+    } catch (error) {
+      quiz.message = error.message;
+    } finally {
+      quiz.submitting = false;
+      draw();
+    }
+  };
 }
 async function workplaceEvaluate(save) {
   const form = $("workplaceEvaluationForm");
