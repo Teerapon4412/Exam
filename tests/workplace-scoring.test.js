@@ -75,3 +75,31 @@ test("rejects ambiguous thresholds, absent quiz, invalid weight and invalid answ
   assert.throws(() => validateConfig(f));
 });
 module.exports = { fixture };
+test("question builder accepts scores and images and keeps old questions compatible", () => {
+  const old = validateConfig(fixture());
+  assert.equal(old.quizzes.preparation[0].score, 1);
+  assert.equal(old.quizzes.preparation[0].imageUrl, "");
+  const f = fixture();
+  f.quizzes.preparation[0].score = 3;
+  f.quizzes.preparation[0].imageUrl = "https://example.com/question.png";
+  const saved = validateConfig(f);
+  assert.equal(saved.quizzes.preparation[0].score, 3);
+  assert.equal(
+    saved.quizzes.preparation[0].imageUrl,
+    f.quizzes.preparation[0].imageUrl,
+  );
+  for (const value of [0, -1, Infinity, "3"]) {
+    const bad = fixture();
+    bad.quizzes.preparation[0].score = value;
+    assert.throws(() => validateConfig(bad));
+  }
+  for (const value of [
+    "javascript:alert(1)",
+    "data:text/html;base64,PGgxPg==",
+    "data:image/svg+xml;base64,PHN2Zy8+",
+  ]) {
+    const bad = fixture();
+    bad.quizzes.preparation[0].imageUrl = value;
+    assert.throws(() => validateConfig(bad));
+  }
+});

@@ -190,9 +190,13 @@ function workplaceReadQuestions() {
     workplaceQuestions[kind] = [
       ...container.querySelectorAll("[data-question]"),
     ].map((row) => ({
-      text: row.querySelector("textarea").value,
-      choices: [...row.querySelectorAll("input")].map((i) => i.value),
-      answer: Number(row.querySelector("select").value),
+      text: row.querySelector('[data-wp-field="text"]').value,
+      score: Number(row.querySelector('[data-wp-field="score"]').value),
+      imageUrl: row.querySelector('[data-wp-field="image"]').value.trim(),
+      choices: [...row.querySelectorAll('[data-wp-field="choice"]')].map(
+        (input) => input.value,
+      ),
+      answer: Number(row.querySelector('[data-wp-field="answer"]').value),
     }));
   }
 }
@@ -200,34 +204,114 @@ function workplaceRenderQuestionEditors() {
   $("workplaceQuestionEditors").innerHTML = Object.entries(workplaceKinds)
     .map(
       ([kind, title]) =>
-        `<fieldset><legend>${title}</legend><div id="wp-editor-${kind}">${workplaceQuestions[kind].map((q, index) => `<section data-question class="workplace-question"><label class="field"><span>ข้อ ${index + 1}</span><textarea required>${escapeHtml(q.text)}</textarea></label>${q.choices.map((choice, i) => workplaceField("ตัวเลือก " + (i + 1), "wp-choice-" + kind + "-" + index + "-" + i, "text", choice)).join("")}<label class="field"><span>คำตอบที่ถูกต้อง</span><select>${[0, 1, 2, 3].map((i) => `<option value="${i}" ${q.answer === i ? "selected" : ""}>ตัวเลือก ${i + 1}</option>`).join("")}</select></label><button type="button" data-remove="${kind}:${index}" class="secondary-btn">ลบข้อ</button></section>`).join("")}</div><button type="button" data-add="${kind}" class="secondary-btn">เพิ่มคำถาม</button></fieldset>`,
+        `<fieldset><legend>${title}</legend><div class="admin-question-head"><p>${workplaceQuestions[kind].length} ข้อ · คะแนนเต็ม ${workplaceQuestions[kind].reduce((sum, q) => sum + (Number(q.score) || 1), 0)}</p><button type="button" data-add="${kind}" class="primary-btn">เพิ่มคำถาม</button></div><div id="wp-editor-${kind}">${workplaceQuestions[
+          kind
+        ]
+          .map(
+            (
+              q,
+              index,
+            ) => `<article data-question class="admin-question-card" tabindex="-1"><div class="admin-question-head"><div><span class="card-label">ข้อที่ ${index + 1}</span><strong>Question ${index + 1}</strong></div><div class="admin-question-actions"><button type="button" data-copy="${kind}:${index}" class="secondary-btn">คัดลอกข้อนี้</button><button type="button" data-remove="${kind}:${index}" class="secondary-btn">ลบข้อนี้</button></div></div>
+ <div class="evaluation-grid admin-question-grid"><label class="field admin-question-main"><span>คำถาม</span><textarea data-wp-field="text" required rows="3" placeholder="พิมพ์ข้อความคำถามที่ต้องการแสดง">${escapeHtml(q.text)}</textarea></label><label class="field"><span>คะแนนข้อนี้</span><input data-wp-field="score" type="number" min="1" max="1000" step="any" required value="${q.score ?? 1}"></label><label class="field"><span>คำตอบที่ถูก</span><select data-wp-field="answer">${["A", "B", "C", "D"].map((letter, i) => `<option value="${i}" ${q.answer === i ? "selected" : ""}>${letter}</option>`).join("")}</select></label></div>
+ <div class="admin-question-media"><div class="admin-question-media-row"><label class="field"><span>รูปประกอบคำถาม (URL)</span><input data-wp-field="image" type="text" value="${escapeHtml(q.imageUrl || "")}" placeholder="https://example.com/question-image.jpg"></label><div class="admin-image-actions"><input type="file" class="hidden" data-wp-file accept="image/png,image/jpeg,image/gif,image/webp"><button type="button" data-pick-image class="secondary-btn">เลือกรูปจากเครื่อง</button><button type="button" data-clear-image class="secondary-btn">ลบรูป</button></div></div><div data-wp-preview>${q.imageUrl ? `<img class="admin-question-preview" src="${escapeHtml(q.imageUrl)}" alt="รูปประกอบข้อ ${index + 1}">` : ""}</div></div>
+ <div class="admin-choice-grid">${["A", "B", "C", "D"].map((letter, i) => `<label class="field"><span>ตัวเลือก ${letter}</span><input data-wp-field="choice" type="text" required value="${escapeHtml(q.choices[i])}" placeholder="พิมพ์ตัวเลือก ${letter}"></label>`).join("")}</div></article>`,
+          )
+          .join("")}</div></fieldset>`,
     )
     .join("");
-  $("workplaceQuestionEditors")
-    .querySelectorAll("[data-add]")
-    .forEach(
-      (b) =>
-        (b.onclick = () => {
-          workplaceReadQuestions();
-          workplaceQuestions[b.dataset.add].push({
-            text: "",
-            choices: ["", "", "", ""],
-            answer: 0,
-          });
-          workplaceRenderQuestionEditors();
-        }),
-    );
-  $("workplaceQuestionEditors")
-    .querySelectorAll("[data-remove]")
-    .forEach(
-      (b) =>
-        (b.onclick = () => {
-          workplaceReadQuestions();
-          const [kind, index] = b.dataset.remove.split(":");
-          workplaceQuestions[kind].splice(Number(index), 1);
-          workplaceRenderQuestionEditors();
-        }),
-    );
+  const root = $("workplaceQuestionEditors");
+  root.querySelectorAll("[data-add]").forEach(
+    (button) =>
+      (button.onclick = () => {
+        workplaceReadQuestions();
+        const kind = button.dataset.add;
+        if (workplaceQuestions[kind].length >= 100) {
+          workplaceMessage("เพิ่มได้ไม่เกิน 100 ข้อต่อชุด");
+          return;
+        }
+        workplaceQuestions[kind].push({
+          text: "",
+          choices: ["", "", "", ""],
+          answer: 0,
+          score: 1,
+          imageUrl: "",
+        });
+        workplaceRenderQuestionEditors();
+        $("wp-editor-" + kind)
+          .lastElementChild.querySelector("textarea")
+          .focus();
+      }),
+  );
+  root.querySelectorAll("[data-copy],[data-remove]").forEach(
+    (button) =>
+      (button.onclick = () => {
+        workplaceReadQuestions();
+        const [kind, indexText] = (
+          button.dataset.copy || button.dataset.remove
+        ).split(":");
+        const index = Number(indexText);
+        if (button.dataset.copy) {
+          if (workplaceQuestions[kind].length >= 100) {
+            workplaceMessage("เพิ่มได้ไม่เกิน 100 ข้อต่อชุด");
+            return;
+          }
+          workplaceQuestions[kind].splice(
+            index + 1,
+            0,
+            structuredClone(workplaceQuestions[kind][index]),
+          );
+        } else workplaceQuestions[kind].splice(index, 1);
+        workplaceRenderQuestionEditors();
+      }),
+  );
+  root.querySelectorAll("[data-question]").forEach((row) => {
+    const image = row.querySelector('[data-wp-field="image"]');
+    const updatePreview = () => {
+      const value = image.value.trim(),
+        preview = row.querySelector("[data-wp-preview]");
+      preview.innerHTML = "";
+      if (
+        value &&
+        (/^https?:\/\//i.test(value) ||
+          /^data:image\/(png|jpeg|gif|webp);base64,/i.test(value))
+      ) {
+        const img = document.createElement("img");
+        img.className = "admin-question-preview";
+        img.alt = "รูปประกอบคำถาม";
+        img.src = value;
+        preview.append(img);
+      }
+    };
+    image.onchange = updatePreview;
+    row.querySelector("[data-pick-image]").onclick = () =>
+      row.querySelector("[data-wp-file]").click();
+    row.querySelector("[data-clear-image]").onclick = () => {
+      image.value = "";
+      updatePreview();
+    };
+    row.querySelector("[data-wp-file]").onchange = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (
+        !["image/png", "image/jpeg", "image/gif", "image/webp"].includes(
+          file.type,
+        ) ||
+        file.size > 5 * 1024 * 1024
+      ) {
+        workplaceMessage("เลือกรูป PNG, JPEG, GIF หรือ WebP ขนาดไม่เกิน 5 MB");
+        return;
+      }
+      const ticket = workplaceRequest;
+      try {
+        const value = await readFileAsDataUrl(file);
+        if (ticket !== workplaceRequest || !row.isConnected) return;
+        image.value = value;
+        updatePreview();
+      } catch (error) {
+        workplaceMessage(error.message);
+      }
+    };
+  });
 }
 async function workplaceSaveConfig(event) {
   event.preventDefault();
@@ -304,9 +388,9 @@ function workplaceRenderQuiz(target, quiz, token, ticket) {
   const locked = quiz.submitting || !!quiz.result;
   target.innerHTML = `<form class="workplace-quiz-runner">
     <div class="exam-kpi-grid"><article class="exam-kpi-card"><p class="card-label">Answer Progress</p><h3>${answered} / ${total}</h3><p>จำนวนข้อที่ตอบแล้ว</p></article><article class="exam-kpi-card exam-progress-card"><h3>${Math.round((answered / total) * 100)}%</h3><div class="progress-track"><div class="progress-bar" style="width:${(answered / total) * 100}%"></div></div></article><article class="exam-kpi-card"><p class="card-label">Exam Status</p><h3>${quiz.result ? "ส่งข้อสอบแล้ว" : quiz.submitting ? "กำลังส่งข้อสอบ…" : "กำลังทำข้อสอบ"}</h3></article></div>
-    <div class="workplace-quiz-layout"><article class="panel exam-question-panel"><div class="panel-head"><h3 tabindex="-1" data-quiz-heading>ข้อ ${quiz.index + 1} / ${total}</h3><span class="question-badge">${selected === null ? "ยังไม่ได้เลือกคำตอบ" : `เลือกข้อ ${selected + 1} แล้ว`}</span></div><div class="question-card"><p class="question-text">${escapeHtml(question.text)}</p><div class="choices-container">${question.choices.map((choice, index) => `<label class="choice-item ${selected === index ? "selected" : ""}"><input type="radio" name="wp-answer-${quiz.kind}" value="${index}" ${selected === index ? "checked" : ""} ${locked ? "disabled" : ""}><span>${index + 1}. ${escapeHtml(choice)}</span></label>`).join("")}</div></div><div class="question-actions"><button type="button" class="secondary-btn" data-quiz-prev ${quiz.index === 0 || quiz.submitting ? "disabled" : ""}>ก่อนหน้า</button><button type="button" class="primary-btn" data-quiz-next ${quiz.index === total - 1 || quiz.submitting ? "disabled" : ""}>ถัดไป</button></div></article>
+    <div class="workplace-quiz-layout"><article class="panel exam-question-panel"><div class="panel-head"><h3 tabindex="-1" data-quiz-heading>ข้อ ${quiz.index + 1} / ${total}</h3><span class="question-badge">${selected === null ? "ยังไม่ได้เลือกคำตอบ" : `เลือกข้อ ${["A", "B", "C", "D"][selected]} แล้ว`}</span></div><div class="question-card"><p class="question-text">${escapeHtml(question.text)}</p>${question.imageUrl ? `<img class="question-image" src="${escapeHtml(question.imageUrl)}" alt="รูปประกอบข้อ ${quiz.index + 1}">` : ""}<p>คะแนนข้อนี้: ${question.score ?? 1}</p><div class="choices-container">${question.choices.map((choice, index) => `<label class="choice-item ${selected === index ? "selected" : ""}"><input type="radio" name="wp-answer-${quiz.kind}" value="${index}" ${selected === index ? "checked" : ""} ${locked ? "disabled" : ""}><span>${["A", "B", "C", "D"][index]}. ${escapeHtml(choice)}</span></label>`).join("")}</div></div><div class="question-actions"><button type="button" class="secondary-btn" data-quiz-prev ${quiz.index === 0 || quiz.submitting ? "disabled" : ""}>ก่อนหน้า</button><button type="button" class="primary-btn" data-quiz-next ${quiz.index === total - 1 || quiz.submitting ? "disabled" : ""}>ถัดไป</button></div></article>
     <aside class="panel exam-side-rail"><h3>เลือกข้อสอบ</h3><div class="question-nav">${quiz.questions.map((q, index) => `<button type="button" class="nav-chip ${quiz.index === index ? "current" : ""} ${quiz.answers[index] !== null ? "answered" : ""}" data-quiz-index="${index}" aria-label="ข้อ ${index + 1}${quiz.answers[index] !== null ? " ตอบแล้ว" : " ยังไม่ตอบ"}" ${quiz.index === index ? 'aria-current="step"' : ""} ${quiz.submitting ? "disabled" : ""}>${index + 1}</button>`).join("")}</div><p data-quiz-message role="status" aria-live="polite">${escapeHtml(quiz.message)}</p><button type="submit" class="primary-btn danger wide" ${locked ? "disabled" : ""}>${quiz.submitting ? "กำลังส่ง…" : "ส่งข้อสอบ"}</button></aside></div>
-    ${quiz.result ? `<section class="panel result-panel"><h3>สรุปผลการสอบ</h3><p role="status">บันทึกผลแล้ว</p><div class="result-grid"><div class="result-box"><span>คะแนน</span><strong>${quiz.result.correct} / ${quiz.result.total}</strong></div><div class="result-box"><span>เปอร์เซ็นต์</span><strong>${quiz.result.percent.toFixed(2)}%</strong></div><div class="result-box"><span>ตอบถูก</span><strong>${quiz.result.correct} ข้อ</strong></div><div class="result-box"><span>ตอบผิด</span><strong>${quiz.result.total - quiz.result.correct} ข้อ</strong></div></div><p>ผลนี้ใช้สำหรับประเมินหน้างาน แยกจากคะแนนข้อสอบ Part</p><button type="button" class="secondary-btn" data-quiz-restart>เริ่มทำใหม่</button></section>` : ""}
+    ${quiz.result ? `<section class="panel result-panel"><h3>สรุปผลการสอบ</h3><p role="status">บันทึกผลแล้ว</p><div class="result-grid"><div class="result-box"><span>คะแนน</span><strong>${quiz.result.score ?? quiz.result.correct} / ${quiz.result.totalScore ?? quiz.result.total}</strong></div><div class="result-box"><span>เปอร์เซ็นต์</span><strong>${quiz.result.percent.toFixed(2)}%</strong></div><div class="result-box"><span>ตอบถูก</span><strong>${quiz.result.correct} ข้อ</strong></div><div class="result-box"><span>ตอบผิด</span><strong>${quiz.result.total - quiz.result.correct} ข้อ</strong></div></div><p>ผลนี้ใช้สำหรับประเมินหน้างาน แยกจากคะแนนข้อสอบ Part</p><button type="button" class="secondary-btn" data-quiz-restart>เริ่มทำใหม่</button></section>` : ""}
   </form>`;
   const draw = () => workplaceRenderQuiz(target, quiz, token, ticket);
   function move(index) {

@@ -251,6 +251,47 @@ test(
         combined.records.find((r) => r.scope === "overall").totalScore,
         40,
       );
+      const weighted = fixture();
+      weighted.quizzes.preparation = [
+        {
+          text: "Weighted",
+          choices: ["a", "b", "c", "d"],
+          answer: 0,
+          score: 3,
+          imageUrl: "https://example.com/q.png",
+        },
+        { text: "Second", choices: ["a", "b", "c", "d"], answer: 1, score: 1 },
+      ];
+      await json(
+        await req(
+          "/api/workplace/config",
+          admin.token,
+          { config: weighted, revision: 2 },
+          "PUT",
+        ),
+      );
+      const publicQuiz = await json(
+        await req("/api/workplace/quizzes", worker.token),
+      );
+      assert.equal(publicQuiz.quizzes.preparation[0].score, 3);
+      assert.equal(
+        publicQuiz.quizzes.preparation[0].imageUrl,
+        "https://example.com/q.png",
+      );
+      assert.equal(publicQuiz.quizzes.preparation[0].answer, undefined);
+      const weightedResult = await json(
+        await req("/api/workplace/attempts", worker.token, {
+          kind: "preparation",
+          revision: 3,
+          answers: [0, 0],
+          score: 999,
+        }),
+        201,
+      );
+      assert.equal(weightedResult.score, 3);
+      assert.equal(weightedResult.totalScore, 4);
+      assert.equal(weightedResult.percent, 75);
+      assert.equal(weightedResult.correct, 1);
       storage.close();
     } finally {
       child.kill();

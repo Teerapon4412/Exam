@@ -88,10 +88,14 @@ module.exports = function register({
       check(config, "Admin ยังไม่ได้ตั้งค่าเกณฑ์และข้อสอบรวม");
       const quizzes = {};
       for (const kind of ["preparation", "response"])
-        quizzes[kind] = config.quizzes[kind].map(({ text, choices }) => ({
-          text,
-          choices,
-        }));
+        quizzes[kind] = config.quizzes[kind].map(
+          ({ text, choices, score = 1, imageUrl = "" }) => ({
+            text,
+            choices,
+            score,
+            imageUrl,
+          }),
+        );
       res.json({ quizzes, revision: config.revision });
     }),
   );
@@ -122,7 +126,13 @@ module.exports = function register({
       const correct = questions.filter(
         (q, i) => q.answer === answers[i],
       ).length;
-      const percent = (correct / questions.length) * 100;
+      const score = questions.reduce(
+        (sum, q, index) =>
+          sum + (q.answer === answers[index] ? (q.score ?? 1) : 0),
+        0,
+      );
+      const totalScore = questions.reduce((sum, q) => sum + (q.score ?? 1), 0);
+      const percent = (score / totalScore) * 100;
       const id = crypto.randomUUID();
       db.prepare("INSERT INTO workplace_attempts VALUES (?,?,?,?,?,?,?,?)").run(
         id,
@@ -134,7 +144,16 @@ module.exports = function register({
         JSON.stringify(answers),
         new Date().toISOString(),
       );
-      res.status(201).json({ id, percent, correct, total: questions.length });
+      res
+        .status(201)
+        .json({
+          id,
+          percent,
+          correct,
+          total: questions.length,
+          score,
+          totalScore,
+        });
     }),
   );
   function calculate(req) {

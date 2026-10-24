@@ -103,7 +103,30 @@ function validateConfig(config) {
         Number.isInteger(q.answer) && q.answer >= 0 && q.answer < 4,
         "เลือกคำตอบที่ถูกต้อง",
       );
+      const score = q.score === undefined ? 1 : q.score;
+      check(
+        finite(score) && score >= 1 && score <= 1000,
+        "คะแนนรายข้อต้องอยู่ระหว่าง 1–1000",
+      );
+      const imageUrl = String(q.imageUrl || "").trim();
+      check(imageUrl.length <= 7500000, "รูปประกอบมีขนาดใหญ่เกินไป");
+      if (imageUrl) {
+        let valid =
+          /^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(
+            imageUrl,
+          );
+        try {
+          const url = new URL(imageUrl);
+          valid = valid || ["http:", "https:"].includes(url.protocol);
+        } catch {}
+        check(
+          valid,
+          "รูปประกอบต้องเป็น URL http/https หรือไฟล์ PNG, JPEG, GIF, WebP",
+        );
+      }
       return {
+        score,
+        imageUrl,
         text: q.text.trim(),
         choices: q.choices.map((c) => c.trim()),
         answer: q.answer,
