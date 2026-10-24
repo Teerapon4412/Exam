@@ -4,6 +4,7 @@ const { spawn } = require("node:child_process");
 const { mkdtemp, rm } = require("node:fs/promises");
 const path = require("node:path");
 const fixture = require("./workplace-fixture");
+const Database = require("better-sqlite3");
 test(
   "workplace API enforces roles, versions, exam completion and server-calculated scores",
   { timeout: 120000 },
@@ -61,30 +62,39 @@ test(
         other = bank.examSets[1];
       const examId = String(exam.id);
       assert.equal(
-        (await req("/api/workplace/config?examId=" + examId, worker.token))
-          .status,
+        (await req("/api/workplace/config", worker.token)).status,
         403,
       );
-      assert.equal(
-        (await req("/api/workplace/quizzes?examId=" + examId)).status,
-        401,
-      );
+      assert.equal((await req("/api/workplace/quizzes")).status, 401);
       const config = fixture();
+      // Old per-Part rules remain stored, but must not become shared rules silently.
+      const storage = new Database(path.join(dir, "factory-exam.sqlite"));
+      storage
+        .prepare("INSERT INTO workplace_configs VALUES (?,?,?,?)")
+        .run(examId, 1, JSON.stringify(config), new Date().toISOString());
+      const initial = await json(
+        await req("/api/workplace/config", admin.token),
+      );
+      assert.equal(initial.config, null);
+      assert.equal(
+        (await req("/api/workplace/quizzes", worker.token)).status,
+        400,
+      );
+
       const saved = await json(
         await req(
           "/api/workplace/config",
           admin.token,
-          { examId, config, revision: 0 },
+          { config, revision: 0 },
           "PUT",
         ),
       );
       assert.equal(saved.config.revision, 1);
       const quiz = await json(
-        await req("/api/workplace/quizzes?examId=" + examId, worker.token),
+        await req("/api/workplace/quizzes", worker.token),
       );
       assert.equal(quiz.quizzes.preparation[0].answer, undefined);
       const base = {
-        examId,
         revision: 1,
         employeeCode: "WP-TEST",
         period: "2026-10",
@@ -113,7 +123,6 @@ test(
       ])
         await json(
           await req("/api/workplace/attempts", worker.token, {
-            examId,
             kind,
             revision: 1,
             answers: [answer],
@@ -146,18 +155,17 @@ test(
       );
       assert.equal(evaluated.totalScore, 40);
       const history = await json(
-        await req(
-          "/api/workplace/history?examId=" + examId + "&employeeCode=WP-TEST",
-          admin.token,
-        ),
+        await req("/api/workplace/history?employeeCode=WP-TEST", admin.token),
       );
       assert.equal(history.records[0].rows.length, 4);
+      assert.equal(history.records[0].scope, "overall");
       assert.equal(history.records[0].evidence.period, "2026-10");
       const wrongPart = await req("/api/workplace/preview", admin.token, {
         ...base,
         examId: String(other.id),
       });
-      assert.equal(wrongPart.status, 400);
+      assert.equal(wrongPart.status, 200);
+      assert.equal((await wrongPart.json()).totalScore, 40);
       assert.equal(
         (
           await req("/api/workplace/preview", admin.token, {
@@ -172,7 +180,7 @@ test(
           await req(
             "/api/workplace/config",
             admin.token,
-            { examId, config, revision: 0 },
+            { config, revision: 0 },
             "PUT",
           )
         ).status,
@@ -182,14 +190,13 @@ test(
         await req(
           "/api/workplace/config",
           admin.token,
-          { examId, config, revision: 1 },
+          { config, revision: 1 },
           "PUT",
         ),
       );
       assert.equal(
         (
           await req("/api/workplace/attempts", worker.token, {
-            examId,
             kind: "response",
             revision: 1,
             answers: [1],
@@ -207,13 +214,44 @@ test(
         400,
       );
       const stillSaved = await json(
-        await req(
-          "/api/workplace/history?examId=" + examId + "&employeeCode=WP-TEST",
-          admin.token,
-        ),
+        await req("/api/workplace/history?employeeCode=WP-TEST", admin.token),
       );
       assert.equal(stillSaved.records[0].totalScore, 40);
       assert.equal(stillSaved.records[0].config.revision, 1);
+      assert.equal(
+        storage
+          .prepare("SELECT revision FROM workplace_configs WHERE exam_id=?")
+          .get(examId).revision,
+        1,
+      );
+      const original = storage
+        .prepare("SELECT * FROM evaluations WHERE id=?")
+        .get(evaluated.id);
+      const legacy = {
+        ...original,
+        id: "preserved-legacy",
+        model_code: "old-model",
+        part_code: "old-part",
+        total_score: 17,
+      };
+      const columns = Object.keys(legacy);
+      storage
+        .prepare(
+          `INSERT INTO evaluations (${columns.join(",")}) VALUES (${columns.map((k) => "@" + k).join(",")})`,
+        )
+        .run(legacy);
+      const combined = await json(
+        await req("/api/workplace/history?employeeCode=WP-TEST", admin.token),
+      );
+      assert.equal(
+        combined.records.find((r) => r.scope === "legacy").totalScore,
+        17,
+      );
+      assert.equal(
+        combined.records.find((r) => r.scope === "overall").totalScore,
+        40,
+      );
+      storage.close();
     } finally {
       child.kill();
       if (child.exitCode === null)

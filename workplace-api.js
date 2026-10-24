@@ -12,17 +12,20 @@ module.exports = function register({
   db,
   requireAuth,
   requireAdmin,
-  getCurrentBankPayload,
   writeAdminAudit,
 }) {
   db.exec(`CREATE TABLE IF NOT EXISTS workplace_configs (exam_id TEXT PRIMARY KEY, revision INTEGER NOT NULL, payload TEXT NOT NULL, updated_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS workplace_attempts (id TEXT PRIMARY KEY,user_id TEXT NOT NULL,exam_id TEXT NOT NULL,kind TEXT NOT NULL,revision INTEGER NOT NULL,percent REAL NOT NULL,answers_json TEXT NOT NULL,created_at TEXT NOT NULL);
  CREATE INDEX IF NOT EXISTS workplace_attempt_lookup ON workplace_attempts(user_id,exam_id,kind,revision,created_at);
  CREATE TABLE IF NOT EXISTS workplace_evidence (evaluation_id TEXT PRIMARY KEY,config_json TEXT NOT NULL,evidence_json TEXT NOT NULL,updated_at TEXT NOT NULL);`);
-  const examById = (id) =>
-    (getCurrentBankPayload().examSets || []).find(
-      (e) => String(e.id) === String(id),
-    );
+  const GLOBAL_ID = "__WORKPLACE_ALL__";
+  const globalExam = {
+    id: GLOBAL_ID,
+    modelCode: GLOBAL_ID,
+    modelName: "ประเมินหน้างานรวม",
+    partCode: GLOBAL_ID,
+    title: "ประเมินหน้างานรวมรายพนักงาน",
+  };
   const getConfig = (id) => {
     const row = db
       .prepare("SELECT * FROM workplace_configs WHERE exam_id=?")
@@ -41,7 +44,7 @@ module.exports = function register({
     requireAdmin,
     route((req, res) =>
       res.json({
-        config: getConfig(String(req.query.examId || "")),
+        config: getConfig(GLOBAL_ID),
         groups: GROUPS,
         metrics: METRICS,
       }),
@@ -51,8 +54,7 @@ module.exports = function register({
     "/api/workplace/config",
     requireAdmin,
     route((req, res) => {
-      const examId = String(req.body.examId || "");
-      check(examById(examId), "ไม่พบ Model/Part");
+      const examId = GLOBAL_ID;
       const config = validateConfig(req.body.config);
       const previous = getConfig(examId);
       const revision = (previous?.revision || 0) + 1;
@@ -81,10 +83,9 @@ module.exports = function register({
     "/api/workplace/quizzes",
     requireAuth,
     route((req, res) => {
-      const examId = String(req.query.examId || "");
-      check(examById(examId), "ไม่พบ Model/Part");
+      const examId = GLOBAL_ID;
       const config = getConfig(examId);
-      check(config, "Admin ยังไม่ได้ตั้งค่าเกณฑ์และข้อสอบสำหรับ Part นี้");
+      check(config, "Admin ยังไม่ได้ตั้งค่าเกณฑ์และข้อสอบรวม");
       const quizzes = {};
       for (const kind of ["preparation", "response"])
         quizzes[kind] = config.quizzes[kind].map(({ text, choices }) => ({
@@ -98,14 +99,14 @@ module.exports = function register({
     "/api/workplace/attempts",
     requireAuth,
     route((req, res) => {
-      const examId = String(req.body.examId || "");
+      const examId = GLOBAL_ID;
       const kind = req.body.kind;
       check(
         ["preparation", "response"].includes(kind),
         "ประเภทข้อสอบไม่ถูกต้อง",
       );
       const config = getConfig(examId);
-      check(examById(examId) && config, "ยังไม่มีข้อสอบ");
+      check(config, "ยังไม่มีข้อสอบ");
       check(
         config.revision === req.body.revision,
         "ข้อสอบมีการเปลี่ยนแปลง กรุณาโหลดใหม่",
@@ -138,10 +139,10 @@ module.exports = function register({
   );
   function calculate(req) {
     const body = req.body;
-    const examId = String(body.examId || "");
-    const exam = examById(examId);
+    const examId = GLOBAL_ID;
+    const exam = globalExam;
     const config = getConfig(examId);
-    check(exam && config, "Admin ยังไม่ได้ตั้งค่า Part นี้");
+    check(config, "Admin ยังไม่ได้ตั้งค่าเกณฑ์รวม");
     check(
       body.revision === config.revision,
       "เกณฑ์มีการเปลี่ยนแปลง กรุณาโหลดใหม่",
@@ -212,20 +213,17 @@ module.exports = function register({
     "/api/workplace/history",
     requireAdmin,
     route((req, res) => {
-      const exam = examById(String(req.query.examId || ""));
-      check(exam, "ไม่พบ Model/Part");
       const records = db
         .prepare(
-          "SELECT e.*,w.config_json,w.evidence_json FROM evaluations e LEFT JOIN workplace_evidence w ON e.id=w.evaluation_id WHERE e.employee_code=? AND e.model_code=? AND e.part_code=? ORDER BY e.updated_at DESC",
+          "SELECT e.*,w.config_json,w.evidence_json FROM evaluations e LEFT JOIN workplace_evidence w ON e.id=w.evaluation_id WHERE e.employee_code=? ORDER BY e.updated_at DESC",
         )
-        .all(
-          String(req.query.employeeCode || "").toUpperCase(),
-          exam.modelCode,
-          exam.partCode,
-        );
+        .all(String(req.query.employeeCode || "").toUpperCase());
       res.json({
         records: records.map((row) => ({
           id: row.id,
+          scope: row.model_code === GLOBAL_ID ? "overall" : "legacy",
+          modelName: row.model_name,
+          partCode: row.part_code,
           updatedAt: row.updated_at,
           evaluator: row.evaluator,
           totalScore: row.total_score,

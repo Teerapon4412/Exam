@@ -3123,7 +3123,8 @@ function buildSkillMatrixRows() {
             .map((partCode) => latestEvaluationMap.get(`${employee.employeeCode}::::${partCode}`))
             .find(Boolean)
           || null)
-        : latestEvaluationMap.get(`${employee.employeeCode}::${column.modelCode}::${column.partCode}`) || null;
+        : (latestEvaluationMap.get(`${employee.employeeCode}::__WORKPLACE_ALL__::__WORKPLACE_ALL__`)
+          || latestEvaluationMap.get(`${employee.employeeCode}::${column.modelCode}::${column.partCode}`) || null);
       const examPercent = Number(result?.percent || 0);
       const evaluationPercent = evaluation
         ? Math.round((Number(evaluation.totalScore || 0) / Math.max(Number(evaluation.maxScore || 0), 1)) * 100)

@@ -23,7 +23,7 @@ function workplaceOpen() {
   const root = $("workplaceView");
   const admin = state.user?.role === "admin";
   root.innerHTML = `<section class="panel"><h3>ประเมินหน้างานอัตโนมัติ</h3><p>ผลสอบ Model/Part 40% + คะแนนประเมินหน้างาน 60% ตามน้ำหนักของ Admin</p>
- <label class="field"><span>Model / Part</span><select id="workplaceExam">${state.bank.examSets.map((e) => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.modelCode)} / ${escapeHtml(e.partCode)} — ${escapeHtml(e.title)}</option>`).join("")}</select></label>
+ <p>ข้อสอบและผลประเมินชุดรวมรายพนักงาน ใช้ร่วมกันทุก Model/Part</p>
  <p id="workplaceMessage" role="status" aria-live="polite"></p><button type="button" class="secondary-btn" id="workplaceReload">โหลดข้อมูลใหม่</button>
  <div class="workplace-quizzes">${Object.entries(workplaceKinds)
    .map(
@@ -34,10 +34,9 @@ function workplaceOpen() {
  ${
    admin
      ? `<details><summary>ตั้งค่าเกณฑ์ น้ำหนัก และข้อสอบ (Admin)</summary><p>แต่ละตัวชี้วัดกำหนดเกณฑ์ระดับ 2, 3, 4 ส่วนค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 หัวข้อที่มีหลายตัวชี้วัดใช้ระดับต่ำสุด</p><p>บันทึกการตั้งค่าใหม่จะเริ่มเวอร์ชันใหม่ พนักงานต้องทำข้อสอบทั้งสองชุดใหม่ก่อนประเมิน ผลประเมินที่บันทึกแล้วไม่ถูกคำนวณย้อนหลัง</p><form id="workplaceConfigForm"><div id="workplaceRules"></div><div id="workplaceQuestionEditors"></div><button type="submit" class="primary-btn">บันทึกเกณฑ์และข้อสอบ</button></form></details>
- <hr><form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}${workplaceField("ยอดงานจริง", "wp-actual")}${workplaceField("เป้าหมายงาน", "wp-target")}${workplaceField("จำนวน Over cut", "wp-overCut")}${workplaceField("จำนวนตัดกินเนื้อ", "wp-undercut")}${workplaceField("จำนวน Out Flow", "wp-outFlow")}${workplaceField("จำนวน NC", "wp-nc")}${workplaceField("จำนวน CAR", "wp-car")}</div><p>กรอกจำนวนจากรอบประเมินเดียวกัน กรอก 0 เมื่อไม่มีเหตุการณ์ ระบบใช้ผลข้อสอบแยกครั้งล่าสุดในเวอร์ชันเกณฑ์ปัจจุบัน</p><button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานใน Model/Part นี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>`
+ <hr><form id="workplaceEvaluationForm"><h4>ข้อมูลประเมินของพนักงาน</h4><label class="field"><span>พนักงาน</span><select id="workplaceEmployee"></select></label><div class="workplace-fields">${workplaceField("รอบประเมิน (เดือน)", "wp-period", "month")}${workplaceField("ผู้ประเมิน", "wp-evaluator", "text", state.user.fullName || "")}${workplaceField("ยอดงานจริง", "wp-actual")}${workplaceField("เป้าหมายงาน", "wp-target")}${workplaceField("จำนวน Over cut", "wp-overCut")}${workplaceField("จำนวนตัดกินเนื้อ", "wp-undercut")}${workplaceField("จำนวน Out Flow", "wp-outFlow")}${workplaceField("จำนวน NC", "wp-nc")}${workplaceField("จำนวน CAR", "wp-car")}</div><p>กรอกจำนวนจากรอบประเมินเดียวกัน กรอก 0 เมื่อไม่มีเหตุการณ์ ระบบใช้ผลข้อสอบแยกครั้งล่าสุดในเวอร์ชันเกณฑ์ปัจจุบัน</p><button type="button" class="secondary-btn" id="workplacePreview">คำนวณคะแนน</button> <button type="submit" class="primary-btn">คำนวณและบันทึกผลประเมิน</button><p>บันทึกใหม่จะแทนผลล่าสุดของพนักงานคนนี้ และเก็บหลักฐานการเปลี่ยนแปลงในประวัติผู้ดูแล</p><div id="workplaceScore"></div></form><details><summary>ผลประเมินที่บันทึกไว้</summary><button type="button" class="secondary-btn" id="workplaceHistoryButton">ดูผลล่าสุดของพนักงานที่เลือก</button><div id="workplaceHistory"></div></details>`
      : ""
  }</section>`;
-  $("workplaceExam").onchange = workplaceLoad;
   $("workplaceReload").onclick = workplaceLoad;
   root
     .querySelectorAll("[data-workplace-quiz]")
@@ -79,7 +78,6 @@ async function workplaceLoad() {
   for (const kind of Object.keys(workplaceKinds))
     $("workplaceQuiz-" + kind).innerHTML = "";
   workplaceMessage("กำลังโหลด…");
-  const examId = $("workplaceExam").value;
   if (state.user?.role !== "admin") {
     workplaceMessage(
       "เลือกข้อสอบแยกที่ต้องการทำ ผลจะส่งเข้าการประเมินหน้างานของคุณ",
@@ -92,7 +90,7 @@ async function workplaceLoad() {
     true;
   try {
     const [data, roster] = await Promise.all([
-      api("/api/workplace/config?examId=" + encodeURIComponent(examId)),
+      api("/api/workplace/config"),
       api("/api/admin/employees"),
     ]);
     if (ticket !== workplaceRequest || token !== state.authToken) return;
@@ -201,7 +199,6 @@ async function workplaceSaveConfig(event) {
     await api("/api/workplace/config", {
       method: "PUT",
       body: JSON.stringify({
-        examId: $("workplaceExam").value,
         revision: workplaceRevision,
         config,
       }),
@@ -215,15 +212,12 @@ async function workplaceSaveConfig(event) {
   }
 }
 async function workplaceTakeQuiz(kind) {
-  const examId = $("workplaceExam").value;
   const token = state.authToken;
   const ticket = workplaceRequest;
   const target = $("workplaceQuiz-" + kind);
   target.textContent = "กำลังโหลดข้อสอบ…";
   try {
-    const data = await api(
-      "/api/workplace/quizzes?examId=" + encodeURIComponent(examId),
-    );
+    const data = await api("/api/workplace/quizzes");
     if (ticket !== workplaceRequest || token !== state.authToken) return;
     target.innerHTML = `<form>${data.quizzes[kind].map((q, index) => `<fieldset><legend>${index + 1}. ${escapeHtml(q.text)}</legend>${q.choices.map((choice, i) => `<label class="workplace-choice"><input type="radio" name="wp-answer-${kind}-${index}" value="${i}" required> ${escapeHtml(choice)}</label>`).join("")}</fieldset>`).join("")}<button type="submit" class="primary-btn">ส่งคำตอบ</button></form>`;
     target.querySelector("form").onsubmit = async (event) => {
@@ -241,7 +235,6 @@ async function workplaceTakeQuiz(kind) {
         const result = await api("/api/workplace/attempts", {
           method: "POST",
           body: JSON.stringify({
-            examId,
             kind,
             revision: data.revision,
             answers,
@@ -263,7 +256,6 @@ async function workplaceEvaluate(save) {
   const form = $("workplaceEvaluationForm");
   if (!form.reportValidity()) return;
   const body = {
-    examId: $("workplaceExam").value,
     revision: workplaceRevision,
     employeeCode: $("workplaceEmployee").value,
     period: $("wp-period").value,
@@ -308,14 +300,10 @@ async function workplaceEvaluate(save) {
 
 async function workplaceHistory() {
   const employeeCode = $("workplaceEmployee").value,
-    examId = $("workplaceExam").value,
     ticket = workplaceRequest;
   try {
     const data = await api(
-      "/api/workplace/history?examId=" +
-        encodeURIComponent(examId) +
-        "&employeeCode=" +
-        encodeURIComponent(employeeCode),
+      "/api/workplace/history?employeeCode=" + encodeURIComponent(employeeCode),
     );
     if (
       ticket !== workplaceRequest ||
@@ -326,7 +314,7 @@ async function workplaceHistory() {
       data.records
         .map(
           (record) =>
-            `<article><h4>${escapeHtml(record.updatedAt)} — ${record.totalScore}/${record.maxScore}</h4><p>ผู้ประเมิน: ${escapeHtml(record.evaluator)} · ${record.evidence ? "รอบ " + escapeHtml(record.evidence.period) : "ผลประเมินเดิม"}</p><ul>${record.rows
+            `<article><h4>${escapeHtml(record.updatedAt)} — ${record.totalScore}/${record.maxScore}</h4><p>ผู้ประเมิน: ${escapeHtml(record.evaluator)} · ${record.scope === "legacy" ? "ผลเดิมราย Model/Part: " + escapeHtml(record.modelName) + " / " + escapeHtml(record.partCode) + " · " : "ประเมินรวม · "}${record.evidence ? "รอบ " + escapeHtml(record.evidence.period) : "ผลประเมินเดิม"}</p><ul>${record.rows
               .map(
                 (row) =>
                   `<li>${escapeHtml(row.title || row.item || "หัวข้อ")}: ${escapeHtml(row.score)} × ${escapeHtml(row.weight)}${
