@@ -144,23 +144,28 @@ async function renderManualRules() {
   const panel = document.createElement("section");
   panel.className = "panel";
   panel.id = "manualRulesPanel";
-  $("workplaceScorePreviewView").append(panel);
+  $("workplaceScorePreviewView").insertBefore(
+    panel,
+    $("workplaceScorePreviewView").querySelector(".score-entry-panel"),
+  );
   panel.textContent = "กำลังโหลดเกณฑ์แปลงคะแนนดิบ…";
   try {
     const data = await api("/api/workplace/manual-rules");
     if (ticket !== workplaceHub.request || token !== state.authToken) return;
-    panel.innerHTML = `<details ${data.rules ? "" : "open"}><summary>เกณฑ์แปลงคะแนนดิบข้อ 2–3 และน้ำหนัก (Admin)</summary><p>กำหนดเพียงครั้งเดียวเพื่อใช้ร่วมทุกงวด ค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 การแก้เกณฑ์นี้ไม่ทำให้พนักงานต้องสอบใหม่ ผลที่บันทึกแล้วจะไม่เปลี่ยนจนกว่าจะสรุปผลใหม่</p><form id="manualRulesForm">${[
+    panel.innerHTML = `<div class="panel-head"><div><p class="card-label">SCORING CRITERIA · ADMIN</p><h3>กำหนดเกณฑ์คะแนนข้อ 2–3</h3></div><span id="manualRulesRevision">${data.rules ? "เวอร์ชัน " + data.rules.revision : "ยังไม่กำหนดเกณฑ์"}</span></div><p>กำหนดเพียงครั้งเดียวเพื่อใช้ร่วมทุกงวด ค่าที่ไม่ถึงระดับ 2 จะได้ระดับ 1 การแก้เกณฑ์นี้ไม่ทำให้พนักงานต้องสอบใหม่ ผลที่บันทึกแล้วจะไม่เปลี่ยนจนกว่าจะสรุปผลใหม่</p><form id="manualRulesForm" novalidate>${[
       "quantity",
       "quality",
     ]
       .map((key, index) => {
         const rule = data.rules?.groups.find((g) => g.key === key);
-        return `<fieldset><legend>${index + 2}. ${key === "quantity" ? "ปริมาณงาน" : "คุณภาพงาน"}</legend><div class="workplace-fields">${workplaceField("น้ำหนัก", "manual-weight-" + key, "number", rule?.weight ?? "")}<label class="field"><span>ทิศทางคะแนน</span><select id="manual-direction-${key}"><option value="higher">ยิ่งสูงยิ่งดี (≥)</option><option value="lower" ${rule?.direction === "lower" ? "selected" : ""}>ยิ่งต่ำยิ่งดี (≤)</option></select></label>${[0, 1, 2].map((i) => workplaceField("เกณฑ์ระดับ " + (i + 2), "manual-threshold-" + key + "-" + i, "number", rule?.metrics[key + "Raw"][i] ?? "")).join("")}</div></fieldset>`;
+        return `<fieldset><legend>${index + 2}. ${key === "quantity" ? "ปริมาณงาน" : "คุณภาพงาน"}</legend><div class="workplace-fields">${workplaceField("น้ำหนัก", "manual-weight-" + key, "number", rule?.weight ?? "")}<label class="field"><span>ทิศทางคะแนน</span><select id="manual-direction-${key}"><option value="higher">ยิ่งสูงยิ่งดี (≥)</option><option value="lower" ${rule?.direction === "lower" ? "selected" : ""}>ยิ่งต่ำยิ่งดี (≤)</option></select></label>${[0, 1, 2].map((i) => workplaceField("เกณฑ์ระดับ " + (i + 2), "manual-threshold-" + key + "-" + i, "number", rule?.metrics[key + "Raw"][i] ?? "")).join("")}</div><div id="manual-ranges-${key}" class="manual-ranges" aria-live="polite"></div></fieldset>`;
       })
       .join(
         "",
-      )}<p id="manualRulesMessage" role="status"></p><button class="primary-btn" type="submit">บันทึกเกณฑ์คะแนนดิบ</button></form></details>`;
+      )}<p id="manualRulesMessage" role="status"></p><button class="primary-btn" type="submit">บันทึกเกณฑ์คะแนนดิบ</button></form>`;
+    renderManualRuleRanges();
     $("manualRulesForm").oninput = () => {
+      renderManualRuleRanges();
       workplaceHub.manualRulesDirty = true;
     };
     $("manualRulesForm").onsubmit = async (event) => {
@@ -168,7 +173,20 @@ async function renderManualRules() {
       const button =
         event.submitter ||
         $("manualRulesForm").querySelector("button[type=submit]");
+      const invalid = $("manualRulesForm").querySelector(":invalid");
+      if (invalid) {
+        $("manualRulesMessage").textContent =
+          "กรุณาตรวจสอบ " +
+          (invalid.closest("label")?.querySelector("span")?.textContent ||
+            "ช่องข้อมูล") +
+          ": " +
+          invalid.validationMessage;
+        invalid.focus();
+        invalid.reportValidity();
+        return;
+      }
       button.disabled = true;
+      $("manualRulesMessage").textContent = "กำลังบันทึกเกณฑ์…";
       try {
         const rules = WorkplaceScoring.validateManualRules({
           groups: ["quantity", "quality"].map((key) => ({
@@ -187,6 +205,8 @@ async function renderManualRules() {
           body: JSON.stringify({ rules, revision: data.rules?.revision || 0 }),
         });
         data.rules = saved.rules;
+        $("manualRulesRevision").textContent =
+          "เวอร์ชัน " + saved.rules.revision;
         workplaceHub.manualRulesDirty = false;
         $("manualRulesMessage").textContent =
           "บันทึกเกณฑ์คะแนนดิบเรียบร้อยแล้ว";
@@ -230,4 +250,41 @@ function clearWorkplaceHub() {
   const root = $("workplaceHubView");
   if (root) root.innerHTML = "";
   document.body.classList.remove("workplace-hub-open");
+}
+
+function renderManualRuleRanges() {
+  for (const key of ["quantity", "quality"]) {
+    const values = [0, 1, 2].map(
+        (i) => $("manual-threshold-" + key + "-" + i).value,
+      ),
+      numbers = values.map(Number),
+      higher = $("manual-direction-" + key).value === "higher";
+    const valid =
+      values.every((value) => value !== "") &&
+      numbers.every((value) => Number.isFinite(value) && value >= 0) &&
+      (higher
+        ? numbers[0] < numbers[1] && numbers[1] < numbers[2]
+        : numbers[0] > numbers[1] && numbers[1] > numbers[2]);
+    const ranges = valid
+      ? higher
+        ? [
+            `น้อยกว่า ${numbers[0]}`,
+            `${numbers[0]} ถึงน้อยกว่า ${numbers[1]}`,
+            `${numbers[1]} ถึงน้อยกว่า ${numbers[2]}`,
+            `ตั้งแต่ ${numbers[2]} ขึ้นไป`,
+          ]
+        : [
+            `มากกว่า ${numbers[0]}`,
+            `มากกว่า ${numbers[1]} ถึง ${numbers[0]}`,
+            `มากกว่า ${numbers[2]} ถึง ${numbers[1]}`,
+            `ไม่เกิน ${numbers[2]}`,
+          ]
+      : ["รอกำหนดเกณฑ์", "—", "—", "—"];
+    $("manual-ranges-" + key).innerHTML = ranges
+      .map(
+        (text, index) =>
+          `<div><strong>ระดับ ${index + 1}</strong><span>${text}</span></div>`,
+      )
+      .join("");
+  }
 }

@@ -5220,3 +5220,8 @@ body.score-entry-preview-open .topbar-actions { display:none; }
 .workplace-hub-open .topbar-actions { display:none; }
 #manualRulesPanel fieldset { border:1px solid #dce3ed; padding:16px; border-radius:12px; margin:16px 0; }
 @media(max-width:700px) { .workplace-hub-heading { flex-direction:column; align-items:stretch; } .workplace-hub-tabs button { flex:1 1 130px; } }
+
+.manual-ranges { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; margin-top:12px; }
+.manual-ranges div { background:#f0f6f8; border:1px solid #dce7eb; border-radius:10px; padding:12px; }
+.manual-ranges strong,.manual-ranges span { display:block; }
+.manual-ranges span { font-size:13px; margin-top:6px; color:#526377; }
