@@ -5167,10 +5167,10 @@ body {
 .progress-model-card progress { display: block; width: 100%; height: 12px; accent-color: #198576; }
 .progress-model-detail { font-size: 13px; }
 .workplace-fields { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,180px),1fr)); gap: 14px; margin: 12px 0; }
-#workplaceView fieldset { border: 1px solid #cbd5e1; border-radius: 12px; margin: 16px 0; padding: 16px; min-width: 0; }
-#workplaceView legend { font-weight: 700; white-space: pre-wrap; }
-#workplaceView details { margin: 24px 0; }
-#workplaceView summary { cursor: pointer; font-weight: 700; }
+:is(#workplaceView, #workplaceSettingsView, #workplaceEvaluationMount) fieldset { border: 1px solid #cbd5e1; border-radius: 12px; margin: 16px 0; padding: 16px; min-width: 0; }
+:is(#workplaceView, #workplaceSettingsView, #workplaceEvaluationMount) legend { font-weight: 700; white-space: pre-wrap; }
+:is(#workplaceView, #workplaceSettingsView, #workplaceEvaluationMount) details { margin: 24px 0; }
+:is(#workplaceView, #workplaceSettingsView, #workplaceEvaluationMount) summary { cursor: pointer; font-weight: 700; }
 .workplace-choice { display: block; padding: 12px; }
 .workplace-choice input { width: auto; }
 .workplace-question { padding: 16px; margin: 12px 0; background: #f8fafc; border-radius: 12px; }

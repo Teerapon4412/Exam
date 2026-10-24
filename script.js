@@ -1109,7 +1109,6 @@ function resetExamSession() {
 }
 
 function setView(view) {
-  if (view === "evaluation") view = "workplace";
   state.activeView = view;
   const views = {
     dashboard: els.dashboardView,
@@ -1121,6 +1120,7 @@ function setView(view) {
     profile: els.profileView,
     skillMatrix: els.skillMatrixView,
     workplace: $("workplaceView"),
+    workplaceSettings: $("workplaceSettingsView"),
     evaluation: els.evaluationView,
     practicalAssessment: els.practicalAssessmentView,
     management: els.managementView,
@@ -1142,8 +1142,11 @@ function setView(view) {
   setText(els.pageHeading, TEXT.titleByView[view] || "Factory Online Exam");
 
   if (view === "workplace") {
-    setText(els.pageHeading, "ข้อสอบและประเมินหน้างาน");
+    setText(els.pageHeading, "ข้อสอบประเมินหน้างาน");
     workplaceOpen();
+  } else if (view === "workplaceSettings") {
+    setText(els.pageHeading, "ตั้งค่าข้อสอบและเกณฑ์คะแนน");
+    workplaceOpen("settings");
   } else if (view === "dashboard") {
     renderDashboard();
   } else if (view === "individualSummary") {
@@ -1160,8 +1163,7 @@ function setView(view) {
   } else if (view === "skillMatrix") {
     renderSkillMatrix();
   } else if (view === "evaluation") {
-    renderEvaluationForm();
-    renderEvaluationHistory();
+    workplaceOpen("evaluation");
   } else if (view === "practicalAssessment") {
     renderPracticalAssessment();
   } else if (view === "management") {
@@ -3451,6 +3453,7 @@ function renderEvaluationRows(rows = TEXT.evaluationRows) {
 }
 
 function renderEvaluationForm() {
+  if (state.activeView === "evaluation") { workplaceRenderSheet(); return; }
   if (state.user?.role !== "admin") return;
 
   const employees = getEvaluationEmployees();
@@ -3609,6 +3612,8 @@ async function loadEvaluations() {
 function renderEvaluationHistory() {
   if (state.user?.role !== "admin") return;
 
+  const previousPart = els.evaluationHistoryPartFilter.value;
+  const previousEvaluator = els.evaluationHistoryEvaluatorFilter.value;
   const defaultPartLabel = "ทุก Part";
   const defaultEvaluatorLabel = "ผู้ประเมินทั้งหมด";
   const partOptions = [defaultPartLabel].concat(
@@ -3619,12 +3624,14 @@ function renderEvaluationHistory() {
   );
 
   els.evaluationHistoryPartFilter.innerHTML = partOptions
-    .map((value) => `<option value="${value}">${value}</option>`)
+    .map((value) => `<option value="${value}">${value === "__WORKPLACE_ALL__" ? "ประเมินรวม" : value}</option>`)
     .join("");
   els.evaluationHistoryEvaluatorFilter.innerHTML = evaluatorOptions
-    .map((value) => `<option value="${value}">${value}</option>`)
+    .map((value) => `<option value="${value}">${value === "__WORKPLACE_ALL__" ? "ประเมินรวม" : value}</option>`)
     .join("");
 
+  els.evaluationHistoryPartFilter.value = partOptions.includes(previousPart) ? previousPart : defaultPartLabel;
+  els.evaluationHistoryEvaluatorFilter.value = evaluatorOptions.includes(previousEvaluator) ? previousEvaluator : defaultEvaluatorLabel;
   const keyword = (els.evaluationSearchInput.value || "").trim().toLowerCase();
   const partFilter = els.evaluationHistoryPartFilter.value || defaultPartLabel;
   const evaluatorFilter = els.evaluationHistoryEvaluatorFilter.value || defaultEvaluatorLabel;
@@ -3649,9 +3656,9 @@ function renderEvaluationHistory() {
       <tr>
         <td>${formatDateTime(item.updatedAt || item.createdAt)}</td>
         <td>${item.employeeName} (${item.employeeCode})</td>
-        <td>${item.modelName || item.modelCode} / ${item.partCode}</td>
+        <td>${item.partCode === "__WORKPLACE_ALL__" ? "ประเมินรวมทุก Model/Part" : `${item.modelName || item.modelCode} / ${item.partCode}`}</td>
         <td>${item.totalScore}/${item.maxScore}</td>
-        <td>${item.examScore}/${item.examTotalScore} (${item.examPercent}%)</td>
+        <td>${item.partCode === "__WORKPLACE_ALL__" ? "—" : `${item.examScore}/${item.examTotalScore} (${item.examPercent}%)`}</td>
         <td>${item.evaluator}</td>
       </tr>
     `)

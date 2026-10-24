@@ -55,3 +55,5 @@ node --test tests/*.test.js
 ```
 
 Workplace assessment is global per employee: no Model/Part selection is required. The overall evaluation supplies the 60% component to every ordinary Model/Part cell; exam-only and practical-assessment modes keep their existing formulas. Legacy per-Part configurations and quiz attempts are preserved without merging them into the new shared criteria; Admin must configure the overall criteria once. Legacy evaluations remain available in saved results and serve as the matrix fallback until an overall evaluation is recorded.
+
+The original **ประเมินหน้างาน** page keeps its employee workflow, four-row score sheet and evaluation history. Scores and weights on the sheet are read-only and come from automatic calculation. Admin manages criteria, weights and the two quiz banks in the separate **ตั้งค่าข้อสอบและเกณฑ์คะแนน** page; employees use **ข้อสอบประเมินหน้างาน** to take their quizzes. No Model/Part selection is required in these workflows.

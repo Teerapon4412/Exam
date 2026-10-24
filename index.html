@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Factory Online Exam</title>
-    <link rel="stylesheet" href="./styles.css?v=20261024-workplace-overall" />
+    <link rel="stylesheet" href="./styles.css?v=20261024-workplace-settings" />
   </head>
   <body>
     <div class="login-shell" id="loginShell">
@@ -66,11 +66,12 @@
               <button class="nav-item admin-only hidden" data-view="dashboard" type="button">Dashboard</button>
               <button class="nav-item admin-only hidden" data-view="individualSummary" type="button">สรุปรายบุคคล</button>
               <button class="nav-item active" data-view="exam" type="button">ทำข้อสอบ</button>
-              <button class="nav-item" data-view="workplace" type="button">ข้อสอบและประเมินหน้างาน</button>
+              <button class="nav-item" data-view="workplace" type="button">ข้อสอบประเมินหน้างาน</button>
               <button class="nav-item" data-view="examProgress" type="button">สถานะการสอบราย Part</button>
               <button class="nav-item" data-view="history" type="button">ประวัติผลสอบ</button>
               <button class="nav-item" data-view="profile" type="button">ข้อมูลพนักงาน</button>
               <button class="nav-item admin-only hidden" data-view="evaluation" type="button">ประเมินหน้างาน</button>
+              <button class="nav-item admin-only hidden" data-view="workplaceSettings" type="button">ตั้งค่าข้อสอบและเกณฑ์คะแนน</button>
               <button class="nav-item admin-only hidden" data-view="skillMatrix" type="button">Skill Matrix</button>
               <button class="nav-item admin-only hidden" data-view="management" type="button">จัดการข้อมูล <span id="questionReportNavBadge" class="nav-badge hidden">0</span></button>
               <button class="nav-item admin-only hidden" data-view="admin" type="button">จัดการคลังข้อสอบ</button>
@@ -523,6 +524,7 @@
             </section>
           </section>
 
+          <section id="workplaceSettingsView" class="view-section hidden"></section>
           <section id="workplaceView" class="view-section hidden"></section>
           <section id="evaluationView" class="view-section hidden">
             <div class="evaluation-layout">
@@ -531,11 +533,12 @@
                   <div>
                     <p class="card-label">Evaluation</p>
                     <h3>พื้นที่ประเมินหน้างาน</h3>
-                    <p class="section-intro">เลือกพนักงาน Part และผู้ประเมินก่อนให้คะแนนแต่ละหัวข้อด้านล่าง</p>
+                    <p class="section-intro">เลือกพนักงานและกรอกข้อมูลการทำงาน ระบบคำนวณระดับคะแนน 1–4 ตามเกณฑ์ที่ Admin ตั้งไว้</p>
                   </div>
                 </div>
 
-                <div class="evaluation-form">
+                <div id="workplaceEvaluationMount"></div>
+                <div class="evaluation-form hidden">
                   <label class="field">
                     <span>ชื่อหัวข้อการประเมิน</span>
                     <input id="evaluationSectionTitle" type="text" />
@@ -582,7 +585,7 @@
                 <div class="evaluation-sheet-head">
                   <p class="card-label">Evaluation Sheet</p>
                   <h3 id="evaluationSheetTitle">ส่วนที่ 1 : การปฏิบัติงาน และ ความร่วมมือ</h3>
-                  <p class="section-intro centered">ใช้ระดับคะแนน 1-4 เพื่อสะท้อนความพร้อมและความสม่ำเสมอในการปฏิบัติงานของ Part ที่เลือก</p>
+                  <p class="section-intro centered">แสดงคะแนนอัตโนมัติ 1–4 และน้ำหนักจากหน้าตั้งค่า ใช้ประเมินภาพรวมรายพนักงาน</p>
                 </div>
 
                 <div class="evaluation-sheet-meta">
@@ -1034,8 +1037,8 @@
       </div>
     </div>
 
-    <script src="./script.js?v=20261024-workplace-overall"></script>
-    <script src="./workplace-ui.js?v=20261024-workplace-overall"></script>
-    <script src="./progress-ui.js?v=20261024-workplace-overall"></script>
+    <script src="./script.js?v=20261024-workplace-settings"></script>
+    <script src="./workplace-ui.js?v=20261024-workplace-settings"></script>
+    <script src="./progress-ui.js?v=20261024-workplace-settings"></script>
   </body>
 </html>
