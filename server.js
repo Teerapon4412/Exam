@@ -810,7 +810,20 @@ function serializeEvaluation(row) {
   };
 }
 
+// Image-backed question sets can exceed 30 MB once encoded as JSON/Base64.
+// Authenticate these larger writes before reading their request bodies.
+app.post("/api/admin/exam-bank", requireAdmin, express.json({ limit: "100mb" }));
+app.put("/api/workplace/config", requireAdmin, express.json({ limit: "100mb" }));
 app.use(express.json({ limit: "30mb" }));
+app.use((error, req, res, next) => {
+  if (error.type === "entity.too.large") {
+    const limitMb = Math.round(error.limit / (1024 * 1024));
+    return res.status(413).json({
+      error: `ข้อมูลมีขนาดเกิน ${limitMb} MB กรุณาลดขนาดรูปประกอบหรือลบรูปที่ไม่ใช้ แล้วบันทึกอีกครั้ง`,
+    });
+  }
+  next(error);
+});
 app.use(express.static(__dirname));
 
 function getBearerToken(req) {
