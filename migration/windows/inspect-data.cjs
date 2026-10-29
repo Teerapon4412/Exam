@@ -13,13 +13,15 @@ try {
   if (path.resolve(source) === path.resolve(reportPath)) throw new Error('Report must not replace database');
   db = new Database(source, { readonly: true, fileMustExist: true });
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all();
-  const counts = {}, external = new Set(), local = new Set();
+  const counts = {}, external = new Set(), local = new Set(), sourceLabels = new Set();
   let embeddedImages = 0;
   const quote = value => '"' + value.replaceAll('"', '""') + '"';
   function inspect(value, key = '') {
     if (value && typeof value === 'object') {
       for (const [k, v] of Object.entries(value)) inspect(v, k);
     } else if (typeof value === 'string') {
+      // sourceImage records the import page name; rendering uses imageUrl.
+      if (key === 'sourceImage') { if (value.trim()) sourceLabels.add(value); return; }
       if (/^data:image\//i.test(value)) { embeddedImages++; return; }
       if (/image|photo|attachment|fileurl/i.test(key) && value.trim()) {
         if (/^https?:\/\//i.test(value)) external.add(value);
@@ -43,6 +45,7 @@ try {
     createdAt: new Date().toISOString(), integrity: db.pragma('integrity_check', { simple: true }),
     counts, embeddedImageOccurrences: embeddedImages,
     externalAssetUrls: [...external].sort(), localAssetReferences: [...local].sort(),
+    sourceImageLabels: [...sourceLabels].sort(),
     note: 'Asset references may contain private URLs. Keep this report private. Repeated snapshots count repeatedly. No files downloaded; no source data changed. Review code dependencies separately.',
   }, null, 2), { flag: 'wx' });
   console.log('Read-only inventory saved: ' + reportPath);
