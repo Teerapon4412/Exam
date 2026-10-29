@@ -64,3 +64,19 @@
 หยุดการบันทึกบน Render → สำรองล่าสุด → ตรวจสำเนา → นำเข้าที่ Windows
 → ทดสอบ → แจ้งผู้ใช้เปลี่ยน URL ห้ามเปิดสองระบบให้รับคะแนนพร้อมกัน
 เก็บ Render และสำเนาก่อนย้ายไว้จนตรวจรับ หากย้อนกลับหลังมีข้อมูลใหม่ต้องวางแผนย้ายข้อมูลกลับก่อน
+
+## รูปภายนอกสำหรับ Windows
+
+แปลง mapping.csv ที่ดาวน์โหลดไว้เป็น mapping.json ด้วย PowerShell:
+
+    Import-Csv "$env:USERPROFILE\FactoryExamMigration\downloaded-images\mapping.csv" | ConvertTo-Json -Depth 4 | Set-Content "$env:USERPROFILE\FactoryExamMigration\downloaded-images\mapping.json" -Encoding UTF8
+
+จัดชุดรูป (ต้องเป็นโฟลเดอร์ใหม่):
+
+    node migration/windows/prepare-images.cjs "$env:USERPROFILE\FactoryExamMigration\downloaded-images\mapping.json" "$env:USERPROFILE\FactoryExamMigration\offline-assets"
+
+กำหนด OFFLINE_ASSET_DIR ให้ชี้โฟลเดอร์ offline-assets ก่อนเริ่มเซิร์ฟเวอร์
+ระบบเปลี่ยน URL เฉพาะตอนแสดงภาพบนหน้าเว็บ ไม่แก้ฐานข้อมูล เกณฑ์ หรือเอกลักษณ์ข้อสอบ
+manifest ตรวจชนิดไฟล์จาก signature และตั้งชื่อจาก SHA-256; ต้องรีสตาร์ตเมื่อเปลี่ยน manifest
+ควรทดสอบทุกหน้าที่มีภาพหลังตัดอินเทอร์เน็ต รวมถึงภาพขยายและรูปพนักงาน
+รูปใหม่ที่เพิ่มภายหลังต้องจัดชุดเพิ่มก่อนรับรองการใช้งานออฟไลน์

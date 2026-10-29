@@ -824,6 +824,7 @@ app.use((error, req, res, next) => {
   }
   next(error);
 });
+require('./offline-images')(app, process.env.OFFLINE_ASSET_DIR);
 app.use(express.static(__dirname));
 
 function getBearerToken(req) {
