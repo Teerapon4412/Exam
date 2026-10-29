@@ -1436,6 +1436,6 @@ app.get("*", (_req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`Factory exam app running on http://localhost:${PORT}`);
+app.listen(PORT, process.env.HOST || "0.0.0.0", () => {
+  console.log(`Factory exam app running on http://${process.env.HOST || "localhost"}:${PORT}`);
 });
